@@ -11,38 +11,17 @@ export type AuthUser = User;
 class AuthService {
   async login(role: UserRole, credentials: LoginCredentials): Promise<AuthUser> {
     try {
-      // Query users table for authentication
-      const { data: user, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('username', credentials.username)
-        .eq('role', role)
-        .eq('is_active', true)
-        .single();
+      const { data, error } = await supabase.rpc('login', {
+        _username: credentials.username,
+        _password: credentials.password,
+        _role: role,
+      });
 
-      if (error || !user) {
+      if (error) {
         throw new Error('Invalid credentials');
       }
 
-      // In production, you would verify password hash here
-      // For demo, we'll use simple password check
-      const validPasswords = {
-        'admin': 'admin123',
-        'staff': 'staff123',
-        'manager': 'manager123'
-      };
-
-      if (validPasswords[credentials.username as keyof typeof validPasswords] !== credentials.password) {
-        throw new Error('Invalid credentials');
-      }
-
-      // Update last login
-      await supabase
-        .from('users')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', user.id);
-
-      return user;
+      return data;
     } catch (error) {
       throw new Error('Authentication failed');
     }

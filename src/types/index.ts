@@ -59,6 +59,12 @@ export interface Staff {
   updated_at: string;
 }
 
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export interface TaskTemplate {
   id: string;
   firm_id: string;
@@ -67,7 +73,7 @@ export interface TaskTemplate {
   compliance_type_id?: string;
   default_priority: Task['priority'];
   estimated_hours?: number;
-  checklist_items: any[];
+  checklist_items: ChecklistItem[];
   is_active: boolean;
   created_by?: string;
   created_at: string;
@@ -103,7 +109,7 @@ export interface Task {
   delay_reason?: string;
   estimated_hours?: number;
   actual_hours?: number;
-  checklist_progress?: any;
+  checklist_progress?: { [itemId: string]: boolean };
   created_at: string;
   updated_at: string;
   assigned_by: string;
