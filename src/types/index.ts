@@ -1,0 +1,161 @@
+export interface Firm {
+  id: string;
+  name: string;
+  registration_number?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface User {
+  id: string;
+  firm_id: string;
+  email: string;
+  username: string;
+  full_name: string;
+  role: UserRole;
+  phone?: string;
+  is_active: boolean;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Client {
+  id: string;
+  firm_id: string;
+  name: string;
+  gstin?: string;
+  pan: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  work_types: string[];
+  is_active: boolean;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Staff {
+  id: string;
+  user_id: string;
+  firm_id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
+  employee_id?: string;
+  department?: string;
+  specializations: string[];
+  hourly_rate?: number;
+  is_available: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskTemplate {
+  id: string;
+  firm_id: string;
+  name: string;
+  description?: string;
+  compliance_type_id?: string;
+  default_priority: Task['priority'];
+  estimated_hours?: number;
+  checklist_items: any[];
+  is_active: boolean;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ComplianceType {
+  id: string;
+  firm_id?: string;
+  name: string;
+  code: string;
+  description?: string;
+  frequency: 'monthly' | 'quarterly' | 'yearly' | 'as_needed';
+  due_day: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Task {
+  id: string;
+  firm_id: string;
+  client_id: string;
+  staff_id: string;
+  compliance_type_id: string;
+  template_id?: string;
+  title: string;
+  description?: string;
+  due_date: string;
+  status: 'assigned' | 'in_progress' | 'awaiting_client_data' | 'ready_for_review' | 'filed_completed';
+  priority: 'low' | 'medium' | 'high';
+  period: string; // e.g., "March 2024", "Q1 2024"
+  remarks?: string;
+  delay_reason?: string;
+  estimated_hours?: number;
+  actual_hours?: number;
+  checklist_progress?: any;
+  created_at: string;
+  updated_at: string;
+  assigned_by: string;
+  client?: Client;
+  staff?: Staff;
+  compliance_type?: ComplianceType;
+}
+
+export interface StaffAvailability {
+  id: string;
+  firm_id: string;
+  staff_id: string;
+  date: string;
+  is_available: boolean;
+  availability_type?: string;
+  start_time?: string;
+  end_time?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  firm_id: string;
+  table_name: string;
+  record_id: string;
+  action: 'create' | 'update' | 'delete' | 'assign' | 'status_change';
+  old_values?: any;
+  new_values?: any;
+  user_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+}
+
+export interface TaskStatusUpdate {
+  id: string;
+  task_id: string;
+  status: Task['status'];
+  remarks?: string;
+  updated_by: string;
+  created_at: string;
+}
+
+export type UserRole = 'partner' | 'manager' | 'staff';
+
+export interface DashboardStats {
+  total_clients: number;
+  total_staff: number;
+  overdue_tasks: number;
+  pending_review: number;
+  completed_today: number;
+  upcoming_due_dates: number;
+}
