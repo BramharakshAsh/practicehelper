@@ -28,6 +28,8 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterStaff, setFilterStaff] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
+  const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [showModal, setShowModal] = useState(false);
 
   const taskStatuses = [
@@ -61,6 +63,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
     filteredTasks = filteredTasks.filter(task => task.staff_id === filterStaff);
   }
 
+  if (filterPriority !== 'all') {
+    filteredTasks = filteredTasks.filter(task => task.priority === filterPriority);
+  }
+
   // Count tasks by status
   taskStatuses.forEach(status => {
     status.count = filteredTasks.filter(task => task.status === status.value).length;
@@ -86,15 +92,31 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
             }
           </p>
         </div>
-        {currentRole === 'partner' && (
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Create Task</span>
-          </button>
-        )}
+        <div className="flex items-center space-x-3">
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('board')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'board' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+            >
+              Board
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+            >
+              List
+            </button>
+          </div>
+          {currentRole === 'partner' && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Create Task</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -142,41 +164,125 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                 ))}
               </select>
             )}
+
+            <select
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Priorities</option>
+              <option value="low">Low Priority</option>
+              <option value="medium">Medium Priority</option>
+              <option value="high">High Priority</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Task Board */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {taskStatuses.map((status) => (
-          <div key={status.value} className="bg-gray-50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">{status.label}</h3>
-              <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-sm font-medium">
-                {status.count}
-              </span>
-            </div>
+      {/* Task Board / List */}
+      {viewMode === 'board' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {taskStatuses.map((status) => (
+            <div key={status.value} className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">{status.label}</h3>
+                <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-sm font-medium">
+                  {status.count}
+                </span>
+              </div>
 
-            <div className="space-y-3">
-              {groupedTasks[status.value]?.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onUpdate={onTaskUpdate}
-                  currentRole={currentRole}
-                />
+              <div className="space-y-3">
+                {groupedTasks[status.value]?.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onUpdate={onTaskUpdate}
+                    currentRole={currentRole}
+                  />
+                ))}
+
+                {groupedTasks[status.value]?.length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+                    <p className="text-sm">No tasks</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {taskStatuses.map(status => (
+                <React.Fragment key={status.value}>
+                  {groupedTasks[status.value]?.length > 0 && (
+                    <tr className="bg-gray-50">
+                      <td colSpan={6} className="px-6 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        {status.label} ({status.count})
+                      </td>
+                    </tr>
+                  )}
+                  {groupedTasks[status.value]?.map(task => (
+                    <tr key={task.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{task.title}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-600">{task.client?.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-600">{task.staff?.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${task.status === 'filed_completed' ? 'bg-green-100 text-green-800' :
+                            task.status === 'ready_for_review' ? 'bg-blue-100 text-blue-800' :
+                              task.status === 'awaiting_client_data' ? 'bg-orange-100 text-orange-800' :
+                                'bg-gray-100 text-gray-800'
+                          }`}>
+                          {status.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-800' :
+                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-blue-100 text-blue-800'
+                          }`}>
+                          {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`text-sm ${new Date(task.due_date) < new Date() && task.status !== 'filed_completed' ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                          {new Date(task.due_date).toLocaleDateString()}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
               ))}
-
-              {groupedTasks[status.value]?.length === 0 && (
-                <div className="text-center py-8 text-gray-400">
-                  <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
-                  <p className="text-sm">No tasks</p>
-                </div>
+              {filteredTasks.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p>No tasks found matching your filters</p>
+                  </td>
+                </tr>
               )}
-            </div>
-          </div>
-        ))}
-      </div>
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Task Creation Modal */}
       {showModal && (

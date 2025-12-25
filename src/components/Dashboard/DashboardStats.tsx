@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, FileText, Clock, CheckCircle, AlertTriangle, Calendar } from 'lucide-react';
 import { DashboardStats as StatsType } from '../../types';
 
@@ -7,6 +8,8 @@ interface DashboardStatsProps {
 }
 
 const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
+  const navigate = useNavigate();
+
   const statCards = [
     {
       title: 'Total Clients',
@@ -15,6 +18,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-blue-500',
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-700',
+      path: '/clients',
     },
     {
       title: 'Total Staff',
@@ -23,6 +27,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-green-500',
       bgColor: 'bg-green-50',
       textColor: 'text-green-700',
+      path: '/staff',
     },
     {
       title: 'Overdue Tasks',
@@ -31,6 +36,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-red-500',
       bgColor: 'bg-red-50',
       textColor: 'text-red-700',
+      path: '/tasks',
     },
     {
       title: 'Pending Review',
@@ -39,6 +45,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-orange-500',
       bgColor: 'bg-orange-50',
       textColor: 'text-orange-700',
+      path: '/tasks',
     },
     {
       title: 'Completed Today',
@@ -47,6 +54,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-emerald-500',
       bgColor: 'bg-emerald-50',
       textColor: 'text-emerald-700',
+      path: '/tasks',
     },
     {
       title: 'Upcoming Due Dates',
@@ -55,6 +63,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-purple-500',
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-700',
+      path: '/calendar',
     },
   ];
 
@@ -63,7 +72,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       {statCards.map((card, index) => {
         const Icon = card.icon;
         return (
-          <div key={index} className={`${card.bgColor} rounded-xl p-6 transition-transform hover:scale-105`}>
+          <div
+            key={index}
+            onClick={() => navigate(card.path)}
+            className={`${card.bgColor} rounded-xl p-6 transition-all hover:scale-105 cursor-pointer hover:shadow-md ring-1 ring-black ring-opacity-0 hover:ring-opacity-5`}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm font-medium ${card.textColor} opacity-80`}>{card.title}</p>

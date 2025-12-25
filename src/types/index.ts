@@ -55,6 +55,7 @@ export interface Staff {
   hourly_rate?: number;
   is_available: boolean;
   is_active: boolean;
+  date_of_joining?: string;
   created_at: string;
   updated_at: string;
 }

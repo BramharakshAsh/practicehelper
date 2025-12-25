@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard as Edit, Eye } from 'lucide-react';
+import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard as Edit, Eye, Calendar } from 'lucide-react';
 import { Staff, Task } from '../../types';
 import StaffModal from './StaffModal';
 
@@ -166,6 +166,13 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
                   <span>{member.phone}</span>
                 </div>
               )}
+
+              {member.date_of_joining && (
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Calendar className="h-3 w-3" />
+                  <span>Joined: {new Date(member.date_of_joining).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
 
             <div className="pt-4 border-t border-gray-100">
@@ -176,8 +183,8 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
                 <button
                   onClick={() => toggleStaffStatus(member.id, member.is_active)}
                   className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${member.is_active
-                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                      : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                    : 'bg-green-100 text-green-700 hover:bg-green-200'
                     }`}
                 >
                   {member.is_active ? 'Deactivate' : 'Activate'}

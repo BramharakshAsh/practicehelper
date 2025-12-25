@@ -1,25 +1,31 @@
 import React, { useState } from 'react';
-import { Plus, Search, Building, Phone, Mail, FileText, CreditCard as Edit, Eye } from 'lucide-react';
-import { Client } from '../../types';
+import { Plus, Search, Building, Phone, Mail, FileText, CreditCard as Edit, Eye, Filter } from 'lucide-react';
+import { Client, ComplianceType } from '../../types';
 import ClientModal from './ClientModal';
 
 interface ClientListProps {
   clients: Client[];
+  complianceTypes: ComplianceType[];
   onClientUpdate: (clientId: string, updates: Partial<Client>) => void;
   onClientCreate: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => void;
 }
 
-const ClientList: React.FC<ClientListProps> = ({ clients, onClientUpdate, onClientCreate }) => {
+const ClientList: React.FC<ClientListProps> = ({ clients, complianceTypes, onClientUpdate, onClientCreate }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterWorkType, setFilterWorkType] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [viewMode, setViewMode] = useState<'create' | 'edit' | 'view'>('create');
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.pan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.gstin && client.gstin.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.pan.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (client.gstin && client.gstin.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesWorkType = filterWorkType === 'all' || client.work_types.includes(filterWorkType);
+
+    return matchesSearch && matchesWorkType;
+  });
 
   const openModal = (mode: 'create' | 'edit' | 'view', client?: Client) => {
     setViewMode(mode);
@@ -53,17 +59,36 @@ const ClientList: React.FC<ClientListProps> = ({ clients, onClientUpdate, onClie
         </button>
       </div>
 
-      {/* Search */}
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="relative">
-          <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search clients by name, PAN, or GSTIN..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+        <div className="flex items-center space-x-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search clients by name, PAN, or GSTIN..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-gray-400" />
+            <select
+              value={filterWorkType}
+              onChange={(e) => setFilterWorkType(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Work Types</option>
+              {complianceTypes.map(type => (
+                <option key={type.code} value={type.code}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -81,7 +106,7 @@ const ClientList: React.FC<ClientListProps> = ({ clients, onClientUpdate, onClie
                   <p className="text-sm text-gray-600">PAN: {client.pan}</p>
                 </div>
               </div>
-              
+
               <div className="flex space-x-1">
                 <button
                   onClick={() => openModal('view', client)}
@@ -102,14 +127,14 @@ const ClientList: React.FC<ClientListProps> = ({ clients, onClientUpdate, onClie
               {client.gstin && (
                 <p className="text-sm text-gray-600">GSTIN: {client.gstin}</p>
               )}
-              
+
               {client.email && (
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Mail className="h-3 w-3" />
                   <span>{client.email}</span>
                 </div>
               )}
-              
+
               {client.phone && (
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Phone className="h-3 w-3" />

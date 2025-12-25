@@ -34,13 +34,13 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
 
   const generateTasks = () => {
     setIsGenerating(true);
-    
+
     const tasks: Omit<Task, 'id' | 'created_at' | 'updated_at'>[] = [];
-    const monthlyCompliances = getMonthlyComplianceTypes().filter(ct => 
+    const monthlyCompliances = getMonthlyComplianceTypes().filter(ct =>
       selectedTaskTypes.length === 0 || selectedTaskTypes.includes(ct.code)
     );
     const monthName = months[selectedMonth];
-    
+
     // Generate due dates for the selected month
     const getDueDate = (complianceCode: string) => {
       const dueDates: Record<string, number> = {
@@ -48,15 +48,15 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
         'TDS': 7,  // TDS due on 7th of next month
         'PF': 15,  // PF due on 15th of next month
       };
-      
+
       const day = dueDates[complianceCode] || 20;
       const dueMonth = selectedMonth === 11 ? 0 : selectedMonth + 1;
       const dueYear = selectedMonth === 11 ? selectedYear + 1 : selectedYear;
-      
+
       return new Date(dueYear, dueMonth, day).toISOString();
     };
 
-    const clientsToProcess = selectedClients.length > 0 
+    const clientsToProcess = selectedClients.length > 0
       ? clients.filter(c => selectedClients.includes(c.id))
       : clients;
 
@@ -68,7 +68,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
           const activeStaff = staff.filter(s => s.is_active);
           if (activeStaff.length > 0) {
             const assignedStaff = activeStaff[Math.floor(Math.random() * activeStaff.length)];
-            
+
             tasks.push({
               client_id: client.id,
               staff_id: assignedStaff.id,
@@ -94,7 +94,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
   };
 
   const handleClientToggle = (clientId: string) => {
-    setSelectedClients(prev => 
+    setSelectedClients(prev =>
       prev.includes(clientId)
         ? prev.filter(id => id !== clientId)
         : [...prev, clientId]
@@ -108,24 +108,35 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
   const clearAllClients = () => {
     setSelectedClients([]);
   };
-  
+
   const handleTaskTypeToggle = (taskType: string) => {
-    setSelectedTaskTypes(prev => 
+    setSelectedTaskTypes(prev =>
       prev.includes(taskType)
         ? prev.filter(type => type !== taskType)
         : [...prev, taskType]
     );
   };
-  
+
   const selectAllTaskTypes = () => {
     setSelectedTaskTypes(['GST', 'TDS', 'ACCOUNTING']);
   };
-  
+
   const clearAllTaskTypes = () => {
     setSelectedTaskTypes([]);
   };
 
   const monthlyCompliances = getMonthlyComplianceTypes();
+
+  const estimatedTasks = (selectedClients.length > 0
+    ? clients.filter(c => selectedClients.includes(c.id))
+    : clients
+  ).reduce((acc, client) => {
+    const matchingCompliances = monthlyCompliances.filter(c =>
+      client.work_types.includes(c.code) &&
+      (selectedTaskTypes.length === 0 || selectedTaskTypes.includes(c.code))
+    );
+    return acc + matchingCompliances.length;
+  }, 0);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -200,7 +211,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
                 </button>
               </div>
             </div>
-            
+
             <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-4">
               <div className="space-y-2">
                 {clients.map(client => (
@@ -221,7 +232,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
                 ))}
               </div>
             </div>
-            
+
             {selectedClients.length === 0 && (
               <p className="text-sm text-gray-600 mt-2">
                 No clients selected. All clients will be included.
