@@ -1,29 +1,23 @@
-import { supabase } from './supabase';
 import { ComplianceType } from '../types';
+import { LocalStorageService } from './local-storage.service';
+
+const COMPLIANCE_TYPES_KEY = 'ca_practice_manager_compliance_types';
 
 class ComplianceService {
   async getComplianceTypes(): Promise<ComplianceType[]> {
-    const { data, error } = await supabase
-      .from('compliance_types')
-      .select('*')
-      .eq('is_active', true)
-      .order('name');
-
-    if (error) throw error;
-    return data || [];
+    return LocalStorageService.getItem<ComplianceType[]>(COMPLIANCE_TYPES_KEY, []);
   }
 
-  async createComplianceType(complianceType: Omit<ComplianceType, 'id' | 'firm_id' | 'created_at'>): Promise<ComplianceType> {
-    const firmId = 'demo-firm-id'; // This should be dynamic based on authenticated user
-    
-    const { data, error } = await supabase
-      .from('compliance_types')
-      .insert([{ ...complianceType, firm_id: firmId }])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+  async createComplianceType(type: Omit<ComplianceType, 'id' | 'created_at'>): Promise<ComplianceType> {
+    const types = await this.getComplianceTypes();
+    const newType: ComplianceType = {
+      ...type,
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+    };
+    types.push(newType);
+    LocalStorageService.setItem(COMPLIANCE_TYPES_KEY, types);
+    return newType;
   }
 }
 

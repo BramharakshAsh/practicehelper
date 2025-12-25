@@ -1,74 +1,72 @@
-import { supabase } from './supabase';
 import { Client } from '../types';
 import { useAuthStore } from '../store/auth.store';
+import { LocalStorageService } from './local-storage.service';
+
+const CLIENTS_KEY = 'ca_practice_manager_clients';
 
 class ClientsService {
   async getClients(): Promise<Client[]> {
-    const { data, error } = await supabase
-      .from('clients')
-      .select(`
-        *,
-        created_by_user:users!clients_created_by_fkey(full_name)
-      `)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
+    return LocalStorageService.getItem<Client[]>(CLIENTS_KEY, []);
   }
 
   async createClient(client: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>): Promise<Client> {
-    // Get current user's firm_id
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated or missing firm ID');
 
-    const { data, error } = await supabase
-      .from('clients')
-      .insert([{ ...client, firm_id: firmId }])
-      .select(`
-        *,
-        created_by_user:users!clients_created_by_fkey(full_name)
-      `)
-      .single();
+    const clients = await this.getClients();
+    const newClient: Client = {
+      ...client,
+      id: crypto.randomUUID(),
+      firm_id: firmId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_active: true,
+    };
 
-    if (error) throw error;
-    return data;
+    clients.push(newClient);
+    LocalStorageService.setItem(CLIENTS_KEY, clients);
+    return newClient;
   }
 
   async updateClient(id: string, updates: Partial<Client>): Promise<Client> {
-    const { data, error } = await supabase
-      .from('clients')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
+    const clients = await this.getClients();
+    const index = clients.findIndex(c => c.id === id);
+    if (index === -1) throw new Error('Client not found');
 
-    if (error) throw error;
-    return data;
+    const updatedClient = {
+      ...clients[index],
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+
+    clients[index] = updatedClient;
+    LocalStorageService.setItem(CLIENTS_KEY, clients);
+    return updatedClient;
   }
 
   async deleteClient(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('clients')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
+    const clients = await this.getClients();
+    const filtered = clients.filter(c => c.id !== id);
+    LocalStorageService.setItem(CLIENTS_KEY, filtered);
   }
 
-  async importClients(clients: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]): Promise<Client[]> {
+  async importClients(clientsData: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]): Promise<Client[]> {
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated or missing firm ID');
 
-    const clientsWithFirm = clients.map(client => ({ ...client, firm_id: firmId }));
+    const currentClients = await this.getClients();
+    const newClients = clientsData.map(c => ({
+      ...c,
+      id: crypto.randomUUID(),
+      firm_id: firmId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_active: true,
+    }));
 
-    const { data, error } = await supabase
-      .from('clients')
-      .insert(clientsWithFirm)
-      .select();
-
-    if (error) throw error;
-    return data || [];
+    const updatedClients = [...currentClients, ...newClients];
+    LocalStorageService.setItem(CLIENTS_KEY, updatedClients);
+    return newClients;
   }
 }
 
