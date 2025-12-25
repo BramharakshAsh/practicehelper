@@ -44,9 +44,17 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
     // Generate due dates for the selected month
     const getDueDate = (complianceCode: string) => {
       const dueDates: Record<string, number> = {
-        'GST': 20, // GST due on 20th of next month
-        'TDS': 7,  // TDS due on 7th of next month
-        'PF': 15,  // PF due on 15th of next month
+        'GSTR-1': 11,
+        'GSTR-3B': 20,
+        'GSTR-9': 31,
+        '24Q': 31,
+        '26Q': 31,
+        '27Q': 31,
+        'ITR': 31,
+        'AUDIT': 30,
+        'ACCOUNTING': 10,
+        'NOTICES': 15,
+        'PAYROLL': 15,
       };
 
       const day = dueDates[complianceCode] || 20;
@@ -118,7 +126,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
   };
 
   const selectAllTaskTypes = () => {
-    setSelectedTaskTypes(['GST', 'TDS', 'ACCOUNTING']);
+    setSelectedTaskTypes(['GSTR-1', 'GSTR-3B', 'ACCOUNTING', 'PAYROLL']);
   };
 
   const clearAllTaskTypes = () => {

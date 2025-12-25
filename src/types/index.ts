@@ -84,6 +84,7 @@ export interface TaskTemplate {
 export interface ComplianceType {
   id: string;
   firm_id?: string;
+  category: 'GST' | 'Income Tax' | 'TDS' | 'Others';
   name: string;
   code: string;
   description?: string;

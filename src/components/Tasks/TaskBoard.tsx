@@ -29,6 +29,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterStaff, setFilterStaff] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
+  const [filterComplianceType, setFilterComplianceType] = useState('all');
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [showModal, setShowModal] = useState(false);
 
@@ -65,6 +66,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
 
   if (filterPriority !== 'all') {
     filteredTasks = filteredTasks.filter(task => task.priority === filterPriority);
+  }
+
+  if (filterComplianceType !== 'all') {
+    filteredTasks = filteredTasks.filter(task => task.compliance_type_id === filterComplianceType);
   }
 
   // Count tasks by status
@@ -175,6 +180,29 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
               <option value="medium">Medium Priority</option>
               <option value="high">High Priority</option>
             </select>
+
+            <select
+              value={filterComplianceType}
+              onChange={(e) => setFilterComplianceType(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Compliance Types</option>
+              {Object.entries(
+                complianceTypes.reduce((acc, type) => {
+                  if (!acc[type.category]) acc[type.category] = [];
+                  acc[type.category].push(type);
+                  return acc;
+                }, {} as Record<string, typeof complianceTypes>)
+              ).map(([category, types]) => (
+                <optgroup key={category} label={category}>
+                  {types.map(type => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -247,17 +275,17 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${task.status === 'filed_completed' ? 'bg-green-100 text-green-800' :
-                            task.status === 'ready_for_review' ? 'bg-blue-100 text-blue-800' :
-                              task.status === 'awaiting_client_data' ? 'bg-orange-100 text-orange-800' :
-                                'bg-gray-100 text-gray-800'
+                          task.status === 'ready_for_review' ? 'bg-blue-100 text-blue-800' :
+                            task.status === 'awaiting_client_data' ? 'bg-orange-100 text-orange-800' :
+                              'bg-gray-100 text-gray-800'
                           }`}>
                           {status.label}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-800' :
-                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-blue-100 text-blue-800'
+                          task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-blue-100 text-blue-800'
                           }`}>
                           {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                         </span>
