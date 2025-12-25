@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Building, Phone, Mail, FileText, CreditCard as Edit, Eye, Filter } from 'lucide-react';
+import { Plus, Search, Building, Phone, Mail, FileText, CreditCard as Edit, Eye, Filter, Trash2 } from 'lucide-react';
 import { Client, ComplianceType } from '../../types';
 import ClientModal from './ClientModal';
 
@@ -8,9 +8,10 @@ interface ClientListProps {
   complianceTypes: ComplianceType[];
   onClientUpdate: (clientId: string, updates: Partial<Client>) => void;
   onClientCreate: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => void;
+  onClientDelete: (clientId: string) => void;
 }
 
-const ClientList: React.FC<ClientListProps> = ({ clients, complianceTypes, onClientUpdate, onClientCreate }) => {
+const ClientList: React.FC<ClientListProps> = ({ clients, complianceTypes, onClientUpdate, onClientCreate, onClientDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterWorkType, setFilterWorkType] = useState('all');
   const [showModal, setShowModal] = useState(false);
@@ -119,6 +120,16 @@ const ClientList: React.FC<ClientListProps> = ({ clients, complianceTypes, onCli
                   className="p-1 hover:bg-gray-100 rounded"
                 >
                   <Edit className="h-4 w-4 text-gray-500" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete ${client.name}?`)) {
+                      onClientDelete(client.id);
+                    }
+                  }}
+                  className="p-1 hover:bg-red-50 rounded"
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
                 </button>
               </div>
             </div>

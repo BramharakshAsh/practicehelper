@@ -4,7 +4,7 @@ import { useCompliance } from '../hooks/useCompliance';
 import ClientList from '../components/Clients/ClientList';
 
 const ClientsPage: React.FC = () => {
-    const { clients, createClient, updateClient } = useClients();
+    const { clients, createClient, updateClient, deleteClient } = useClients();
     const { complianceTypes } = useCompliance();
 
     return (
@@ -13,6 +13,7 @@ const ClientsPage: React.FC = () => {
             complianceTypes={complianceTypes}
             onClientUpdate={updateClient}
             onClientCreate={createClient}
+            onClientDelete={deleteClient}
         />
     );
 };

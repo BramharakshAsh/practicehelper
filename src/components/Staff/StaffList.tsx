@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard as Edit, Eye, Calendar } from 'lucide-react';
+import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard as Edit, Eye, Calendar, Trash2 } from 'lucide-react';
 import { Staff, Task } from '../../types';
 import StaffModal from './StaffModal';
 
@@ -8,9 +8,10 @@ interface StaffListProps {
   tasks: Task[];
   onStaffUpdate: (staffId: string, updates: Partial<Staff>) => void;
   onStaffCreate: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'>) => void;
+  onStaffDelete: (staffId: string) => void;
 }
 
-const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onStaffCreate }) => {
+const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onStaffCreate, onStaffDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [showModal, setShowModal] = useState(false);
@@ -150,6 +151,16 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
                   className="p-1 hover:bg-gray-100 rounded"
                 >
                   <Edit className="h-4 w-4 text-gray-500" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete ${member.name}?`)) {
+                      onStaffDelete(member.id);
+                    }
+                  }}
+                  className="p-1 hover:bg-red-50 rounded"
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
                 </button>
               </div>
             </div>

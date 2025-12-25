@@ -232,6 +232,17 @@ export const seedInitialData = () => {
                 due_day: 30,
                 is_active: true,
                 created_at: new Date().toISOString(),
+            },
+            {
+                id: 'ct14',
+                category: 'Others',
+                name: 'Other',
+                code: 'OTHER',
+                description: 'Miscellaneous tasks',
+                frequency: 'as_needed',
+                due_day: 15,
+                is_active: true,
+                created_at: new Date().toISOString(),
             }
         ]);
     }

@@ -13,6 +13,7 @@ interface TaskBoardProps {
   currentStaffId?: string;
   onTaskUpdate: (taskId: string, updates: Partial<Task>) => void;
   onTaskCreate: (task: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => void;
+  onTaskDelete: (taskId: string) => void;
 }
 
 const TaskBoard: React.FC<TaskBoardProps> = ({
@@ -24,6 +25,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
   currentStaffId,
   onTaskUpdate,
   onTaskCreate,
+  onTaskDelete,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -225,6 +227,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                     key={task.id}
                     task={task}
                     onUpdate={onTaskUpdate}
+                    onDelete={onTaskDelete}
                     currentRole={currentRole}
                   />
                 ))}

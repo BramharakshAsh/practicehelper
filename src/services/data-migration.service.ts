@@ -1,7 +1,7 @@
 import { LocalStorageService } from './local-storage.service';
 
 const DATA_VERSION_KEY = 'ca_practice_manager_data_version';
-const CURRENT_DATA_VERSION = '2.0'; // Updated for hierarchical compliance types
+const CURRENT_DATA_VERSION = '2.1'; // Updated to include 'Other' compliance type
 
 export class DataMigrationService {
     static checkAndMigrateData(): boolean {

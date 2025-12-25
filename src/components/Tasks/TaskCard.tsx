@@ -1,16 +1,17 @@
 import * as React from 'react';
 const { useState } = React;
-import { MoreVertical, User, Building, Calendar, MessageSquare, CheckCircle, AlertTriangle, Eye } from 'lucide-react';
+import { MoreVertical, User, Building, Calendar, MessageSquare, CheckCircle, AlertTriangle, Eye, Trash2 } from 'lucide-react';
 import { Task } from '../../types';
 import TaskDetailsModal from './TaskDetailsModal';
 
 interface TaskCardProps {
   task: Task;
   onUpdate: (taskId: string, updates: Partial<Task>) => void;
+  onDelete: (taskId: string) => void;
   currentRole: 'partner' | 'staff';
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, currentRole }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showRemarks, setShowRemarks] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -113,6 +114,20 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
                 >
                   Add/Edit Remarks
                 </button>
+                {currentRole === 'partner' && (
+                  <button
+                    onClick={() => {
+                      if (confirm('Are you sure you want to delete this task?')) {
+                        onDelete(task.id);
+                        setShowMenu(false);
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Task
+                  </button>
+                )}
               </div>
             </div>
           )}

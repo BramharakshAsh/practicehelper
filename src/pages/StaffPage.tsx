@@ -4,7 +4,7 @@ import { useTasksStore } from '../store/tasks.store';
 import StaffList from '../components/Staff/StaffList';
 
 const StaffPage: React.FC = () => {
-    const { staff, createStaff, updateStaff } = useStaff();
+    const { staff, createStaff, updateStaff, deleteStaff } = useStaff();
     const { tasks } = useTasksStore();
 
     return (
@@ -13,6 +13,7 @@ const StaffPage: React.FC = () => {
             tasks={tasks}
             onStaffUpdate={updateStaff}
             onStaffCreate={createStaff}
+            onStaffDelete={deleteStaff}
         />
     );
 };

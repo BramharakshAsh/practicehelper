@@ -37,12 +37,42 @@ const TaskModal: React.FC<TaskModalProps> = ({
 
   const selectedCompliance = complianceTypes.find(ct => ct.id === formData.compliance_type_id);
 
+  // Helper function to format date without timezone issues
+  const formatDateForInput = (year: number, month: number, day: number): string => {
+    const yyyy = year.toString();
+    const mm = (month + 1).toString().padStart(2, '0');
+    const dd = day.toString().padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   // Auto-calculate due date when compliance type or period changes
   useEffect(() => {
     if (!selectedCompliance || !selectedPeriod.type) return;
 
+    // For "Others" category, don't auto-calculate - let user enter manually
+    if (selectedCompliance.category === 'Others') {
+      // Only set period text, not due date
+      let periodText = '';
+      if (selectedCompliance.frequency === 'monthly' && selectedPeriod.type === 'month') {
+        const month = selectedPeriod.month - 1;
+        const year = selectedPeriod.year;
+        periodText = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      } else if (selectedCompliance.frequency === 'yearly' && selectedPeriod.type === 'year') {
+        const { year } = selectedPeriod;
+        periodText = `FY ${year}-${(year + 1).toString().slice(2)}`;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        period: periodText,
+        title: `${selectedCompliance.name} - ${periodText}`,
+        due_date: '', // Clear due date for manual entry
+      }));
+      return;
+    }
+
     const { frequency, due_day } = selectedCompliance;
-    let dueDate: Date;
+    let dueDateStr: string;
     let periodText = '';
 
     if (frequency === 'monthly' && selectedPeriod.type === 'month') {
@@ -51,19 +81,24 @@ const TaskModal: React.FC<TaskModalProps> = ({
       // Due date is in the following month
       const nextMonth = month === 11 ? 0 : month + 1;
       const nextYear = month === 11 ? year + 1 : year;
-      dueDate = new Date(nextYear, nextMonth, due_day);
+      dueDateStr = formatDateForInput(nextYear, nextMonth, due_day);
       periodText = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     } else if (frequency === 'quarterly' && selectedPeriod.type === 'quarter') {
       const { quarter, year } = selectedPeriod;
       // TDS quarters: Q1(Apr-Jun), Q2(Jul-Sep), Q3(Oct-Dec), Q4(Jan-Mar)
-      const quarterEndMonth = [5, 8, 11, 2]; // June, Sept, Dec, March
-      const endMonth = quarterEndMonth[quarter - 1];
-      const dueYear = quarter === 4 ? year + 1 : year;
+      // Due dates: Q1 due July 31, Q2 due Oct 31, Q3 due Jan 31, Q4 due May 31
+      const dueMonths = [6, 9, 0, 4]; // July, October, January, May (0-indexed)
+      const dueMonth = dueMonths[quarter - 1];
 
-      // Due date is the end of month following quarter end
-      // Q1 (Apr-Jun) due July 31, Q2 (Jul-Sep) due Oct 31, etc.
-      const dueMonth = endMonth === 11 ? 0 : endMonth + 1;
-      dueDate = new Date(dueYear, dueMonth, due_day);
+      // Calculate due year - Q3 and Q4 roll into next year
+      let dueYear = year;
+      if (quarter === 3) {
+        dueYear = year + 1; // Q3 (Oct-Dec) due Jan next year
+      } else if (quarter === 4) {
+        dueYear = year + 1; // Q4 (Jan-Mar) due May next year
+      }
+
+      dueDateStr = formatDateForInput(dueYear, dueMonth, due_day);
       periodText = `Q${quarter} FY${year}`;
     } else if (frequency === 'yearly' && selectedPeriod.type === 'year') {
       const { year } = selectedPeriod;
@@ -83,7 +118,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
         dueMonth = 8; // September
       }
 
-      dueDate = new Date(dueYear, dueMonth, due_day);
+      dueDateStr = formatDateForInput(dueYear, dueMonth, due_day);
       periodText = `FY ${year}-${(year + 1).toString().slice(2)}`;
     } else {
       return;
@@ -91,7 +126,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
 
     setFormData(prev => ({
       ...prev,
-      due_date: dueDate.toISOString().split('T')[0],
+      due_date: dueDateStr,
       period: periodText,
       title: `${selectedCompliance.name} - ${periodText}`,
     }));
@@ -349,16 +384,17 @@ const TaskModal: React.FC<TaskModalProps> = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Calendar className="h-4 w-4 inline mr-2" />
-                Due Date * (Auto-calculated)
+                Due Date * {selectedCompliance?.category !== 'Others' && '(Auto-calculated)'}
               </label>
               <input
                 type="date"
                 name="due_date"
                 value={formData.due_date}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${selectedCompliance?.category === 'Others' ? 'bg-white' : 'bg-gray-50'
+                  }`}
                 required
-                readOnly={!!selectedCompliance && !!selectedPeriod.type}
+                readOnly={selectedCompliance?.category !== 'Others' && !!selectedCompliance && !!selectedPeriod.type}
               />
             </div>
 
