@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Staff } from '../types';
+import { useAuthStore } from '../store/auth.store';
 
 class StaffService {
   async getStaff(): Promise<Staff[]> {
@@ -14,7 +15,7 @@ class StaffService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    
+
     // Transform the data to match the Staff interface
     return (data || []).map(user => ({
       id: user.id,
@@ -36,8 +37,9 @@ class StaffService {
   }
 
   async createStaff(staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>): Promise<Staff> {
-    const firmId = 'demo-firm-id'; // This should be dynamic based on authenticated user
-    
+    const firmId = useAuthStore.getState().user?.firm_id;
+    if (!firmId) throw new Error('User not authenticated or missing firm ID');
+
     // First create the user
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -148,7 +150,7 @@ class StaffService {
 
   async importStaff(staffList: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]): Promise<Staff[]> {
     const results: Staff[] = [];
-    
+
     // Process each staff member individually to handle the user/staff relationship
     for (const staffData of staffList) {
       try {

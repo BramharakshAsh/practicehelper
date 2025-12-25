@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Filter, Search, User, Building, Calendar, AlertTriangle } from 'lucide-react';
+import { Plus, Filter, Search, AlertTriangle } from 'lucide-react';
 import { Task, Staff, Client, ComplianceType } from '../../types';
 import TaskCard from './TaskCard';
 import TaskModal from './TaskModal';
@@ -80,7 +80,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
             {currentRole === 'staff' ? 'My Tasks' : 'Task Management'}
           </h2>
           <p className="text-gray-600 mt-1">
-            {currentRole === 'staff' 
+            {currentRole === 'staff'
               ? 'View and manage your assigned tasks'
               : 'Manage and track all tasks across your practice'
             }
@@ -112,7 +112,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
               />
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-gray-400" />
             <select
@@ -127,7 +127,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                 </option>
               ))}
             </select>
-            
+
             {currentRole === 'partner' && (
               <select
                 value={filterStaff}
@@ -156,7 +156,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                 {status.count}
               </span>
             </div>
-            
+
             <div className="space-y-3">
               {groupedTasks[status.value]?.map((task) => (
                 <TaskCard
@@ -166,7 +166,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                   currentRole={currentRole}
                 />
               ))}
-              
+
               {groupedTasks[status.value]?.length === 0 && (
                 <div className="text-center py-8 text-gray-400">
                   <AlertTriangle className="h-8 w-8 mx-auto mb-2" />

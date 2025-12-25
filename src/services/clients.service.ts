@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Client } from '../types';
+import { useAuthStore } from '../store/auth.store';
 
 class ClientsService {
   async getClients(): Promise<Client[]> {
@@ -17,13 +18,17 @@ class ClientsService {
   }
 
   async createClient(client: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>): Promise<Client> {
-    // Get current user's firm_id (in production, this would come from auth context)
-    const firmId = 'demo-firm-id'; // This should be dynamic based on authenticated user
-    
+    // Get current user's firm_id
+    const firmId = useAuthStore.getState().user?.firm_id;
+    if (!firmId) throw new Error('User not authenticated or missing firm ID');
+
     const { data, error } = await supabase
       .from('clients')
       .insert([{ ...client, firm_id: firmId }])
-      .select()
+      .select(`
+        *,
+        created_by_user:users!clients_created_by_fkey(full_name)
+      `)
       .single();
 
     if (error) throw error;
@@ -52,10 +57,11 @@ class ClientsService {
   }
 
   async importClients(clients: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]): Promise<Client[]> {
-    const firmId = 'demo-firm-id'; // This should be dynamic based on authenticated user
-    
+    const firmId = useAuthStore.getState().user?.firm_id;
+    if (!firmId) throw new Error('User not authenticated or missing firm ID');
+
     const clientsWithFirm = clients.map(client => ({ ...client, firm_id: firmId }));
-    
+
     const { data, error } = await supabase
       .from('clients')
       .insert(clientsWithFirm)

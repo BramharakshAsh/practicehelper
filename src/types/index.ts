@@ -165,3 +165,32 @@ export interface DashboardStats {
   completed_today: number;
   upcoming_due_dates: number;
 }
+
+export interface Meeting {
+  id: string;
+  firm_id: string;
+  client_id: string;
+  staff_id?: string;
+  title: string;
+  description?: string;
+  start_time: string;
+  end_time: string;
+  location?: string;
+  meeting_link?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  client?: Client;
+  staff?: Staff;
+}
+
+export interface TaskComment {
+  id: string;
+  task_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+}

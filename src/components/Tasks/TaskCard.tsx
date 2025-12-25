@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { MoreVertical, Clock, User, Building, Calendar, MessageSquare, CheckCircle, AlertTriangle } from 'lucide-react';
+import * as React from 'react';
+const { useState } = React;
+import { MoreVertical, User, Building, Calendar, MessageSquare, CheckCircle, AlertTriangle, Eye } from 'lucide-react';
 import { Task } from '../../types';
+import TaskDetailsModal from './TaskDetailsModal';
 
 interface TaskCardProps {
   task: Task;
@@ -11,6 +13,7 @@ interface TaskCardProps {
 const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showRemarks, setShowRemarks] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [remarks, setRemarks] = useState(task.remarks || '');
 
   const getPriorityColor = (priority: Task['priority']) => {
@@ -76,7 +79,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
             {task.priority} priority
           </span>
         </div>
-        
+
         <div className="relative">
           <button
             onClick={() => setShowMenu(!showMenu)}
@@ -84,14 +87,21 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
           >
             <MoreVertical className="h-4 w-4 text-gray-400" />
           </button>
-          
+
           {showMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
               <div className="py-2">
+                <button
+                  onClick={() => { setShowDetails(true); setShowMenu(false); }}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </button>
                 {nextStatuses.map((status) => (
                   <button
                     key={status}
-                    onClick={() => handleStatusChange(status)}
+                    onClick={() => handleStatusChange(status as Task['status'])}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                   >
                     Move to {status.replace('_', ' ')}
@@ -114,14 +124,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
           <Building className="h-3 w-3" />
           <span>{task.client?.name}</span>
         </div>
-        
+
         {currentRole === 'partner' && (
           <div className="flex items-center space-x-2">
             <User className="h-3 w-3" />
             <span>{task.staff?.name}</span>
           </div>
         )}
-        
+
         <div className="flex items-center space-x-2">
           <Calendar className="h-3 w-3" />
           <span>{task.period}</span>
@@ -130,17 +140,16 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
 
       <div className="mt-3 pt-3 border-t border-gray-100">
         <div className="flex items-center justify-between">
-          <span className={`text-xs font-medium ${
-            isOverdue(task.due_date) ? 'text-red-600' : 'text-gray-600'
-          }`}>
+          <span className={`text-xs font-medium ${isOverdue(task.due_date) ? 'text-red-600' : 'text-gray-600'
+            }`}>
             Due: {formatDate(task.due_date)}
             {isOverdue(task.due_date) && ' (Overdue)'}
           </span>
-          
+
           {task.status === 'awaiting_client_data' && (
             <AlertTriangle className="h-4 w-4 text-orange-500" />
           )}
-          
+
           {task.status === 'filed_completed' && (
             <CheckCircle className="h-4 w-4 text-green-500" />
           )}
@@ -184,6 +193,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Details Modal */}
+      {showDetails && (
+        <TaskDetailsModal
+          task={task}
+          onClose={() => setShowDetails(false)}
+          onStatusChange={(taskId, status) => onUpdate(taskId, { status })}
+        />
       )}
     </div>
   );

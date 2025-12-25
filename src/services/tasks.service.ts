@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Task } from '../types';
+import { useAuthStore } from '../store/auth.store';
 
 class TasksService {
   async getTasks(): Promise<Task[]> {
@@ -34,8 +35,9 @@ class TasksService {
   }
 
   async createTask(task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>): Promise<Task> {
-    const firmId = 'demo-firm-id'; // This should be dynamic based on authenticated user
-    
+    const firmId = useAuthStore.getState().user?.firm_id;
+    if (!firmId) throw new Error('User not authenticated or missing firm ID');
+
     const { data, error } = await supabase
       .from('tasks')
       .insert([{ ...task, firm_id: firmId }])
@@ -78,10 +80,11 @@ class TasksService {
   }
 
   async createBulkTasks(tasks: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]): Promise<Task[]> {
-    const firmId = 'demo-firm-id'; // This should be dynamic based on authenticated user
-    
+    const firmId = useAuthStore.getState().user?.firm_id;
+    if (!firmId) throw new Error('User not authenticated or missing firm ID');
+
     const tasksWithFirm = tasks.map(task => ({ ...task, firm_id: firmId }));
-    
+
     const { data, error } = await supabase
       .from('tasks')
       .insert(tasksWithFirm)

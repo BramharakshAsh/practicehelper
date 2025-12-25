@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
-import { Task } from '../../types';
+import * as React from 'react';
+const { useState } = React;
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle, Video, MapPin } from 'lucide-react';
+import { Task, Meeting } from '../../types';
 
 interface CalendarViewProps {
   tasks: Task[];
+  meetings?: Meeting[];
   currentRole: 'partner' | 'staff';
   currentStaffId?: string;
 }
 
-const CalendarView: React.FC<CalendarViewProps> = ({ tasks, currentRole, currentStaffId }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ tasks, meetings = [], currentRole, currentStaffId }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
 
   // Filter tasks based on role
   let filteredTasks = tasks;
   if (currentRole === 'staff' && currentStaffId) {
-    filteredTasks = tasks.filter(task => task.staff_id === currentStaffId);
+    filteredTasks = tasks.filter((task: Task) => task.staff_id === currentStaffId);
   }
 
   const formatDate = (date: Date) => {
@@ -33,28 +35,35 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, currentRole, current
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
 
-    const days = [];
-    
+    const days: (Date | null)[] = [];
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
-    
+
     // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
-    
+
     return days;
   };
 
-  const getTasksForDate = (date: Date | null) => {
-    if (!date) return [];
-    
-    return filteredTasks.filter(task => {
+  const getEventsForDate = (date: Date | null) => {
+    if (!date) return { tasks: [], meetings: [] };
+
+    const dayTasks = filteredTasks.filter((task: Task) => {
       const taskDate = new Date(task.due_date);
       return taskDate.toDateString() === date.toDateString();
     });
+
+    const dayMeetings = meetings.filter((meeting: Meeting) => {
+      const meetingDate = new Date(meeting.start_time);
+      return meetingDate.toDateString() === date.toDateString();
+    });
+
+    return { tasks: dayTasks, meetings: dayMeetings };
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -115,17 +124,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, currentRole, current
           <div className="flex items-center space-x-2 bg-white border border-gray-300 rounded-lg">
             <button
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1 text-sm font-medium rounded-l-lg ${
-                viewMode === 'month' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-3 py-1 text-sm font-medium rounded-l-lg ${viewMode === 'month' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               Month
             </button>
             <button
               onClick={() => setViewMode('week')}
-              className={`px-3 py-1 text-sm font-medium rounded-r-lg ${
-                viewMode === 'week' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-3 py-1 text-sm font-medium rounded-r-lg ${viewMode === 'week' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               Week
             </button>
@@ -142,12 +149,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, currentRole, current
           >
             <ChevronLeft className="h-5 w-5 text-gray-600" />
           </button>
-          
+
           <h3 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
             <CalendarIcon className="h-5 w-5" />
             <span>{formatDate(currentDate)}</span>
           </h3>
-          
+
           <button
             onClick={() => navigateMonth('next')}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -164,38 +171,49 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, currentRole, current
               {day}
             </div>
           ))}
-          
+
           {/* Calendar days */}
-          {days.map((date, index) => {
-            const tasksForDate = getTasksForDate(date);
+          {days.map((date: Date | null, index: number) => {
+            const { tasks: dayTasks, meetings: dayMeetings } = getEventsForDate(date);
             const isEmpty = !date;
-            
+
             return (
               <div
                 key={index}
-                className={`bg-white min-h-[120px] p-2 ${
-                  isEmpty ? 'opacity-50' : 'hover:bg-gray-50'
-                } ${isToday(date) ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+                className={`bg-white min-h-[120px] p-2 ${isEmpty ? 'opacity-50' : 'hover:bg-gray-50'
+                  } ${isToday(date) ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
               >
                 {date && (
                   <>
-                    <div className={`text-sm font-medium mb-1 ${
-                      isToday(date) ? 'text-blue-600' : 'text-gray-900'
-                    }`}>
+                    <div className={`text-sm font-medium mb-1 ${isToday(date) ? 'text-blue-600' : 'text-gray-900'
+                      }`}>
                       {date.getDate()}
                     </div>
-                    
+
                     <div className="space-y-1">
-                      {tasksForDate.slice(0, 3).map((task) => (
+                      {/* Meetings First */}
+                      {dayMeetings.map((meeting: Meeting) => (
+                        <div
+                          key={meeting.id}
+                          className="text-xs p-1 rounded truncate bg-purple-100 text-purple-800 border border-purple-200"
+                          title={`Meeting: ${meeting.title} (${new Date(meeting.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`}
+                        >
+                          <div className="flex items-center space-x-1">
+                            {meeting.meeting_link ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+                            <span className="truncate">{new Date(meeting.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} {meeting.title}</span>
+                          </div>
+                        </div>
+                      ))}
+
+                      {dayTasks.slice(0, 3).map((task: Task) => (
                         <div
                           key={task.id}
-                          className={`text-xs p-1 rounded truncate ${
-                            isOverdue(date) && task.status !== 'filed_completed'
+                          className={`text-xs p-1 rounded truncate ${isOverdue(date) && task.status !== 'filed_completed'
                               ? 'bg-red-100 text-red-800 border border-red-200'
                               : task.status === 'filed_completed'
-                              ? 'bg-green-100 text-green-800 border border-green-200'
-                              : 'bg-blue-100 text-blue-800 border border-blue-200'
-                          }`}
+                                ? 'bg-green-100 text-green-800 border border-green-200'
+                                : 'bg-blue-100 text-blue-800 border border-blue-200'
+                            }`}
                           title={`${task.title} - ${task.client?.name}`}
                         >
                           <div className="flex items-center space-x-1">
@@ -204,10 +222,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, currentRole, current
                           </div>
                         </div>
                       ))}
-                      
-                      {tasksForDate.length > 3 && (
+
+                      {(dayTasks.length + dayMeetings.length) > 3 && (dayTasks.length > 0) && (
                         <div className="text-xs text-gray-600 font-medium">
-                          +{tasksForDate.length - 3} more
+                          +{dayTasks.length + dayMeetings.length - (dayMeetings.length + Math.min(dayTasks.length, 3))} more
                         </div>
                       )}
                     </div>
@@ -222,7 +240,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, currentRole, current
         <div className="flex items-center justify-center space-x-6 mt-6 pt-6 border-t border-gray-200">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded"></div>
-            <span className="text-sm text-gray-600">Scheduled</span>
+            <span className="text-sm text-gray-600">Pending Task</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-purple-100 border border-purple-200 rounded"></div>
+            <span className="text-sm text-gray-600">Meeting</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
@@ -232,10 +254,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, currentRole, current
             <div className="w-3 h-3 bg-green-100 border border-green-200 rounded"></div>
             <span className="text-sm text-gray-600">Completed</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 ring-2 ring-blue-500 rounded"></div>
-            <span className="text-sm text-gray-600">Today</span>
-          </div>
         </div>
       </div>
 
@@ -244,10 +262,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, currentRole, current
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Deadlines</h3>
         <div className="space-y-3">
           {filteredTasks
-            .filter(task => new Date(task.due_date) >= new Date() && task.status !== 'filed_completed')
-            .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+            .filter((task: Task) => new Date(task.due_date) >= new Date() && task.status !== 'filed_completed')
+            .sort((a: Task, b: Task) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
             .slice(0, 5)
-            .map((task) => (
+            .map((task: Task) => (
               <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   {getStatusIcon(task.status)}
@@ -264,15 +282,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, currentRole, current
                 </div>
               </div>
             ))}
-          
-          {filteredTasks.filter(task => 
+
+          {filteredTasks.filter((task: Task) =>
             new Date(task.due_date) >= new Date() && task.status !== 'filed_completed'
           ).length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>No upcoming deadlines</p>
-            </div>
-          )}
+              <div className="text-center py-8 text-gray-500">
+                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No upcoming deadlines</p>
+              </div>
+            )}
         </div>
       </div>
     </div>
