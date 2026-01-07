@@ -9,7 +9,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   login: (role: UserRole, credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
@@ -18,7 +18,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
@@ -26,18 +26,18 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (role: UserRole, credentials: LoginCredentials) => {
         set({ isLoading: true, error: null });
-        
+
         await handleAsyncError(async () => {
           const user = await authService.login(role, credentials);
-          set({ 
-            user, 
-            isAuthenticated: true, 
-            isLoading: false 
+          set({
+            user,
+            isAuthenticated: true,
+            isLoading: false
           });
         }, 'User login').catch((error) => {
-          set({ 
+          set({
             error: ErrorService.getErrorMessage(error),
-            isLoading: false 
+            isLoading: false
           });
           throw error;
         });
@@ -45,19 +45,19 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         set({ isLoading: true });
-        
+
         await handleAsyncError(async () => {
           await authService.logout();
-          set({ 
-            user: null, 
-            isAuthenticated: false, 
+          set({
+            user: null,
+            isAuthenticated: false,
             isLoading: false,
             error: null
           });
         }, 'User logout').catch((error) => {
-          set({ 
+          set({
             error: ErrorService.getErrorMessage(error),
-            isLoading: false 
+            isLoading: false
           });
         });
       },
@@ -66,9 +66,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ 
-        user: state.user, 
-        isAuthenticated: state.isAuthenticated 
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated
       }),
     }
   )

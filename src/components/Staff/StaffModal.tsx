@@ -5,7 +5,7 @@ import { Staff } from '../../types';
 interface StaffModalProps {
   staff?: Staff;
   onClose: () => void;
-  onSubmit: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'>) => void;
+  onSubmit: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => void;
   mode: 'create' | 'edit' | 'view';
 }
 
@@ -46,7 +46,20 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, onClose, onSubmit, mode 
       return;
     }
 
-    onSubmit(formData);
+    if (mode === 'create' && !generateCredentials) {
+      alert('Please generate login credentials for the new staff member');
+      return;
+    }
+
+    if (generateCredentials && !generatedPassword) {
+      alert('Please generate a password');
+      return;
+    }
+
+    onSubmit({
+      ...formData,
+      password: generateCredentials ? generatedPassword : undefined
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

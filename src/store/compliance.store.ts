@@ -7,45 +7,45 @@ interface ComplianceState {
   complianceTypes: ComplianceType[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   fetchComplianceTypes: () => Promise<void>;
   createComplianceType: (complianceType: Omit<ComplianceType, 'id' | 'firm_id' | 'created_at'>) => Promise<void>;
   clearError: () => void;
 }
 
-export const useComplianceStore = create<ComplianceState>((set, get) => ({
+export const useComplianceStore = create<ComplianceState>((set) => ({
   complianceTypes: [],
   isLoading: false,
   error: null,
 
   fetchComplianceTypes: async () => {
     set({ isLoading: true, error: null });
-    
+
     await handleAsyncError(async () => {
       const complianceTypes = await complianceService.getComplianceTypes();
       set({ complianceTypes, isLoading: false });
     }, 'Fetch compliance types').catch((error) => {
-      set({ 
+      set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false 
+        isLoading: false
       });
     });
   },
 
   createComplianceType: async (complianceTypeData) => {
     set({ isLoading: true, error: null });
-    
+
     await handleAsyncError(async () => {
       const newComplianceType = await complianceService.createComplianceType(complianceTypeData);
-      set(state => ({ 
+      set(state => ({
         complianceTypes: [...state.complianceTypes, newComplianceType],
-        isLoading: false 
+        isLoading: false
       }));
     }, 'Create compliance type').catch((error) => {
-      set({ 
+      set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false 
+        isLoading: false
       });
       throw error;
     });

@@ -7,7 +7,7 @@ interface StaffListProps {
   staff: Staff[];
   tasks: Task[];
   onStaffUpdate: (staffId: string, updates: Partial<Staff>) => void;
-  onStaffCreate: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'>) => void;
+  onStaffCreate: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => void;
   onStaffDelete: (staffId: string) => void;
 }
 

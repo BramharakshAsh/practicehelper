@@ -1,14 +1,14 @@
 import * as React from 'react';
 const { useState } = React;
 import { MoreVertical, User, Building, Calendar, MessageSquare, CheckCircle, AlertTriangle, Eye, Trash2 } from 'lucide-react';
-import { Task } from '../../types';
+import { Task, UserRole } from '../../types';
 import TaskDetailsModal from './TaskDetailsModal';
 
 interface TaskCardProps {
   task: Task;
   onUpdate: (taskId: string, updates: Partial<Task>) => void;
   onDelete: (taskId: string) => void;
-  currentRole: 'partner' | 'staff';
+  currentRole: UserRole;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, currentRole }) => {

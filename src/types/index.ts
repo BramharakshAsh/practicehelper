@@ -157,7 +157,7 @@ export interface TaskStatusUpdate {
   created_at: string;
 }
 
-export type UserRole = 'partner' | 'manager' | 'staff';
+export type UserRole = 'partner' | 'manager' | 'staff' | 'paid_staff' | 'articles';
 
 export interface DashboardStats {
   total_clients: number;
@@ -195,4 +195,12 @@ export interface TaskComment {
   created_at: string;
   updated_at: string;
   user?: User;
+}
+
+export interface ClientStaffRelation {
+  id: string;
+  firm_id: string;
+  client_id: string;
+  staff_id: string;
+  created_at: string;
 }

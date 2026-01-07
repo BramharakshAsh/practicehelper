@@ -23,7 +23,7 @@ const DashboardPage: React.FC = () => {
     const [showTaskModal, setShowTaskModal] = useState(false);
     const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
 
-    const handleTaskCreate = async (task: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => {
+    const handleTaskCreate = async (task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => {
         await createTask(task);
         setShowTaskModal(false);
     };
@@ -94,7 +94,7 @@ const DashboardPage: React.FC = () => {
             {showAutoScheduleModal && (
                 <AutoTaskModal
                     onClose={() => setShowAutoScheduleModal(false)}
-                    onSubmit={handleScheduleFiling}
+                    onGenerate={handleScheduleFiling}
                     complianceTypes={complianceTypes}
                     clients={clients}
                     staff={staff}

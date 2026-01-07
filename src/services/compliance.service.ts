@@ -1,23 +1,38 @@
 import { ComplianceType } from '../types';
-import { LocalStorageService } from './local-storage.service';
-
-const COMPLIANCE_TYPES_KEY = 'ca_practice_manager_compliance_types';
+import { supabase } from './supabase';
+import { useAuthStore } from '../store/auth.store';
 
 class ComplianceService {
   async getComplianceTypes(): Promise<ComplianceType[]> {
-    return LocalStorageService.getItem<ComplianceType[]>(COMPLIANCE_TYPES_KEY, []);
+    const firmId = useAuthStore.getState().user?.firm_id;
+
+    const { data, error } = await supabase
+      .from('compliance_types')
+      .select('*')
+      .or(`firm_id.is.null,firm_id.eq.${firmId || '00000000-0000-0000-0000-000000000000'}`)
+      .eq('is_active', true)
+      .order('category', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
   }
 
   async createComplianceType(type: Omit<ComplianceType, 'id' | 'created_at'>): Promise<ComplianceType> {
-    const types = await this.getComplianceTypes();
-    const newType: ComplianceType = {
-      ...type,
-      id: crypto.randomUUID(),
-      created_at: new Date().toISOString(),
-    };
-    types.push(newType);
-    LocalStorageService.setItem(COMPLIANCE_TYPES_KEY, types);
-    return newType;
+    const firmId = useAuthStore.getState().user?.firm_id;
+    if (!firmId) throw new Error('User not authenticated or missing firm ID');
+
+    const { data, error } = await supabase
+      .from('compliance_types')
+      .insert({
+        ...type,
+        firm_id: firmId,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 }
 

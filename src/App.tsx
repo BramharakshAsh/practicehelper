@@ -19,6 +19,7 @@ import ImportPage from './pages/ImportPage';
 import AutoTasksPage from './pages/AutoTasksPage';
 import ReportsPage from './pages/ReportsPage';
 import LoginPage from './components/Auth/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
 function App() {
   const { user, isAuthenticated } = useAuthStore();
@@ -36,14 +37,26 @@ function App() {
     }
   }, [isAuthenticated]);
 
-  if (!isAuthenticated || !user) {
-    return <LoginPage />;
+  if (!isAuthenticated && !user && window.location.pathname === '/') {
+    // Optional: handle initial load redirect if needed, but Router handles it below
   }
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<DashboardLayout />}>
+        <Route
+          path="/login"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+        />
+        <Route
+          path="/forgot-password"
+          element={<ForgotPasswordPage />}
+        />
+
+        <Route
+          path="/"
+          element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />}
+        >
           <Route index element={<DashboardPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="clients" element={<ClientsPage />} />

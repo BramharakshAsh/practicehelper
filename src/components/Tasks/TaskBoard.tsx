@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Filter, Search, AlertTriangle } from 'lucide-react';
-import { Task, Staff, Client, ComplianceType } from '../../types';
+import { Task, Staff, Client, ComplianceType, UserRole } from '../../types';
 import TaskCard from './TaskCard';
 import TaskModal from './TaskModal';
 
@@ -9,10 +9,10 @@ interface TaskBoardProps {
   staff: Staff[];
   clients: Client[];
   complianceTypes: ComplianceType[];
-  currentRole: 'partner' | 'staff';
+  currentRole: UserRole;
   currentStaffId?: string;
   onTaskUpdate: (taskId: string, updates: Partial<Task>) => void;
-  onTaskCreate: (task: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => void;
+  onTaskCreate: (task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => void;
   onTaskDelete: (taskId: string) => void;
 }
 
@@ -157,7 +157,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
               ))}
             </select>
 
-            {currentRole === 'partner' && (
+            {(currentRole === 'partner' || currentRole === 'manager') && (
               <select
                 value={filterStaff}
                 onChange={(e) => setFilterStaff(e.target.value)}

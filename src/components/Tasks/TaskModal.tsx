@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuthStore } from '../../store/auth.store';
 import { X, Calendar, User, Building, FileText } from 'lucide-react';
 import { Task, Staff, Client, ComplianceType } from '../../types';
 
@@ -7,7 +8,7 @@ interface TaskModalProps {
   clients: Client[];
   complianceTypes: ComplianceType[];
   onClose: () => void;
-  onSubmit: (task: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => void;
+  onSubmit: (task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => void | Promise<void>;
 }
 
 const TaskModal: React.FC<TaskModalProps> = ({
@@ -140,10 +141,11 @@ const TaskModal: React.FC<TaskModalProps> = ({
       return;
     }
 
-    const newTask: Omit<Task, 'id' | 'created_at' | 'updated_at'> = {
+    const newTask: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'> = {
       ...formData,
       status: 'assigned',
-      assigned_by: 'partner_1', // In real app, this would be the current user ID
+      status: 'assigned',
+      assigned_by: useAuthStore.getState().user?.id || '',
     };
 
     onSubmit(newTask);
@@ -246,7 +248,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
               >
                 <option value="">Select Staff</option>
                 {staff.map(member => (
-                  <option key={member.id} value={member.id}>
+                  <option key={member.id} value={member.user_id}>
                     {member.name} ({member.role})
                   </option>
                 ))}
