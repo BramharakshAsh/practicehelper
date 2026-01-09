@@ -28,16 +28,32 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStats, setGenerationStats] = useState<{ total: number; random: number; defined: number } | null>(null);
 
+  // Helper function to map task types to parent compliance types
+  const getParentComplianceType = (taskCode: string): string => {
+    const mapping: Record<string, string> = {
+      'GSTR-1': 'GST',
+      'GSTR-3B': 'GST',
+      'GSTR-9': 'GST',
+      '24Q': 'TDS',
+      '26Q': 'TDS',
+      '27Q': 'TDS',
+    };
+    return mapping[taskCode] || taskCode;
+  };
+
+  // Helper function to check if client has the required work type for a task
+  const clientHasWorkType = (client: Client, taskCode: string): boolean => {
+    const parentType = getParentComplianceType(taskCode);
+    return client.work_types.includes(parentType);
+  };
+
   useEffect(() => {
     // If specific tile clicked, pre-select type and valid clients (all of them by default)
     if (initialComplianceCode && initialComplianceCode !== 'ALL') {
       setSelectedTaskTypes([initialComplianceCode]);
 
       const applicableClients = clients.filter(c =>
-        c.work_types.some(wt => wt.includes(initialComplianceCode) || initialComplianceCode.includes(wt))
-        // Note: Simple partial match or exact match depending on data cleanliness. 
-        // e.g. Tile 'GSTR-1' matches work_type 'GSTR-1'.
-        // If data is exact: c.work_types.includes(initialComplianceCode)
+        clientHasWorkType(c, initialComplianceCode)
       ).map(c => c.id);
 
       setSelectedClients(applicableClients);
@@ -104,8 +120,8 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
 
       clientsToProcess.forEach(client => {
         monthlyCompliances.forEach(compliance => {
-          // Check if client has this work type
-          if (client.work_types.includes(compliance.code)) {
+          // Check if client has this work type (using parent compliance type mapping)
+          if (clientHasWorkType(client, compliance.code)) {
 
             // Determine Assignee
             let assignedStaffId = '';
@@ -178,7 +194,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
     // Usually 'Select All' means all currently visible/valid for the type.
     if (initialComplianceCode && initialComplianceCode !== 'ALL') {
       const applicableClients = clients.filter(c =>
-        c.work_types.includes(initialComplianceCode)
+        clientHasWorkType(c, initialComplianceCode)
       ).map(c => c.id);
       setSelectedClients(applicableClients);
     } else {
@@ -198,7 +214,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
     : clients
   ).reduce((acc, client) => {
     const matchingCompliances = monthlyCompliances.filter(c =>
-      client.work_types.includes(c.code) &&
+      clientHasWorkType(client, c.code) &&
       (selectedTaskTypes.length === 0 || selectedTaskTypes.includes(c.code))
     );
     return acc + matchingCompliances.length;
@@ -327,7 +343,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
                   .filter(client =>
                     !initialComplianceCode ||
                     initialComplianceCode === 'ALL' ||
-                    client.work_types.includes(initialComplianceCode)
+                    clientHasWorkType(client, initialComplianceCode)
                   )
                   .map(client => (
                     <label key={client.id} className="flex items-center space-x-3 hover:bg-gray-50 p-2 rounded cursor-pointer">
@@ -353,7 +369,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
                 {clients.filter(client =>
                   !initialComplianceCode ||
                   initialComplianceCode === 'ALL' ||
-                  client.work_types.includes(initialComplianceCode)
+                  clientHasWorkType(client, initialComplianceCode)
                 ).length === 0 && (
                     <div className="text-center py-4 text-gray-500 text-sm">
                       No applicable clients found for {initialComplianceCode || 'selection'}.

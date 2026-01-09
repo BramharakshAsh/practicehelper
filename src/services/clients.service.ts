@@ -86,16 +86,7 @@ class ClientsService {
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated');
 
-    // Upsert logic (delete existing for client then insert, or just upsert unique on client_id? 
-    // Schema has UNIQUE(client_id, staff_id), but functionally we likely want 1 staff per client task assignment default?
-    // User request: "define client to staff relations". One-to-one is implied for "default assignee".
-    // I'll assume 1-to-1 default assignee for simplicity. The schema table allows unique mappings.
-    // If I want 1-to-1, I should first delete any existing relation for this client?
-    // Or maybe the UI handles it. The schema UNIQUE is on (client_id, staff_id), so a client could have multiple staff mapped if not constrained.
-    // But "base for assigning auto tasks" implies a single default (or random selection from multiple?).
-    // "In case no relation is defined... allocated randomly".
-    // Let's implement upsert or delete-insert.
-    // Since UI will likely show one selector, let's treat it as single.
+    console.log('💾 Saving client-staff relation:', { clientId, staffId, firmId });
 
     // First delete any existing relation for this client (to enforce 1-to-1 default assignee behavior)
     // Actually, maybe we want multiple relations? "relations" could mean a team.
@@ -111,17 +102,29 @@ class ClientsService {
       .eq('client_id', clientId)
       .eq('firm_id', firmId);
 
-    if (delError) throw delError;
+    if (delError) {
+      console.error('❌ Delete error:', delError);
+      throw delError;
+    }
+    console.log('✅ Deleted existing relations for client');
 
     if (staffId) { // If staffId is provided (not just clearing)
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('client_staff_relations')
         .insert({
           firm_id: firmId,
           client_id: clientId,
           staff_id: staffId
-        });
-      if (error) throw error;
+        })
+        .select();
+
+      if (error) {
+        console.error('❌ Insert error:', error);
+        throw error;
+      }
+      console.log('✅ Inserted new relation:', data);
+    } else {
+      console.log('ℹ️ No staff ID provided - relation cleared (random assignment)');
     }
   }
 }
