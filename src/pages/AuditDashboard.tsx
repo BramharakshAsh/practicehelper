@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auditManagementService } from '../services/audit-management.service';
 import { tasksService } from '../services/tasks.service';
+import { useTasksStore } from '../store/tasks.store';
 import { AuditPlan, Task } from '../types';
-import { ClipboardList, User, Calendar, ExternalLink, Plus, AlertCircle, CheckCircle2, ListTodo } from 'lucide-react';
+import { ClipboardList, User, Calendar, ExternalLink, Plus, AlertCircle, CheckCircle2, ListTodo, Trash2 } from 'lucide-react';
 
 const AuditDashboard: React.FC = () => {
     const [audits, setAudits] = useState<AuditPlan[]>([]);
@@ -31,6 +32,19 @@ const AuditDashboard: React.FC = () => {
         }
     };
 
+    const handleDeleteAudit = async (e: React.MouseEvent, auditId: string) => {
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to delete this audit plan? This will also remove the link from the associated task.')) {
+            try {
+                await auditManagementService.deleteAuditPlan(auditId);
+                await loadData();
+            } catch (error) {
+                console.error('Failed to delete audit', error);
+                alert('Error deleting audit plan');
+            }
+        }
+    };
+
     const handleInitialize = async (task: Task) => {
         try {
             // Fetch templates first
@@ -55,7 +69,7 @@ const AuditDashboard: React.FC = () => {
                 start_date: new Date().toISOString().split('T')[0]
             });
 
-            await tasksService.updateTask(task.id, { audit_id: newAudit.id });
+            await useTasksStore.getState().updateTask(task.id, { audit_id: newAudit.id });
 
             // If a template was selected, apply its items
             if (selectedTemplateId) {
@@ -115,10 +129,19 @@ const AuditDashboard: React.FC = () => {
                                                 <div className="bg-blue-50 p-2 rounded-lg">
                                                     <ClipboardList className="h-5 w-5 text-blue-600" />
                                                 </div>
-                                                <span className={`px-2 py-1 rounded text-xs font-medium ${audit.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                                                    }`}>
-                                                    {audit.status.toUpperCase()}
-                                                </span>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${audit.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                                        }`}>
+                                                        {audit.status.toUpperCase()}
+                                                    </span>
+                                                    <button
+                                                        onClick={(e) => handleDeleteAudit(e, audit.id)}
+                                                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Delete Audit Plan"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">

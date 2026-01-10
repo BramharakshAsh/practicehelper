@@ -9,9 +9,10 @@ interface TaskDetailsModalProps {
     task: Task;
     onClose: () => void;
     onStatusChange: (taskId: string, status: Task['status']) => void;
+    onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
 }
 
-const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onStatusChange }) => {
+const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onStatusChange, onUpdateTask }) => {
     const navigate = useNavigate();
 
     const handleOpenAudit = async () => {
@@ -42,7 +43,11 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                         start_date: new Date().toISOString().split('T')[0]
                     });
 
-                    await tasksService.updateTask(task.id, { audit_id: newAudit.id });
+                    if (onUpdateTask) {
+                        await onUpdateTask(task.id, { audit_id: newAudit.id });
+                    } else {
+                        await tasksService.updateTask(task.id, { audit_id: newAudit.id });
+                    }
 
                     if (selectedTemplateId) {
                         await auditManagementService.createAuditFromTemplate(selectedTemplateId, newAudit.id);

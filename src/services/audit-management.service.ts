@@ -128,6 +128,15 @@ class AuditManagementService {
         if (error) throw error;
     }
 
+    async deleteAuditPlan(id: string): Promise<void> {
+        const { error } = await supabase
+            .from('audit_plans')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+    }
+
     async getTemplates(): Promise<AuditPlanTemplate[]> {
         const firmId = useAuthStore.getState().user?.firm_id;
 

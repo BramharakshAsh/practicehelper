@@ -117,7 +117,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, currentRo
                 {currentRole === 'partner' && (
                   <button
                     onClick={() => {
-                      if (confirm('Are you sure you want to delete this task?')) {
+                      console.log('Task delete clicked:', task.id, 'Audit ID:', task.audit_id);
+                      const message = task.audit_id
+                        ? 'An audit plan for the task exists, deleting this task will also delete the audit plan. Are you sure?'
+                        : 'Are you sure you want to delete this task?';
+
+                      if (window.confirm(message)) {
                         onDelete(task.id);
                         setShowMenu(false);
                       }
@@ -216,6 +221,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, currentRo
           task={task}
           onClose={() => setShowDetails(false)}
           onStatusChange={(taskId, status) => onUpdate(taskId, { status })}
+          onUpdateTask={onUpdate}
         />
       )}
     </div>

@@ -94,6 +94,16 @@ export const useTasksStore = create<TasksState>((set) => ({
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
+      // Get the task before deleting to check for audit_id
+      const state = useTasksStore.getState();
+      const task = state.tasks.find(t => t.id === id);
+
+      if (task?.audit_id) {
+        // We import it dynamically or assume the service is available
+        const { auditManagementService } = await import('../services/audit-management.service');
+        await auditManagementService.deleteAuditPlan(task.audit_id);
+      }
+
       await tasksService.deleteTask(id);
       set(state => ({
         tasks: state.tasks.filter(task => task.id !== id),
