@@ -21,8 +21,12 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
   onClose,
   onGenerate,
 }) => {
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedPeriod, setSelectedPeriod] = useState({
+    type: 'month' as 'month' | 'quarter' | 'year',
+    month: new Date().getMonth() + 1,
+    quarter: Math.floor(new Date().getMonth() / 3) + 1,
+    year: new Date().getFullYear(),
+  });
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [selectedTaskTypes, setSelectedTaskTypes] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -57,21 +61,47 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
       ).map(c => c.id);
 
       setSelectedClients(applicableClients);
-    } else {
-      // Default select all if custom mode
-      // Or maybe let user select? 
-      // "The user shall be able to select the clients or have a select all button"
-      // Let's start with empty or none for Custom.
+
+      // Set period type based on compliance frequency
+      const compliance = complianceTypes.find(ct => ct.code === initialComplianceCode);
+      if (compliance) {
+        if (compliance.frequency === 'monthly') {
+          setSelectedPeriod(prev => ({ ...prev, type: 'month' }));
+        } else if (compliance.frequency === 'quarterly') {
+          setSelectedPeriod(prev => ({ ...prev, type: 'quarter' }));
+        } else if (compliance.frequency === 'yearly') {
+          setSelectedPeriod(prev => ({ ...prev, type: 'year' }));
+        }
+      }
     }
-  }, [initialComplianceCode, clients]);
+  }, [initialComplianceCode, clients, complianceTypes]);
+
+  // Helper function to format date without timezone issues
+  const formatDateForInput = (year: number, month: number, day: number): string => {
+    const yyyy = year.toString();
+    const mm = (month + 1).toString().padStart(2, '0');
+    const dd = day.toString().padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const getMonthlyComplianceTypes = () => {
-    return complianceTypes.filter(ct => ct.frequency === 'monthly');
+  const getApplicableComplianceTypes = () => {
+    if (initialComplianceCode && initialComplianceCode !== 'ALL') {
+      return complianceTypes.filter(ct => ct.code === initialComplianceCode);
+    }
+
+    // For "ALL" mode, filter by the selected period type
+    const frequencyMap: Record<string, string> = {
+      month: 'monthly',
+      quarter: 'quarterly',
+      year: 'yearly'
+    };
+
+    return complianceTypes.filter(ct => ct.frequency === frequencyMap[selectedPeriod.type]);
   };
 
   const generateTasks = async () => {
@@ -81,32 +111,60 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
       const relations = await clientsService.getClientStaffRelations();
 
       const tasks: Omit<Task, 'id' | 'created_at' | 'updated_at'>[] = [];
-      const monthlyCompliances = getMonthlyComplianceTypes().filter(ct =>
-        selectedTaskTypes.length === 0 || selectedTaskTypes.includes(ct.code)
-      );
-      const monthName = months[selectedMonth];
+      const applicableCompliances = getApplicableComplianceTypes();
 
-      // Generate due dates for the selected month
-      const getDueDate = (complianceCode: string) => {
-        const dueDates: Record<string, number> = {
-          'GSTR-1': 11,
-          'GSTR-3B': 20,
-          'GSTR-9': 31,
-          '24Q': 31,
-          '26Q': 31,
-          '27Q': 31,
-          'ITR': 31,
-          'AUDIT': 30,
-          'ACCOUNTING': 10,
-          'NOTICES': 15,
-          'PAYROLL': 15,
-        };
+      // Helper to get period text
+      const getPeriodText = () => {
+        if (selectedPeriod.type === 'month') {
+          return `${months[selectedPeriod.month - 1]} ${selectedPeriod.year}`;
+        } else if (selectedPeriod.type === 'quarter') {
+          return `Q${selectedPeriod.quarter} FY${selectedPeriod.year}`;
+        } else if (selectedPeriod.type === 'year') {
+          return `FY ${selectedPeriod.year}-${(selectedPeriod.year + 1).toString().slice(2)}`;
+        }
+        return '';
+      };
 
-        const day = dueDates[complianceCode] || 20;
-        const dueMonth = selectedMonth === 11 ? 0 : selectedMonth + 1;
-        const dueYear = selectedMonth === 11 ? selectedYear + 1 : selectedYear;
+      const periodText = getPeriodText();
 
-        return new Date(dueYear, dueMonth, day).toISOString();
+      // Generate due dates based on compliance frequency and selected period
+      const getDueDate = (compliance: ComplianceType) => {
+        const { frequency, due_day, code } = compliance;
+        const day = due_day || 20;
+
+        if (frequency === 'monthly' && selectedPeriod.type === 'month') {
+          const month = selectedPeriod.month - 1;
+          const year = selectedPeriod.year;
+          // Due date is in the following month
+          const nextMonth = month === 11 ? 0 : month + 1;
+          const nextYear = month === 11 ? year + 1 : year;
+          return formatDateForInput(nextYear, nextMonth, day);
+        } else if (frequency === 'quarterly' && selectedPeriod.type === 'quarter') {
+          const { quarter, year } = selectedPeriod;
+          // TDS quarters: Q1(Apr-Jun), Q2(Jul-Sep), Q3(Oct-Dec), Q4(Jan-Mar)
+          // Due dates: Q1 due July 31, Q2 due Oct 31, Q3 due Jan 31, Q4 due May 31
+          const dueMonths = [6, 9, 0, 4]; // July, October, January, May (0-indexed)
+          const dueMonth = dueMonths[quarter - 1];
+
+          let dueYear = year;
+          if (quarter === 3 || quarter === 4) {
+            dueYear = year + 1;
+          }
+          return formatDateForInput(dueYear, dueMonth, day);
+        } else if (frequency === 'yearly' && selectedPeriod.type === 'year') {
+          const { year } = selectedPeriod;
+          let dueMonth = 6; // July
+          let dueYear = year + 1;
+
+          if (code === 'TAX-AUDIT' || code === 'AUDIT') dueMonth = 8; // Sep
+          else if (code === 'TP-AUDIT') dueMonth = 9; // Oct
+          else if (code === 'GSTR-9') dueMonth = 11; // Dec
+
+          return formatDateForInput(dueYear, dueMonth, day);
+        }
+
+        // Fallback
+        return new Date().toISOString();
       };
 
       const clientsToProcess = selectedClients.length > 0
@@ -119,7 +177,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
       const activeStaff = staff.filter(s => s.is_active);
 
       clientsToProcess.forEach(client => {
-        monthlyCompliances.forEach(compliance => {
+        applicableCompliances.forEach(compliance => {
           // Check if client has this work type (using parent compliance type mapping)
           if (clientHasWorkType(client, compliance.code)) {
 
@@ -128,20 +186,15 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
             const relation = relations.find(r => r.client_id === client.id);
 
             if (relation && activeStaff.some(s => s.user_id === relation.staff_id)) {
-              // Ensure the assigned staff is active and exists
-              // Note: relations.staff_id stores user_id. Task.staff_id stores user_id.
               assignedStaffId = relation.staff_id;
               definedCount++;
             } else if (activeStaff.length > 0) {
-              // Random assignment
               const randomStaff = activeStaff[Math.floor(Math.random() * activeStaff.length)];
-              assignedStaffId = randomStaff.user_id; // Using user_id for tasks as per schema references? 
-              // Wait, tasks table `staff_id` references `users(id)`. Correct.
+              assignedStaffId = randomStaff.user_id;
               randomCount++;
             }
 
             if (assignedStaffId) {
-              // Find Firm ID (from client)
               const firmId = client.firm_id;
 
               tasks.push({
@@ -149,12 +202,12 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
                 client_id: client.id,
                 staff_id: assignedStaffId,
                 compliance_type_id: compliance.id,
-                title: `${compliance.name} - ${monthName} ${selectedYear}`,
-                description: `Monthly ${compliance.name} for ${client.name}`,
-                due_date: getDueDate(compliance.code),
+                title: `${compliance.name} - ${periodText}`,
+                description: `${compliance.name} for ${client.name}`,
+                due_date: getDueDate(compliance),
                 status: 'assigned',
                 priority: 'medium',
-                period: `${monthName} ${selectedYear}`,
+                period: periodText,
                 assigned_by: useAuthStore.getState().user?.id || '',
               });
             }
@@ -207,13 +260,25 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
   };
 
 
-  const monthlyCompliances = getMonthlyComplianceTypes();
+  const getPeriodText = () => {
+    if (selectedPeriod.type === 'month') {
+      return `${months[selectedPeriod.month - 1]} ${selectedPeriod.year}`;
+    } else if (selectedPeriod.type === 'quarter') {
+      return `Q${selectedPeriod.quarter} FY${selectedPeriod.year}`;
+    } else if (selectedPeriod.type === 'year') {
+      return `FY ${selectedPeriod.year}-${(selectedPeriod.year + 1).toString().slice(2)}`;
+    }
+    return '';
+  };
+
+  const periodText = getPeriodText();
+  const applicableCompliancesTotal = getApplicableComplianceTypes();
 
   const estimatedTasks = (selectedClients.length > 0
     ? clients.filter(c => selectedClients.includes(c.id))
     : clients
   ).reduce((acc, client) => {
-    const matchingCompliances = monthlyCompliances.filter(c =>
+    const matchingCompliances = applicableCompliancesTotal.filter(c =>
       clientHasWorkType(client, c.code) &&
       (selectedTaskTypes.length === 0 || selectedTaskTypes.includes(c.code))
     );
@@ -268,7 +333,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
             <span>
               {initialComplianceCode && initialComplianceCode !== 'ALL'
                 ? `Generate ${initialComplianceCode} Tasks`
-                : 'Auto Generate Monthly Tasks'}
+                : 'Auto Generate Tasks'}
             </span>
           </h2>
           <button
@@ -282,35 +347,100 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
         <div className="p-6 space-y-6">
           {/* Period Selection */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center space-x-2">
-              <Calendar className="h-5 w-5" />
-              <span>Select Period</span>
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
+                <Calendar className="h-5 w-5" />
+                <span>Select Period</span>
+              </h3>
+              {(!initialComplianceCode || initialComplianceCode === 'ALL') && (
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  {(['month', 'quarter', 'year'] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedPeriod(prev => ({ ...prev, type }))}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${selectedPeriod.type === type
+                          ? 'bg-white text-blue-600 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}ly
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Month</label>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {months.map((month, index) => (
-                    <option key={index} value={index}>{month}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {[selectedYear - 1, selectedYear, selectedYear + 1].map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-              </div>
+              {selectedPeriod.type === 'month' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Month</label>
+                    <select
+                      value={selectedPeriod.month}
+                      onChange={(e) => setSelectedPeriod(prev => ({ ...prev, month: parseInt(e.target.value) }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {months.map((month, index) => (
+                        <option key={index} value={index + 1}>{month}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                    <select
+                      value={selectedPeriod.year}
+                      onChange={(e) => setSelectedPeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {[selectedPeriod.year - 1, selectedPeriod.year, selectedPeriod.year + 1].map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+              {selectedPeriod.type === 'quarter' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Quarter</label>
+                    <select
+                      value={selectedPeriod.quarter}
+                      onChange={(e) => setSelectedPeriod(prev => ({ ...prev, quarter: parseInt(e.target.value) }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value={1}>Q1 (Apr-Jun)</option>
+                      <option value={2}>Q2 (Jul-Sep)</option>
+                      <option value={3}>Q3 (Oct-Dec)</option>
+                      <option value={4}>Q4 (Jan-Mar)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Financial Year</label>
+                    <select
+                      value={selectedPeriod.year}
+                      onChange={(e) => setSelectedPeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {[selectedPeriod.year - 1, selectedPeriod.year, selectedPeriod.year + 1].map(year => (
+                        <option key={year} value={year}>FY {year}-{(year + 1).toString().slice(2)}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+              {selectedPeriod.type === 'year' && (
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Financial Year</label>
+                  <select
+                    value={selectedPeriod.year}
+                    onChange={(e) => setSelectedPeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {[selectedPeriod.year - 1, selectedPeriod.year, selectedPeriod.year + 1].map(year => (
+                      <option key={year} value={year}>FY {year}-{(year + 1).toString().slice(2)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
@@ -393,9 +523,9 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
               <div>
                 <h4 className="font-medium text-blue-900">Generation Summary</h4>
                 <div className="text-sm text-blue-700 mt-1 space-y-1">
-                  <p>Period: {months[selectedMonth]} {selectedYear}</p>
+                  <p>Period: {periodText}</p>
                   <p>Clients: {selectedClients.length}</p>
-                  <p>Task Types: {selectedTaskTypes.length > 0 ? selectedTaskTypes.join(', ') : 'All monthly compliance types'}</p>
+                  <p>Task Types: {selectedTaskTypes.length > 0 ? selectedTaskTypes.join(', ') : 'All compliance types'}</p>
                   <p>Estimated Tasks: ~{estimatedTasks}</p>
                 </div>
               </div>
