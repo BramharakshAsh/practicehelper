@@ -249,7 +249,7 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {filteredStaff.filter(member => member.is_active).map((member) => {
-            const memberTasks = tasks.filter(t => t.staff_id === member.id);
+            const memberTasks = tasks.filter(t => t.staff_id === member.user_id);
             const activeTasks = memberTasks.filter(t => t.status !== 'filed_completed').length;
             const overdueTasks = memberTasks.filter(t =>
               t.status !== 'filed_completed' &&

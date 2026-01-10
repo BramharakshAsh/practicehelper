@@ -45,7 +45,7 @@ const UrgentTasksTable: React.FC<UrgentTasksTableProps> = ({ tasks, clients, sta
     };
 
     const getStaffName = (staffId?: string) => {
-        return staff.find(s => s.id === staffId)?.name || 'Unassigned';
+        return staff.find(s => s.user_id === staffId)?.name || 'Unassigned';
     };
 
     const getStatusBadge = (status: Task['status']) => {

@@ -14,28 +14,30 @@ const StaffLoadSnapshot: React.FC<StaffLoadSnapshotProps> = ({ tasks, staff }) =
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     // Calculate workload per staff
-    const staffWorkload = staff.filter(s => s.role !== 'admin').map(member => {
-        const memberTasks = tasks.filter(t => t.staff_id === member.id && t.status !== 'filed_completed');
-        const dueTodayCount = memberTasks.filter(t => {
-            const d = new Date(t.due_date);
-            const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-            return dateOnly.getTime() === today.getTime();
-        }).length;
+    const staffWorkload = staff
+        .filter(s => s.role !== 'partner' && s.role !== 'manager') // Typically partners/managers don't have task load in this snapshot
+        .map(member => {
+            const memberTasks = tasks.filter(t => t.staff_id === member.user_id && t.status !== 'filed_completed');
+            const dueTodayCount = memberTasks.filter(t => {
+                const d = new Date(t.due_date);
+                const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                return dateOnly.getTime() === today.getTime();
+            }).length;
 
-        // Check for overdue
-        const overdueCount = memberTasks.filter(t => {
-            const d = new Date(t.due_date);
-            const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-            return dateOnly.getTime() < today.getTime();
-        }).length;
+            // Check for overdue
+            const overdueCount = memberTasks.filter(t => {
+                const d = new Date(t.due_date);
+                const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                return dateOnly.getTime() < today.getTime();
+            }).length;
 
-        return {
-            ...member,
-            activeCount: memberTasks.length,
-            dueTodayCount,
-            overdueCount
-        };
-    }).sort((a, b) => b.activeCount - a.activeCount).slice(0, 5); // Top 5 by load
+            return {
+                ...member,
+                activeCount: memberTasks.length,
+                dueTodayCount,
+                overdueCount
+            };
+        }).sort((a, b) => b.activeCount - a.activeCount).slice(0, 5); // Top 5 by load
 
     // Arbitrary capacity for visual bar (e.g., 10 tasks = 100%)
     const maxCapacity = 10;

@@ -144,7 +144,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
     const newTask: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'> = {
       ...formData,
       status: 'assigned',
-      status: 'assigned',
       assigned_by: useAuthStore.getState().user?.id || '',
     };
 
