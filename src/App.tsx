@@ -20,6 +20,8 @@ import AutoTasksPage from './pages/AutoTasksPage';
 import ReportsPage from './pages/ReportsPage';
 import LoginPage from './components/Auth/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import AuditDashboard from './pages/AuditDashboard';
+import AuditWorkspace from './pages/AuditWorkspace';
 
 function App() {
   const { user, isAuthenticated } = useAuthStore();
@@ -64,6 +66,8 @@ function App() {
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="import" element={<ImportPage />} />
           <Route path="auto-tasks" element={<AutoTasksPage />} />
+          <Route path="audits" element={<AuditDashboard />} />
+          <Route path="audits/:id" element={<AuditWorkspace />} />
           <Route path="reports" element={<ReportsPage />} />
           {/* Catch all redirect to dashboard */}
           <Route path="*" element={<Navigate to="/" replace />} />
