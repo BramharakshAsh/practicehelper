@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard as Edit, Eye } from 'lucide-react';
-import { Staff } from '../../types';
+import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard as Edit, Eye, Calendar, Trash2 } from 'lucide-react';
+import { Staff, Task } from '../../types';
 import StaffModal from './StaffModal';
 
 interface StaffListProps {
   staff: Staff[];
+  tasks: Task[];
   onStaffUpdate: (staffId: string, updates: Partial<Staff>) => void;
-  onStaffCreate: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'>) => void;
+  onStaffCreate: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => void;
+  onStaffDelete: (staffId: string) => void;
 }
 
-const StaffList: React.FC<StaffListProps> = ({ staff, onStaffUpdate, onStaffCreate }) => {
+const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onStaffCreate, onStaffDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [showModal, setShowModal] = useState(false);
@@ -18,7 +20,7 @@ const StaffList: React.FC<StaffListProps> = ({ staff, onStaffUpdate, onStaffCrea
 
   const filteredStaff = staff.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.email.toLowerCase().includes(searchTerm.toLowerCase());
+      member.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || member.role === filterRole;
     return matchesSearch && matchesRole;
   });
@@ -50,7 +52,7 @@ const StaffList: React.FC<StaffListProps> = ({ staff, onStaffUpdate, onStaffCrea
   };
 
   const toggleStaffStatus = (staffId: string, currentStatus: boolean) => {
-    onStaffUpdate(staffId, { 
+    onStaffUpdate(staffId, {
       is_active: !currentStatus,
       updated_at: new Date().toISOString()
     });
@@ -99,7 +101,7 @@ const StaffList: React.FC<StaffListProps> = ({ staff, onStaffUpdate, onStaffCrea
               />
             </div>
           </div>
-          
+
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
@@ -136,7 +138,7 @@ const StaffList: React.FC<StaffListProps> = ({ staff, onStaffUpdate, onStaffCrea
                   </span>
                 </div>
               </div>
-              
+
               <div className="flex space-x-1">
                 <button
                   onClick={() => openModal('view', member)}
@@ -150,6 +152,16 @@ const StaffList: React.FC<StaffListProps> = ({ staff, onStaffUpdate, onStaffCrea
                 >
                   <Edit className="h-4 w-4 text-gray-500" />
                 </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete ${member.name}?`)) {
+                      onStaffDelete(member.id);
+                    }
+                  }}
+                  className="p-1 hover:bg-red-50 rounded"
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </button>
               </div>
             </div>
 
@@ -158,11 +170,18 @@ const StaffList: React.FC<StaffListProps> = ({ staff, onStaffUpdate, onStaffCrea
                 <Mail className="h-3 w-3" />
                 <span>{member.email}</span>
               </div>
-              
+
               {member.phone && (
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Phone className="h-3 w-3" />
                   <span>{member.phone}</span>
+                </div>
+              )}
+
+              {member.date_of_joining && (
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Calendar className="h-3 w-3" />
+                  <span>Joined: {new Date(member.date_of_joining).toLocaleDateString()}</span>
                 </div>
               )}
             </div>
@@ -174,11 +193,10 @@ const StaffList: React.FC<StaffListProps> = ({ staff, onStaffUpdate, onStaffCrea
                 </span>
                 <button
                   onClick={() => toggleStaffStatus(member.id, member.is_active)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                    member.is_active
-                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                      : 'bg-green-100 text-green-700 hover:bg-green-200'
-                  }`}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${member.is_active
+                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
                 >
                   {member.is_active ? 'Deactivate' : 'Activate'}
                 </button>
@@ -230,20 +248,29 @@ const StaffList: React.FC<StaffListProps> = ({ staff, onStaffUpdate, onStaffCrea
           <span>Staff Workload Summary</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {filteredStaff.filter(member => member.is_active).map((member) => (
-            <div key={member.id} className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900">{member.name}</h4>
-              <p className="text-sm text-gray-600 mb-2">{getRoleLabel(member.role)}</p>
-              <div className="flex items-center justify-between text-sm">
-                <span>Active Tasks:</span>
-                <span className="font-medium">5</span> {/* This would be calculated from actual tasks */}
+          {filteredStaff.filter(member => member.is_active).map((member) => {
+            const memberTasks = tasks.filter(t => t.staff_id === member.user_id);
+            const activeTasks = memberTasks.filter(t => t.status !== 'filed_completed').length;
+            const overdueTasks = memberTasks.filter(t =>
+              t.status !== 'filed_completed' &&
+              new Date(t.due_date) < new Date()
+            ).length;
+
+            return (
+              <div key={member.id} className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900">{member.name}</h4>
+                <p className="text-sm text-gray-600 mb-2">{getRoleLabel(member.role)}</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Active Tasks:</span>
+                  <span className={`font-medium ${activeTasks > 5 ? 'text-orange-600' : 'text-gray-900'}`}>{activeTasks}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Overdue:</span>
+                  <span className={`font-medium ${overdueTasks > 0 ? 'text-red-600' : 'text-green-600'}`}>{overdueTasks}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span>Overdue:</span>
-                <span className="font-medium text-red-600">1</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

@@ -55,6 +55,7 @@ export interface Staff {
   hourly_rate?: number;
   is_available: boolean;
   is_active: boolean;
+  date_of_joining?: string;
   created_at: string;
   updated_at: string;
 }
@@ -83,6 +84,7 @@ export interface TaskTemplate {
 export interface ComplianceType {
   id: string;
   firm_id?: string;
+  category: 'GST' | 'Income Tax' | 'TDS' | 'Others';
   name: string;
   code: string;
   description?: string;
@@ -110,6 +112,7 @@ export interface Task {
   estimated_hours?: number;
   actual_hours?: number;
   checklist_progress?: { [itemId: string]: boolean };
+  audit_id?: string;
   created_at: string;
   updated_at: string;
   assigned_by: string;
@@ -155,7 +158,7 @@ export interface TaskStatusUpdate {
   created_at: string;
 }
 
-export type UserRole = 'partner' | 'manager' | 'staff';
+export type UserRole = 'partner' | 'manager' | 'staff' | 'paid_staff' | 'articles';
 
 export interface DashboardStats {
   total_clients: number;
@@ -193,4 +196,65 @@ export interface TaskComment {
   created_at: string;
   updated_at: string;
   user?: User;
+}
+
+export interface ClientStaffRelation {
+  id: string;
+  firm_id: string;
+  client_id: string;
+  staff_id: string;
+  created_at: string;
+}
+
+export interface AuditPlan {
+  id: string;
+  firm_id: string;
+  client_id: string;
+  lead_staff_id: string;
+  title: string;
+  description?: string;
+  status: 'active' | 'completed' | 'archived';
+  progress: number;
+  start_date: string;
+  end_date?: string;
+  created_at: string;
+  updated_at: string;
+  client?: Client;
+  lead_staff?: Staff;
+}
+
+export interface AuditChecklistItem {
+  id: string;
+  audit_id: string;
+  parent_id?: string;
+  title: string;
+  description?: string;
+  assigned_to?: string;
+  target_date?: string;
+  is_completed: boolean;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+  children?: AuditChecklistItem[];
+  assigned_staff?: Staff;
+}
+
+export interface AuditPlanTemplate {
+  id: string;
+  firm_id?: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditTemplateItem {
+  id: string;
+  template_id: string;
+  parent_id?: string;
+  title: string;
+  description?: string;
+  order_index: number;
+  created_at: string;
 }

@@ -1,5 +1,7 @@
-import * as React from 'react';
-import { X, Calendar, User, Building, FileText } from 'lucide-react';
+import { X, Calendar, User, Building, FileText, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { auditManagementService } from '../../services/audit-management.service';
+import { tasksService } from '../../services/tasks.service';
 import { Task } from '../../types';
 import TaskComments from './TaskComments';
 
@@ -7,9 +9,59 @@ interface TaskDetailsModalProps {
     task: Task;
     onClose: () => void;
     onStatusChange: (taskId: string, status: Task['status']) => void;
+    onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
 }
 
-const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onStatusChange }) => {
+const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onStatusChange, onUpdateTask }) => {
+    const navigate = useNavigate();
+
+    const handleOpenAudit = async () => {
+        if (task.audit_id) {
+            navigate(`/audits/${task.audit_id}`);
+            onClose();
+        } else {
+            if (window.confirm('Initialize a dedicated Audit Workspace for this task?')) {
+                try {
+                    // Fetch templates first
+                    const templates = await auditManagementService.getTemplates();
+                    let selectedTemplateId = '';
+
+                    if (templates.length > 0) {
+                        const statutoryTemplate = templates.find(t => t.name.includes('Statutory Audit'));
+                        selectedTemplateId = statutoryTemplate ? statutoryTemplate.id : templates[0].id;
+
+                        if (!window.confirm(`Found template: "${templates.find(t => t.id === selectedTemplateId)?.name}". Would you like to apply it to the new audit?`)) {
+                            selectedTemplateId = '';
+                        }
+                    }
+
+                    const newAudit = await auditManagementService.createAuditPlan({
+                        client_id: task.client_id,
+                        lead_staff_id: task.staff_id,
+                        title: `Audit: ${task.title}`,
+                        status: 'active',
+                        start_date: new Date().toISOString().split('T')[0]
+                    });
+
+                    if (onUpdateTask) {
+                        await onUpdateTask(task.id, { audit_id: newAudit.id });
+                    } else {
+                        await tasksService.updateTask(task.id, { audit_id: newAudit.id });
+                    }
+
+                    if (selectedTemplateId) {
+                        await auditManagementService.createAuditFromTemplate(selectedTemplateId, newAudit.id);
+                    }
+
+                    navigate(`/audits/${newAudit.id}`);
+                    onClose();
+                } catch (error) {
+                    console.error('Failed to initialize audit', error);
+                    alert('Error creating audit workspace');
+                }
+            }
+        }
+    };
     const getPriorityColor = (priority: Task['priority']) => {
         switch (priority) {
             case 'high': return 'text-red-700 bg-red-100';
@@ -114,6 +166,19 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                         <p className="text-sm text-yellow-800">{task.remarks}</p>
                                     </div>
                                 )}
+
+                                <div className="pt-4 mt-4 border-t border-gray-100">
+                                    <button
+                                        onClick={handleOpenAudit}
+                                        className="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold shadow-indigo-100 shadow-lg active:scale-[0.98]"
+                                    >
+                                        <ExternalLink className="h-5 w-5 mr-2" />
+                                        {task.audit_id ? 'Open Audit Workspace' : 'Initialize Audit Workspace'}
+                                    </button>
+                                    <p className="text-[10px] text-gray-400 mt-2 text-center uppercase tracking-widest font-bold">
+                                        Hierarchical Checklist & Staff Assignment
+                                    </p>
+                                </div>
                             </div>
                         </div>
 

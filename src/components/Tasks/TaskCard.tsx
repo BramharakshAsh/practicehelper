@@ -1,16 +1,17 @@
 import * as React from 'react';
 const { useState } = React;
-import { MoreVertical, User, Building, Calendar, MessageSquare, CheckCircle, AlertTriangle, Eye } from 'lucide-react';
-import { Task } from '../../types';
+import { MoreVertical, User, Building, Calendar, MessageSquare, CheckCircle, AlertTriangle, Eye, Trash2 } from 'lucide-react';
+import { Task, UserRole } from '../../types';
 import TaskDetailsModal from './TaskDetailsModal';
 
 interface TaskCardProps {
   task: Task;
   onUpdate: (taskId: string, updates: Partial<Task>) => void;
-  currentRole: 'partner' | 'staff';
+  onDelete: (taskId: string) => void;
+  currentRole: UserRole;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, currentRole }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showRemarks, setShowRemarks] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -113,6 +114,25 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
                 >
                   Add/Edit Remarks
                 </button>
+                {currentRole === 'partner' && (
+                  <button
+                    onClick={() => {
+                      console.log('Task delete clicked:', task.id, 'Audit ID:', task.audit_id);
+                      const message = task.audit_id
+                        ? 'An audit plan for the task exists, deleting this task will also delete the audit plan. Are you sure?'
+                        : 'Are you sure you want to delete this task?';
+
+                      if (window.confirm(message)) {
+                        onDelete(task.id);
+                        setShowMenu(false);
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Task
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -201,6 +221,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, currentRole }) => {
           task={task}
           onClose={() => setShowDetails(false)}
           onStatusChange={(taskId, status) => onUpdate(taskId, { status })}
+          onUpdateTask={onUpdate}
         />
       )}
     </div>

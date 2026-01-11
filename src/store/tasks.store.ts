@@ -7,7 +7,7 @@ interface TasksState {
   tasks: Task[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   fetchTasks: () => Promise<void>;
   fetchTasksByStaff: (staffId: string) => Promise<void>;
@@ -19,52 +19,52 @@ interface TasksState {
   clearError: () => void;
 }
 
-export const useTasksStore = create<TasksState>((set, get) => ({
+export const useTasksStore = create<TasksState>((set) => ({
   tasks: [],
   isLoading: false,
   error: null,
 
   fetchTasks: async () => {
     set({ isLoading: true, error: null });
-    
+
     await handleAsyncError(async () => {
       const tasks = await tasksService.getTasks();
       set({ tasks, isLoading: false });
     }, 'Fetch tasks').catch((error) => {
-      set({ 
+      set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false 
+        isLoading: false
       });
     });
   },
 
   fetchTasksByStaff: async (staffId: string) => {
     set({ isLoading: true, error: null });
-    
+
     await handleAsyncError(async () => {
       const tasks = await tasksService.getTasksByStaff(staffId);
       set({ tasks, isLoading: false });
     }, 'Fetch tasks by staff').catch((error) => {
-      set({ 
+      set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false 
+        isLoading: false
       });
     });
   },
 
   createTask: async (taskData) => {
     set({ isLoading: true, error: null });
-    
+
     await handleAsyncError(async () => {
       const newTask = await tasksService.createTask(taskData);
-      set(state => ({ 
+      set(state => ({
         tasks: [newTask, ...state.tasks],
-        isLoading: false 
+        isLoading: false
       }));
     }, 'Create task').catch((error) => {
-      set({ 
+      set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false 
+        isLoading: false
       });
       throw error;
     });
@@ -72,19 +72,19 @@ export const useTasksStore = create<TasksState>((set, get) => ({
 
   updateTask: async (id, updates) => {
     set({ isLoading: true, error: null });
-    
+
     await handleAsyncError(async () => {
       const updatedTask = await tasksService.updateTask(id, updates);
       set(state => ({
-        tasks: state.tasks.map(task => 
+        tasks: state.tasks.map(task =>
           task.id === id ? updatedTask : task
         ),
         isLoading: false
       }));
     }, 'Update task').catch((error) => {
-      set({ 
+      set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false 
+        isLoading: false
       });
       throw error;
     });
@@ -92,17 +92,27 @@ export const useTasksStore = create<TasksState>((set, get) => ({
 
   deleteTask: async (id) => {
     set({ isLoading: true, error: null });
-    
+
     await handleAsyncError(async () => {
+      // Get the task before deleting to check for audit_id
+      const state = useTasksStore.getState();
+      const task = state.tasks.find(t => t.id === id);
+
+      if (task?.audit_id) {
+        // We import it dynamically or assume the service is available
+        const { auditManagementService } = await import('../services/audit-management.service');
+        await auditManagementService.deleteAuditPlan(task.audit_id);
+      }
+
       await tasksService.deleteTask(id);
       set(state => ({
         tasks: state.tasks.filter(task => task.id !== id),
         isLoading: false
       }));
     }, 'Delete task').catch((error) => {
-      set({ 
+      set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false 
+        isLoading: false
       });
       throw error;
     });
@@ -110,17 +120,17 @@ export const useTasksStore = create<TasksState>((set, get) => ({
 
   createBulkTasks: async (tasksData) => {
     set({ isLoading: true, error: null });
-    
+
     await handleAsyncError(async () => {
       const newTasks = await tasksService.createBulkTasks(tasksData);
-      set(state => ({ 
+      set(state => ({
         tasks: [...newTasks, ...state.tasks],
-        isLoading: false 
+        isLoading: false
       }));
     }, 'Create bulk tasks').catch((error) => {
-      set({ 
+      set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false 
+        isLoading: false
       });
       throw error;
     });
@@ -128,17 +138,17 @@ export const useTasksStore = create<TasksState>((set, get) => ({
 
   importTasks: async (tasksData) => {
     set({ isLoading: true, error: null });
-    
+
     await handleAsyncError(async () => {
       const newTasks = await tasksService.importTasks(tasksData);
-      set(state => ({ 
+      set(state => ({
         tasks: [...newTasks, ...state.tasks],
-        isLoading: false 
+        isLoading: false
       }));
     }, 'Import tasks').catch((error) => {
-      set({ 
+      set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false 
+        isLoading: false
       });
       throw error;
     });

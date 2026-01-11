@@ -7,14 +7,14 @@ import { useAuthStore } from '../store/auth.store';
 import TaskBoard from '../components/Tasks/TaskBoard';
 
 const TasksPage: React.FC = () => {
-    const { tasks, createTask, updateTask } = useTasks();
+    const { tasks, createTask, updateTask, deleteTask } = useTasks();
     const { staff } = useStaff();
     const { clients } = useClients();
     const { complianceTypes } = useCompliance();
     const { user } = useAuthStore();
 
     const currentRole = user?.role || 'staff';
-    const currentStaffId = user?.role === 'staff' ? user.id : undefined;
+    const currentStaffId = ['staff', 'paid_staff', 'articles'].includes(currentRole) ? user?.id : undefined;
 
     return (
         <TaskBoard
@@ -26,6 +26,7 @@ const TasksPage: React.FC = () => {
             currentStaffId={currentStaffId}
             onTaskUpdate={updateTask}
             onTaskCreate={createTask}
+            onTaskDelete={deleteTask}
         />
     );
 };

@@ -21,7 +21,7 @@ export const useStaff = () => {
     }
   }, [staff.length, isLoading, fetchStaff]);
 
-  const handleCreateStaff = async (staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>) => {
+  const handleCreateStaff = async (staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'> & { password?: string }) => {
     try {
       await createStaff(staffData);
     } catch (error) {

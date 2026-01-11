@@ -1,168 +1,152 @@
-import { supabase } from './supabase';
+import { createClient } from '@supabase/supabase-js';
 import { Staff } from '../types';
+import { supabase } from './supabase';
 import { useAuthStore } from '../store/auth.store';
 
 class StaffService {
   async getStaff(): Promise<Staff[]> {
+    const firmId = useAuthStore.getState().user?.firm_id;
+    if (!firmId) return [];
+
     const { data, error } = await supabase
-      .from('users')
+      .from('staff')
       .select(`
         *,
-        staff_details:staff(*)
+        user:users(*)
       `)
+      .eq('firm_id', firmId)
       .eq('is_active', true)
-      .in('role', ['staff', 'manager'])
-      .order('created_at', { ascending: false });
+      .order('name');
 
     if (error) throw error;
 
-    // Transform the data to match the Staff interface
-    return (data || []).map(user => ({
-      id: user.id,
-      user_id: user.id,
-      firm_id: user.firm_id,
-      name: user.full_name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      employee_id: user.staff_details?.[0]?.employee_id,
-      department: user.staff_details?.[0]?.department,
-      specializations: user.staff_details?.[0]?.specializations || [],
-      hourly_rate: user.staff_details?.[0]?.hourly_rate,
-      is_available: user.staff_details?.[0]?.is_available ?? true,
-      is_active: user.is_active,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-    }));
+    // Map joined user data back to Staff interface structure if needed, 
+    // or just return as is if the component handles it.
+    // Based on the Staff interface, we might need to flatten or map.
+    return (data || []).map(s => ({
+      ...s,
+      role: s.user?.role || s.role,
+    })) as Staff[];
   }
 
-  async createStaff(staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>): Promise<Staff> {
+  async createStaff(staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'> & { password?: string }): Promise<Staff> {
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated or missing firm ID');
 
-    // First create the user
-    const { data: user, error: userError } = await supabase
+    if (!staffData.password) {
+      throw new Error('Password is required to create a staff account');
+    }
+
+    // 1. Create Auth User
+    // We use a temporary client to avoid signing out the current user
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://demo.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'demo-key';
+
+    const tempClient = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    });
+
+    const authRole = (staffData.role === 'paid_staff' || staffData.role === 'articles') ? 'staff' : staffData.role;
+
+    const { data: authData, error: authError } = await tempClient.auth.signUp({
+      email: staffData.email,
+      password: staffData.password,
+      options: {
+        data: {
+          full_name: staffData.name,
+          username: staffData.email.split('@')[0],
+          role: authRole,
+        }
+      }
+    });
+
+    if (authError) throw authError;
+    if (!authData.user) throw new Error('Failed to create auth user');
+
+    const userId = authData.user.id;
+    const { password, ...staffDetails } = staffData;
+
+    // 2. Create Public User Profile
+    const { error: userError } = await supabase
       .from('users')
-      .insert([{
+      .insert({
+        id: userId,
         firm_id: firmId,
         email: staffData.email,
-        username: staffData.email.split('@')[0], // Generate username from email
-        password_hash: 'hashed_password', // In production, hash the password
+        username: staffData.email.split('@')[0],
         full_name: staffData.name,
-        role: staffData.role,
-        phone: staffData.phone,
-        is_active: staffData.is_active,
-      }])
-      .select()
-      .single();
+        role: authRole,
+        is_active: staffData.is_active
+      });
 
-    if (userError) throw userError;
+    if (userError) {
+      console.error('Error creating public user:', userError);
+      // If we fail here, we should ideally cleanup the auth user, but for now we throw
+      throw userError;
+    }
 
-    // Then create the staff details
-    const { data: staff, error: staffError } = await supabase
+    // 3. Create Staff Entry
+    const { data, error } = await supabase
       .from('staff')
-      .insert([{
-        user_id: user.id,
+      .insert({
+        ...staffDetails,
+        user_id: userId,
         firm_id: firmId,
-        employee_id: staffData.employee_id,
-        department: staffData.department,
-        specializations: staffData.specializations,
-        hourly_rate: staffData.hourly_rate,
-        is_available: staffData.is_available,
-      }])
+      })
       .select()
       .single();
 
-    if (staffError) throw staffError;
-
-    return {
-      id: user.id,
-      user_id: user.id,
-      firm_id: user.firm_id,
-      name: user.full_name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      employee_id: staff.employee_id,
-      department: staff.department,
-      specializations: staff.specializations,
-      hourly_rate: staff.hourly_rate,
-      is_available: staff.is_available,
-      is_active: user.is_active,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-    };
+    if (error) throw error;
+    return data as Staff;
   }
 
   async updateStaff(id: string, updates: Partial<Staff>): Promise<Staff> {
-    // Update user table
-    const userUpdates: any = {};
-    if (updates.name) userUpdates.full_name = updates.name;
-    if (updates.email) userUpdates.email = updates.email;
-    if (updates.phone) userUpdates.phone = updates.phone;
-    if (updates.role) userUpdates.role = updates.role;
-    if (updates.is_active !== undefined) userUpdates.is_active = updates.is_active;
-
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .update({ ...userUpdates, updated_at: new Date().toISOString() })
+    const { data, error } = await supabase
+      .from('staff')
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
 
-    if (userError) throw userError;
-
-    // Update staff table
-    const staffUpdates: any = {};
-    if (updates.employee_id) staffUpdates.employee_id = updates.employee_id;
-    if (updates.department) staffUpdates.department = updates.department;
-    if (updates.specializations) staffUpdates.specializations = updates.specializations;
-    if (updates.hourly_rate) staffUpdates.hourly_rate = updates.hourly_rate;
-    if (updates.is_available !== undefined) staffUpdates.is_available = updates.is_available;
-
-    if (Object.keys(staffUpdates).length > 0) {
-      await supabase
-        .from('staff')
-        .update({ ...staffUpdates, updated_at: new Date().toISOString() })
-        .eq('user_id', id);
-    }
-
-    // Return updated staff data
-    return this.getStaffById(id);
+    if (error) throw error;
+    return data as Staff;
   }
 
   async getStaffById(id: string): Promise<Staff> {
-    const staff = await this.getStaff();
-    const found = staff.find(s => s.id === id);
-    if (!found) throw new Error('Staff member not found');
-    return found;
+    const { data, error } = await supabase
+      .from('staff')
+      .select(`*, user:users(*)`)
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return { ...data, role: data.user?.role || data.role } as Staff;
   }
 
   async deleteStaff(id: string): Promise<void> {
-    // Soft delete by setting is_active to false
     const { error } = await supabase
-      .from('users')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .from('staff')
+      .update({ is_active: false })
       .eq('id', id);
 
     if (error) throw error;
   }
 
   async importStaff(staffList: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]): Promise<Staff[]> {
-    const results: Staff[] = [];
+    const firmId = useAuthStore.getState().user?.firm_id;
+    if (!firmId) throw new Error('User not authenticated or missing firm ID');
 
-    // Process each staff member individually to handle the user/staff relationship
-    for (const staffData of staffList) {
-      try {
-        const newStaff = await this.createStaff(staffData);
-        results.push(newStaff);
-      } catch (error) {
-        console.error('Failed to import staff member:', staffData.name, error);
-        // Continue with other staff members
-      }
-    }
+    const { data, error } = await supabase
+      .from('staff')
+      .insert(staffList.map(s => ({ ...s, firm_id: firmId })))
+      .select();
 
-    return results;
+    if (error) throw error;
+    return data as Staff[];
   }
 }
 

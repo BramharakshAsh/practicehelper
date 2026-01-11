@@ -1,63 +1,69 @@
-import { supabase } from './supabase';
 import { Meeting } from '../types';
+import { supabase } from './supabase';
 import { useAuthStore } from '../store/auth.store';
 
 class MeetingsService {
     async getMeetings(startDate?: Date, endDate?: Date): Promise<Meeting[]> {
+        const firmId = useAuthStore.getState().user?.firm_id;
+        if (!firmId) return [];
+
         let query = supabase
             .from('meetings')
             .select(`
-        *,
-        client:clients(name),
-        staff:users!meetings_staff_id_fkey(full_name)
-      `)
-            .order('start_time', { ascending: true });
+                *,
+                client:clients(*),
+                staff:staff(*)
+            `)
+            .eq('firm_id', firmId);
 
         if (startDate) {
             query = query.gte('start_time', startDate.toISOString());
         }
         if (endDate) {
-            query = query.lte('start_time', endDate.toISOString());
+            query = query.lte('end_time', endDate.toISOString());
         }
 
-        const { data, error } = await query;
+        const { data, error } = await query.order('start_time', { ascending: true });
 
         if (error) throw error;
-        return data || [];
+        return data as Meeting[];
     }
 
     async createMeeting(meeting: Omit<Meeting, 'id' | 'firm_id' | 'created_at' | 'updated_at'>): Promise<Meeting> {
         const firmId = useAuthStore.getState().user?.firm_id;
-        if (!firmId) throw new Error('User firm ID not found');
+        if (!firmId) throw new Error('User not authenticated or missing firm ID');
 
         const { data, error } = await supabase
             .from('meetings')
-            .insert([{ ...meeting, firm_id: firmId }])
+            .insert({
+                ...meeting,
+                firm_id: firmId,
+            })
             .select(`
-        *,
-        client:clients(name),
-        staff:users!meetings_staff_id_fkey(full_name)
-      `)
+                *,
+                client:clients(*),
+                staff:staff(*)
+            `)
             .single();
 
         if (error) throw error;
-        return data;
+        return data as Meeting;
     }
 
     async updateMeeting(id: string, updates: Partial<Meeting>): Promise<Meeting> {
         const { data, error } = await supabase
             .from('meetings')
-            .update({ ...updates, updated_at: new Date().toISOString() })
+            .update(updates)
             .eq('id', id)
             .select(`
-        *,
-        client:clients(name),
-        staff:users!meetings_staff_id_fkey(full_name)
-      `)
+                *,
+                client:clients(*),
+                staff:staff(*)
+            `)
             .single();
 
         if (error) throw error;
-        return data;
+        return data as Meeting;
     }
 
     async deleteMeeting(id: string): Promise<void> {

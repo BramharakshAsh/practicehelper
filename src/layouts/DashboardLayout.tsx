@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
-import { LayoutDashboard, Users, UserSquare2, CheckSquare, Calendar, PieChart, LogOut, Upload, Zap } from 'lucide-react';
+import { LayoutDashboard, Users, UserSquare2, CheckSquare, Calendar, PieChart, LogOut, Upload, Zap, ClipboardList } from 'lucide-react';
 
 const DashboardLayout: React.FC = () => {
     const { user, logout } = useAuthStore();
@@ -18,6 +18,7 @@ const DashboardLayout: React.FC = () => {
         { to: '/clients', label: 'Clients', icon: Users },
         { to: '/staff', label: 'Staff', icon: UserSquare2 },
         { to: '/calendar', label: 'Calendar', icon: Calendar },
+        { to: '/audits', label: 'Audits', icon: ClipboardList },
         { to: '/auto-tasks', label: 'Auto Tasks', icon: Zap },
         { to: '/import', label: 'Import', icon: Upload },
         { to: '/reports', label: 'Reports', icon: PieChart },
