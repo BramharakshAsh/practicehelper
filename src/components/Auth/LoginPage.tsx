@@ -35,9 +35,9 @@ const LoginPage: React.FC = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <Building2 className="h-12 w-12 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">CA Practice Manager</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Firm Flow</h1>
           </div>
-          <p className="text-gray-600">Streamline your practice management</p>
+          <p className="text-gray-600">Streamline your firm's workflow</p>
         </div>
 
         {/* Role Selection */}
