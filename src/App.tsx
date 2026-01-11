@@ -50,14 +50,24 @@ function App() {
 
     // 2. Auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event);
+      console.log('App: Auth event detected:', event);
+
       if (event === 'PASSWORD_RECOVERY') {
         navigate('/reset-password');
-      } else if (session) {
-        const user = await authService.getCurrentUser();
-        setUser(user);
-      } else {
+        return;
+      }
+
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        if (session) {
+          const fetchedUser = await authService.getCurrentUser();
+          console.log('App: User profile loaded:', fetchedUser?.email);
+          setUser(fetchedUser);
+        }
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
+      } else if (event === 'USER_UPDATED') {
+        console.log('App: User updated, bypassing profile fetch for reset flow.');
+        return;
       }
     });
 

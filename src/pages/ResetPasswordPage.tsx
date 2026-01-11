@@ -14,17 +14,26 @@ const ResetPasswordPage: React.FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Basic check to see if we have a session or recovery token
-        // Supabase handles the token extraction automatically
+        // 1. Initial check
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                // If no session, it might be an invalid or expired link
-                // But sometimes the hash takes a moment to process or needs to be handled on the root
-                // For recovery flow, Supabase sets the session if the hash is present.
+            if (session) {
+                console.log('ResetPasswordPage: Session active');
             }
         };
         checkSession();
+
+        // 2. Backup listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            console.log('ResetPasswordPage: Backup listener event:', event);
+            if (event === 'USER_UPDATED') {
+                console.log('ResetPasswordPage: USER_UPDATED detected, showing success.');
+                setStatus('success');
+                setIsLoading(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const handleGoToLogin = async () => {
@@ -60,17 +69,17 @@ const ResetPasswordPage: React.FC = () => {
         try {
             console.log('ResetPasswordPage: Calling authService.updatePassword...');
             await authService.updatePassword(password);
-            console.log('ResetPasswordPage: Password update successful.');
 
-            // Set success immediately
-            setStatus('success');
-            setIsLoading(false);
-
-            console.log('ResetPasswordPage: Status set to success.');
+            // If the listener above didn't already catch it
+            if (status !== 'success') {
+                console.log('ResetPasswordPage: Success detected via Promise resolution.');
+                setStatus('success');
+                setIsLoading(false);
+            }
         } catch (error: any) {
             console.error('ResetPasswordPage: Error updating password:', error);
             setStatus('error');
-            setErrorMessage(error.message || 'Failed to update password. Your session might have expired.');
+            setErrorMessage(error.message || 'Failed to update password.');
             setIsLoading(false);
         }
     };
