@@ -39,11 +39,15 @@ const CalendarPage: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-end">
+        <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Calendar</h1>
+                    <p className="text-sm text-gray-600 mt-1">Track due dates and important deadlines</p>
+                </div>
                 <button
                     onClick={() => setShowMeetingModal(true)}
-                    className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm active:scale-95 transform transition-transform text-sm font-semibold"
                 >
                     <Plus className="h-5 w-5" />
                     <span>Schedule Meeting</span>

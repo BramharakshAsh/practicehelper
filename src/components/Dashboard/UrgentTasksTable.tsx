@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Task, Staff, Client } from '../../types';
-import { ArrowRight, AlertTriangle, Clock } from 'lucide-react';
+import { ArrowRight, AlertTriangle, Clock, User, CheckCircle } from 'lucide-react';
 
 interface UrgentTasksTableProps {
     tasks: Task[];
@@ -93,7 +93,7 @@ const UrgentTasksTable: React.FC<UrgentTasksTableProps> = ({ tasks, clients, sta
                 </button>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto hidden sm:block">
                 <table className="min-w-full">
                     <thead>
                         <tr className="border-b border-gray-100">
@@ -139,6 +139,39 @@ const UrgentTasksTable: React.FC<UrgentTasksTableProps> = ({ tasks, clients, sta
                 </table>
             </div>
 
+            {/* Mobile View */}
+            <div className="block sm:hidden space-y-4">
+                {displayTasks.length === 0 ? (
+                    <div className="py-8 text-center text-gray-500">
+                        <div className="flex flex-col items-center">
+                            <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
+                            <p>No urgent tasks due soon</p>
+                        </div>
+                    </div>
+                ) : (
+                    displayTasks.map(task => (
+                        <div key={task.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 active:bg-gray-100" onClick={() => navigate('/tasks')}>
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase">
+                                    {getClientName(task.client_id)}
+                                </span>
+                                <div className="text-right">
+                                    {getDueDateDisplay(task.due_date)}
+                                </div>
+                            </div>
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">{task.title}</h4>
+                            <div className="flex justify-between items-center text-xs text-gray-500">
+                                <span className="flex items-center">
+                                    <User className="h-3 w-3 mr-1" />
+                                    {getStaffName(task.staff_id)}
+                                </span>
+                                {getStatusBadge(task.status)}
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
             {urgentTasks.length > 5 && (
                 <div className="mt-4 text-center">
                     <button
@@ -152,6 +185,4 @@ const UrgentTasksTable: React.FC<UrgentTasksTableProps> = ({ tasks, clients, sta
         </div>
     );
 };
-import { CheckCircle } from 'lucide-react';
-
 export default UrgentTasksTable;

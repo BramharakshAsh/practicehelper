@@ -108,10 +108,10 @@ const StatutoryHeatmap: React.FC<StatutoryHeatmapProps> = ({ tasks, complianceTy
                         <div
                             key={category}
                             onClick={() => handleCategoryClick(category)}
-                            className={`flex items-center p-3 rounded-lg border ${bgColor} ${borderColor} cursor-pointer hover:shadow-sm transition-all`}
+                            className={`flex flex-col sm:flex-row items-start sm:items-center p-3 rounded-lg border ${bgColor} ${borderColor} cursor-pointer hover:shadow-sm transition-all space-y-2 sm:space-y-0`}
                         >
-                            <div className="w-32 font-semibold text-gray-900">{category}</div>
-                            <div className="flex-1">
+                            <div className="w-full sm:w-32 font-semibold text-gray-900 border-b sm:border-b-0 border-gray-100 pb-1 sm:pb-0">{category}</div>
+                            <div className="flex-1 w-full">
                                 {statusContent}
                             </div>
                         </div>

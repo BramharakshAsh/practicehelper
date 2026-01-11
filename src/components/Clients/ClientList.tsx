@@ -61,32 +61,28 @@ const ClientList: React.FC<ClientListProps> = ({ clients, complianceTypes, onCli
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search clients by name, PAN, or GSTIN..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-gray-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex-1 w-full sm:max-w-md relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <input
+            type="text"
+            placeholder="Search clients by name, PAN or GSTIN..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center space-x-3 w-full sm:w-auto">
+          <div className="flex items-center space-x-2 flex-1 sm:flex-none">
+            <Filter className="h-5 w-5 text-gray-400" />
             <select
               value={filterWorkType}
               onChange={(e) => setFilterWorkType(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
             >
               <option value="all">All Work Types</option>
               {complianceTypes.map(type => (
-                <option key={type.code} value={type.code}>
-                  {type.name}
-                </option>
+                <option key={type.id} value={type.id}>{type.name}</option>
               ))}
             </select>
           </div>
@@ -94,81 +90,83 @@ const ClientList: React.FC<ClientListProps> = ({ clients, complianceTypes, onCli
       </div>
 
       {/* Client List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {filteredClients.map((client) => (
-          <div key={client.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div
+            key={client.id}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow relative group flex flex-col"
+          >
             <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <Building className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{client.name}</h3>
-                  <p className="text-sm text-gray-600">PAN: {client.pan}</p>
-                </div>
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <Building className="h-6 w-6 text-blue-600" />
               </div>
-
-              <div className="flex space-x-1">
-                <button
-                  onClick={() => openModal('view', client)}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Eye className="h-4 w-4 text-gray-500" />
-                </button>
-                <button
-                  onClick={() => openModal('edit', client)}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Edit className="h-4 w-4 text-gray-500" />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to delete ${client.name}?`)) {
-                      onClientDelete(client.id);
-                    }
-                  }}
-                  className="p-1 hover:bg-red-50 rounded"
-                >
-                  <Trash2 className="h-4 w-4 text-red-500" />
-                </button>
+              <div className="flex flex-col items-end">
+                <span className={`px-2 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${client.is_active
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-800'
+                  }`}>
+                  {client.is_active ? 'Active' : 'Inactive'}
+                </span>
+                <span className="text-[10px] text-gray-400 mt-1 font-mono uppercase">#{client.id.slice(0, 8)}</span>
               </div>
             </div>
 
-            <div className="space-y-2 mb-4">
-              {client.gstin && (
-                <p className="text-sm text-gray-600">GSTIN: {client.gstin}</p>
-              )}
-
-              {client.email && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Mail className="h-3 w-3" />
-                  <span>{client.email}</span>
-                </div>
-              )}
-
-              {client.phone && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Phone className="h-3 w-3" />
-                  <span>{client.phone}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-4 border-t border-gray-100">
-              <div className="flex items-center space-x-2 mb-2">
-                <FileText className="h-3 w-3 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Work Types:</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
+            <div className="mb-4 flex-1">
+              <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">{client.name}</h3>
+              <p className="text-xs text-gray-500 mt-1">PAN: {client.pan}</p>
+              <div className="flex flex-wrap gap-1 mt-3">
                 {client.work_types.map((type) => (
                   <span
                     key={type}
-                    className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full"
+                    className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 uppercase tracking-tight"
                   >
                     {type}
                   </span>
                 ))}
               </div>
+            </div>
+
+            <div className="space-y-2 mb-6 pt-4 border-t border-gray-50">
+              {client.email && (
+                <div className="flex items-center text-sm text-gray-600">
+                  <Mail className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                  <span className="truncate">{client.email}</span>
+                </div>
+              )}
+              {client.phone && (
+                <div className="flex items-center text-sm text-gray-600">
+                  <Phone className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                  <span>{client.phone}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2 mt-auto">
+              <button
+                onClick={() => openModal('view', client)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-blue-600 border border-gray-200"
+                title="View Details"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => openModal('edit', client)}
+                className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+              >
+                <Edit className="h-4 w-4" />
+                <span>Edit</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm(`Are you sure you want to delete ${client.name}?`)) {
+                    onClientDelete(client.id);
+                  }
+                }}
+                className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-500 border border-red-100"
+                title="Delete Client"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
           </div>
         ))}

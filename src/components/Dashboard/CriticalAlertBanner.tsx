@@ -49,30 +49,36 @@ const CriticalAlertBanner: React.FC<CriticalAlertBannerProps> = ({ tasks, compli
     };
 
     return (
-        <div className="sticky top-0 z-50 w-full bg-red-600 text-white shadow-md p-3">
-            <div className="container mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center space-x-3 mb-2 sm:mb-0">
-                    <AlertTriangle className="h-6 w-6 text-white animate-pulse" />
-                    <div className="font-medium text-lg">
+        <div className="sticky top-0 z-50 w-full bg-red-600 text-white shadow-md">
+            <div className="container mx-auto max-w-7xl flex items-center justify-between px-4 py-2 sm:py-3 sm:px-6 lg:px-8">
+                <div className="flex items-center space-x-2 sm:space-x-3 overflow-hidden">
+                    <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-white animate-pulse flex-shrink-0" />
+                    <div className="font-medium text-sm sm:text-base truncate">
                         {overdueTasks.length > 0 && (
-                            <span>
-                                {overdueTasks.length} Filings Overdue ({overdueText} filings overdue)
+                            <span className="inline sm:hidden">{overdueTasks.length} Overdue</span>
+                        )}
+                        {overdueTasks.length > 0 && (
+                            <span className="hidden sm:inline">
+                                {overdueTasks.length} Filings Overdue ({overdueText})
                             </span>
                         )}
                         {overdueTasks.length > 0 && awaitingClientTasks.length > 0 && (
-                            <span className="mx-2">|</span>
+                            <span className="mx-1.5 sm:mx-2">|</span>
                         )}
                         {awaitingClientTasks.length > 0 && (
-                            <span>{awaitingClientTasks.length} Tasks Awaiting Client Data</span>
+                            <span className="inline sm:hidden">{awaitingClientTasks.length} Awaiting</span>
+                        )}
+                        {awaitingClientTasks.length > 0 && (
+                            <span className="hidden sm:inline">{awaitingClientTasks.length} Awaiting Client Data</span>
                         )}
                     </div>
                 </div>
 
                 <button
                     onClick={handleViewTasks}
-                    className="px-4 py-1.5 bg-white text-red-600 rounded-md font-semibold text-sm hover:bg-gray-100 transition-colors shadow-sm"
+                    className="flex-shrink-0 ml-3 px-3 py-1.5 sm:px-4 sm:py-1.5 bg-white text-red-600 rounded-md font-semibold text-xs sm:text-sm hover:bg-gray-100 transition-colors shadow-sm"
                 >
-                    View Tasks
+                    View
                 </button>
             </div>
         </div>

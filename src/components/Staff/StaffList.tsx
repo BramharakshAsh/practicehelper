@@ -87,193 +87,207 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search staff by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex-1 w-full sm:max-w-md relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <input
+            type="text"
+            placeholder="Search staff by name or email..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center space-x-3 w-full sm:w-auto">
+          <div className="flex items-center space-x-2 flex-1 sm:flex-none">
+            <Shield className="h-5 w-5 text-gray-400" />
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+            >
+              <option value="all">All Roles</option>
+              <option value="partner">Partners</option>
+              <option value="paid_staff">Paid Staff</option>
+              <option value="articles">Articles</option>
+            </select>
           </div>
-
-          <select
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Roles</option>
-            <option value="partner">Partners</option>
-            <option value="paid_staff">Paid Staff</option>
-            <option value="articles">Articles</option>
-          </select>
         </div>
       </div>
 
       {/* Staff Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {filteredStaff.map((member) => (
-          <div key={member.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div key={member.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow relative group flex flex-col">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <User className="h-5 w-5 text-blue-600" />
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <User className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 flex items-center space-x-2">
-                    <span>{member.name}</span>
+                  <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors flex items-center space-x-1.5">
+                    <span className="line-clamp-1">{member.name}</span>
                     {member.is_active ? (
-                      <UserCheck className="h-4 w-4 text-green-500" />
+                      <UserCheck className="h-4 w-4 text-green-500 flex-shrink-0" />
                     ) : (
-                      <UserX className="h-4 w-4 text-red-500" />
+                      <UserX className="h-4 w-4 text-red-500 flex-shrink-0" />
                     )}
                   </h3>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium border mt-1 ${getRoleColor(member.role)}`}>
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border mt-1 ${getRoleColor(member.role)}`}>
                     {getRoleLabel(member.role)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex space-x-1">
+              <div className="flex items-center space-x-1">
                 <button
                   onClick={() => openModal('view', member)}
-                  className="p-1 hover:bg-gray-100 rounded"
+                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-blue-600"
                 >
-                  <Eye className="h-4 w-4 text-gray-500" />
-                </button>
-                <button
-                  onClick={() => openModal('edit', member)}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Edit className="h-4 w-4 text-gray-500" />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to delete ${member.name}?`)) {
-                      onStaffDelete(member.id);
-                    }
-                  }}
-                  className="p-1 hover:bg-red-50 rounded"
-                >
-                  <Trash2 className="h-4 w-4 text-red-500" />
+                  <Eye className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Mail className="h-3 w-3" />
-                <span>{member.email}</span>
+            <div className="space-y-2 mb-6 flex-1">
+              <div className="flex items-center text-sm text-gray-600">
+                <Mail className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                <span className="truncate">{member.email}</span>
               </div>
 
               {member.phone && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Phone className="h-3 w-3" />
+                <div className="flex items-center text-sm text-gray-600">
+                  <Phone className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
                   <span>{member.phone}</span>
                 </div>
               )}
 
               {member.date_of_joining && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Calendar className="h-3 w-3" />
-                  <span>Joined: {new Date(member.date_of_joining).toLocaleDateString()}</span>
+                <div className="flex items-center text-sm text-gray-600">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                  <span className="text-xs">Joined {new Date(member.date_of_joining).toLocaleDateString()}</span>
                 </div>
               )}
             </div>
 
-            <div className="pt-4 border-t border-gray-100">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">
-                  Status: {member.is_active ? 'Active' : 'Inactive'}
-                </span>
-                <button
-                  onClick={() => toggleStaffStatus(member.id, member.is_active)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${member.is_active
-                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                    : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
-                >
-                  {member.is_active ? 'Deactivate' : 'Activate'}
-                </button>
-              </div>
+            <div className="flex items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t border-gray-100 flex-col sm:flex-row">
+              <button
+                onClick={() => openModal('edit', member)}
+                className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+              >
+                <Edit className="h-4 w-4" />
+                <span>Edit</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm(`Are you sure you want to delete ${member.name}?`)) {
+                    onStaffDelete(member.id);
+                  }
+                }}
+                className="px-3 py-2 hover:bg-red-50 rounded-lg transition-colors text-red-500 border border-red-100 flex items-center justify-center"
+                title="Delete Staff"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sm:hidden ml-2">Delete</span>
+              </button>
             </div>
           </div>
         ))}
       </div>
 
-      {filteredStaff.length === 0 && (
-        <div className="text-center py-12">
-          <User className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No staff members found</h3>
-          <p className="text-gray-600 mb-4">
-            {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first team member'}
-          </p>
-          {!searchTerm && (
-            <button
-              onClick={() => openModal('create')}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Add First Staff Member
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Staff Modal */}
-      {showModal && (
-        <StaffModal
-          staff={selectedStaff || undefined}
-          mode={viewMode}
-          onClose={closeModal}
-          onSubmit={(staffData) => {
-            if (viewMode === 'create') {
-              onStaffCreate(staffData);
-            } else if (viewMode === 'edit' && selectedStaff) {
-              onStaffUpdate(selectedStaff.id, staffData);
-            }
-            closeModal();
-          }}
-        />
-      )}
-
-      {/* Workload Summary */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-          <Shield className="h-5 w-5" />
-          <span>Staff Workload Summary</span>
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {filteredStaff.filter(member => member.is_active).map((member) => {
-            const memberTasks = tasks.filter(t => t.staff_id === member.user_id);
-            const activeTasks = memberTasks.filter(t => t.status !== 'filed_completed').length;
-            const overdueTasks = memberTasks.filter(t =>
-              t.status !== 'filed_completed' &&
-              new Date(t.due_date) < new Date()
-            ).length;
-
-            return (
-              <div key={member.id} className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900">{member.name}</h4>
-                <p className="text-sm text-gray-600 mb-2">{getRoleLabel(member.role)}</p>
-                <div className="flex items-center justify-between text-sm">
-                  <span>Active Tasks:</span>
-                  <span className={`font-medium ${activeTasks > 5 ? 'text-orange-600' : 'text-gray-900'}`}>{activeTasks}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span>Overdue:</span>
-                  <span className={`font-medium ${overdueTasks > 0 ? 'text-red-600' : 'text-green-600'}`}>{overdueTasks}</span>
-                </div>
-              </div>
-            );
-          })}
+      <div className="pt-4 border-t border-gray-100">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-600">
+            Status: {member.is_active ? 'Active' : 'Inactive'}
+          </span>
+          <button
+            onClick={() => toggleStaffStatus(member.id, member.is_active)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${member.is_active
+              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+              : 'bg-green-100 text-green-700 hover:bg-green-200'
+              }`}
+          >
+            {member.is_active ? 'Deactivate' : 'Activate'}
+          </button>
         </div>
       </div>
     </div>
+  ))
+}
+      </div >
+
+{
+  filteredStaff.length === 0 && (
+    <div className="text-center py-12">
+      <User className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+      <h3 className="text-lg font-medium text-gray-900 mb-2">No staff members found</h3>
+      <p className="text-gray-600 mb-4">
+        {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first team member'}
+      </p>
+      {!searchTerm && (
+        <button
+          onClick={() => openModal('create')}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Add First Staff Member
+        </button>
+      )}
+    </div>
+  )
+}
+
+{/* Staff Modal */ }
+{
+  showModal && (
+    <StaffModal
+      staff={selectedStaff || undefined}
+      mode={viewMode}
+      onClose={closeModal}
+      onSubmit={(staffData) => {
+        if (viewMode === 'create') {
+          onStaffCreate(staffData);
+        } else if (viewMode === 'edit' && selectedStaff) {
+          onStaffUpdate(selectedStaff.id, staffData);
+        }
+        closeModal();
+      }}
+    />
+  )
+}
+
+{/* Workload Summary */ }
+<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+    <Shield className="h-5 w-5" />
+    <span>Staff Workload Summary</span>
+  </h3>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    {filteredStaff.filter(member => member.is_active).map((member) => {
+      const memberTasks = tasks.filter(t => t.staff_id === member.user_id);
+      const activeTasks = memberTasks.filter(t => t.status !== 'filed_completed').length;
+      const overdueTasks = memberTasks.filter(t =>
+        t.status !== 'filed_completed' &&
+        new Date(t.due_date) < new Date()
+      ).length;
+
+      return (
+        <div key={member.id} className="bg-gray-50 rounded-lg p-4">
+          <h4 className="font-medium text-gray-900">{member.name}</h4>
+          <p className="text-sm text-gray-600 mb-2">{getRoleLabel(member.role)}</p>
+          <div className="flex items-center justify-between text-sm">
+            <span>Active Tasks:</span>
+            <span className={`font-medium ${activeTasks > 5 ? 'text-orange-600' : 'text-gray-900'}`}>{activeTasks}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span>Overdue:</span>
+            <span className={`font-medium ${overdueTasks > 0 ? 'text-red-600' : 'text-green-600'}`}>{overdueTasks}</span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</div>
+    </div >
   );
 };
 

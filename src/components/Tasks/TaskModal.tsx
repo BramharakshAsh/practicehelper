@@ -220,10 +220,10 @@ const TaskModal: React.FC<TaskModalProps> = ({
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 1 + i);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Create New Task</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white rounded-none sm:rounded-lg w-full max-w-2xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Create New Task</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -232,10 +232,10 @@ const TaskModal: React.FC<TaskModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
                 <Building className="h-4 w-4 inline mr-2" />
                 Client *
               </label>
@@ -243,7 +243,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 name="client_id"
                 value={formData.client_id}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
                 required
               >
                 <option value="">Select Client</option>
@@ -256,7 +256,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
                 <User className="h-4 w-4 inline mr-2" />
                 Assign to Staff *
               </label>
@@ -264,7 +264,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 name="staff_id"
                 value={formData.staff_id}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
                 required
               >
                 <option value="">Select Staff</option>
@@ -277,9 +277,9 @@ const TaskModal: React.FC<TaskModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
                 <FileText className="h-4 w-4 inline mr-2" />
                 Compliance Type *
               </label>
@@ -287,7 +287,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 name="compliance_type_id"
                 value={formData.compliance_type_id}
                 onChange={handleComplianceChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
                 required
               >
                 <option value="">Select Compliance Type</option>
@@ -304,14 +304,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
                 Priority
               </label>
               <select
                 name="priority"
                 value={formData.priority}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
               >
                 <option value="low">Low Priority</option>
                 <option value="medium">Medium Priority</option>
@@ -323,17 +323,17 @@ const TaskModal: React.FC<TaskModalProps> = ({
           {/* Period Selection Based on Compliance Frequency */}
           {selectedCompliance && selectedPeriod.type && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 text-xs sm:text-sm">
                 <Calendar className="h-4 w-4 inline mr-2" />
                 Period *
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {selectedPeriod.type === 'month' && (
                   <>
                     <select
                       value={selectedPeriod.month}
                       onChange={(e) => handlePeriodChange('month', parseInt(e.target.value))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
                     >
                       {months.map(m => (
                         <option key={m.value} value={m.value}>{m.label}</option>
@@ -342,7 +342,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                     <select
                       value={selectedPeriod.year}
                       onChange={(e) => handlePeriodChange('year', parseInt(e.target.value))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
                     >
                       {years.map(y => (
                         <option key={y} value={y}>{y}</option>
@@ -355,7 +355,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                     <select
                       value={selectedPeriod.quarter}
                       onChange={(e) => handlePeriodChange('quarter', parseInt(e.target.value))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
                     >
                       <option value={1}>Q1 (Apr-Jun)</option>
                       <option value={2}>Q2 (Jul-Sep)</option>
@@ -365,7 +365,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                     <select
                       value={selectedPeriod.year}
                       onChange={(e) => handlePeriodChange('year', parseInt(e.target.value))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
                     >
                       {years.map(y => (
                         <option key={y} value={y}>FY {y}-{(y + 1).toString().slice(2)}</option>
@@ -377,7 +377,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                   <select
                     value={selectedPeriod.year}
                     onChange={(e) => handlePeriodChange('year', parseInt(e.target.value))}
-                    className="w-full col-span-2 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full col-span-2 border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
                   >
                     {years.map(y => (
                       <option key={y} value={y}>FY {y}-{(y + 1).toString().slice(2)}</option>
@@ -389,7 +389,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
               Task Title *
             </label>
             <input
@@ -397,15 +397,15 @@ const TaskModal: React.FC<TaskModalProps> = ({
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
               placeholder="e.g., GSTR-3B - March 2024"
               required
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
                 <Calendar className="h-4 w-4 inline mr-2" />
                 Due Date * {selectedCompliance?.category !== 'Others' && '(Auto-calculated)'}
               </label>
@@ -414,7 +414,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 name="due_date"
                 value={formData.due_date}
                 onChange={handleChange}
-                className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${selectedCompliance?.category === 'Others' ? 'bg-white' : 'bg-gray-50'
+                className={`w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${selectedCompliance?.category === 'Others' ? 'bg-white' : 'bg-gray-50'
                   }`}
                 required
                 readOnly={selectedCompliance?.category !== 'Others' && !!selectedCompliance && !!selectedPeriod.type}
@@ -422,14 +422,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
                 Period (Auto-filled)
               </label>
               <input
                 type="text"
                 name="period"
                 value={formData.period}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm sm:text-base"
                 placeholder="e.g., March 2024, Q4 FY24"
                 readOnly
               />
@@ -437,7 +437,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
               Description
             </label>
             <textarea
@@ -445,7 +445,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
               value={formData.description}
               onChange={handleChange}
               rows={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
               placeholder="Additional details about the task..."
             />
           </div>
@@ -455,32 +455,40 @@ const TaskModal: React.FC<TaskModalProps> = ({
               {error}
             </div>
           )}
-
-          <div className="flex space-x-4 pt-4">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Creating...
-                </>
-              ) : (
-                'Create Task'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          </div>
         </form>
+
+        <div className="p-4 sm:p-6 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 flex-shrink-0">
+          <button
+            type="submit"
+            form="task-form"
+            onClick={(e) => {
+              // Trigger form submission manually since the button is outside the form now
+              const form = document.getElementById('task-form') as HTMLFormElement;
+              if (form) form.requestSubmit();
+            }}
+            disabled={isSubmitting}
+            className="w-full sm:flex-1 bg-blue-600 text-white py-2.5 sm:py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold shadow-sm text-sm sm:text-base"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Creating...
+              </>
+            ) : (
+              'Create Task'
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="w-full sm:flex-1 bg-white border border-gray-300 text-gray-700 py-2.5 sm:py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 text-sm sm:text-base shadow-sm font-medium"
+          >
+            Cancel
+          </button>
+        </div>
+        {/* Hidden form for the button to trigger */}
+        <form id="task-form" onSubmit={handleSubmit} className="hidden"></form>
       </div>
     </div>
   );
