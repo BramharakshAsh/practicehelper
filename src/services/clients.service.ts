@@ -22,12 +22,20 @@ class ClientsService {
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated or missing firm ID');
 
+    const normalizedClient = {
+      ...client,
+      name: client.name.trim(),
+      pan: client.pan.trim().toUpperCase(),
+      gstin: client.gstin?.trim() || null,
+      email: client.email?.trim() || null,
+      phone: client.phone?.trim() || null,
+      address: client.address?.trim() || null,
+      firm_id: firmId,
+    };
+
     const { data, error } = await supabase
       .from('clients')
-      .insert({
-        ...client,
-        firm_id: firmId,
-      })
+      .insert(normalizedClient)
       .select()
       .single();
 
@@ -60,9 +68,20 @@ class ClientsService {
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated or missing firm ID');
 
+    const normalizedClients = clientsData.map(c => ({
+      ...c,
+      name: c.name.trim(),
+      pan: c.pan.trim().toUpperCase(),
+      gstin: c.gstin?.trim() || null,
+      email: c.email?.trim() || null,
+      phone: c.phone?.trim() || null,
+      address: c.address?.trim() || null,
+      firm_id: firmId,
+    }));
+
     const { data, error } = await supabase
       .from('clients')
-      .insert(clientsData.map(c => ({ ...c, firm_id: firmId })))
+      .insert(normalizedClients)
       .select();
 
     if (error) throw error;

@@ -24,7 +24,7 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSubmit, mo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.pan) {
       alert('Please fill in all required fields');
       return;
@@ -35,7 +35,17 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSubmit, mo
       return;
     }
 
-    onSubmit(formData);
+    const normalizedData = {
+      ...formData,
+      name: formData.name.trim(),
+      pan: formData.pan.trim().toUpperCase(),
+      gstin: formData.gstin.trim() || null,
+      email: formData.email.trim() || null,
+      phone: formData.phone.trim() || null,
+      address: formData.address.trim() || null,
+    };
+
+    onSubmit(normalizedData);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
