@@ -5,6 +5,8 @@ import './index.css';
 import { seedInitialData } from './services/seed.service';
 import { DataMigrationService } from './services/data-migration.service';
 
+import { BrowserRouter } from 'react-router-dom';
+
 // Check and migrate data if needed
 const dataMigrated = DataMigrationService.checkAndMigrateData();
 
@@ -17,6 +19,8 @@ if (dataMigrated) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </StrictMode>
 );
