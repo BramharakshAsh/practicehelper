@@ -191,102 +191,97 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
                 <span className="sm:hidden ml-2">Delete</span>
               </button>
             </div>
+            <div className="pt-4 mt-auto border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  Status: <span className={member.is_active ? 'text-green-600 font-medium' : 'text-red-500 font-medium'}>
+                    {member.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </span>
+                <button
+                  onClick={() => toggleStaffStatus(member.id, member.is_active)}
+                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${member.is_active
+                    ? 'text-red-600 hover:bg-red-50'
+                    : 'text-green-600 hover:bg-green-50'
+                    }`}
+                >
+                  {member.is_active ? 'Deactivate' : 'Activate'}
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="pt-4 border-t border-gray-100">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">
-            Status: {member.is_active ? 'Active' : 'Inactive'}
-          </span>
-          <button
-            onClick={() => toggleStaffStatus(member.id, member.is_active)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${member.is_active
-              ? 'bg-red-100 text-red-700 hover:bg-red-200'
-              : 'bg-green-100 text-green-700 hover:bg-green-200'
-              }`}
-          >
-            {member.is_active ? 'Deactivate' : 'Activate'}
-          </button>
+      {filteredStaff.length === 0 && (
+        <div className="text-center py-12">
+          <User className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No staff members found</h3>
+          <p className="text-gray-600 mb-4">
+            {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first team member'}
+          </p>
+          {!searchTerm && (
+            <button
+              onClick={() => openModal('create')}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Add First Staff Member
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Staff Modal */}
+      {
+        showModal && (
+          <StaffModal
+            staff={selectedStaff || undefined}
+            mode={viewMode}
+            onClose={closeModal}
+            onSubmit={(staffData) => {
+              if (viewMode === 'create') {
+                onStaffCreate(staffData);
+              } else if (viewMode === 'edit' && selectedStaff) {
+                onStaffUpdate(selectedStaff.id, staffData);
+              }
+              closeModal();
+            }}
+          />
+        )
+      }
+
+      {/* Workload Summary */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <Shield className="h-5 w-5" />
+          <span>Staff Workload Summary</span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {filteredStaff.filter(member => member.is_active).map((member) => {
+            const memberTasks = tasks.filter(t => t.staff_id === member.user_id);
+            const activeTasks = memberTasks.filter(t => t.status !== 'filed_completed').length;
+            const overdueTasks = memberTasks.filter(t =>
+              t.status !== 'filed_completed' &&
+              new Date(t.due_date) < new Date()
+            ).length;
+
+            return (
+              <div key={member.id} className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900">{member.name}</h4>
+                <p className="text-sm text-gray-600 mb-2">{getRoleLabel(member.role)}</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Active Tasks:</span>
+                  <span className={`font-medium ${activeTasks > 5 ? 'text-orange-600' : 'text-gray-900'}`}>{activeTasks}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Overdue:</span>
+                  <span className={`font-medium ${overdueTasks > 0 ? 'text-red-600' : 'text-green-600'}`}>{overdueTasks}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
-    </div>
-  ))
-}
-      </div >
-
-{
-  filteredStaff.length === 0 && (
-    <div className="text-center py-12">
-      <User className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 mb-2">No staff members found</h3>
-      <p className="text-gray-600 mb-4">
-        {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first team member'}
-      </p>
-      {!searchTerm && (
-        <button
-          onClick={() => openModal('create')}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Add First Staff Member
-        </button>
-      )}
-    </div>
-  )
-}
-
-{/* Staff Modal */ }
-{
-  showModal && (
-    <StaffModal
-      staff={selectedStaff || undefined}
-      mode={viewMode}
-      onClose={closeModal}
-      onSubmit={(staffData) => {
-        if (viewMode === 'create') {
-          onStaffCreate(staffData);
-        } else if (viewMode === 'edit' && selectedStaff) {
-          onStaffUpdate(selectedStaff.id, staffData);
-        }
-        closeModal();
-      }}
-    />
-  )
-}
-
-{/* Workload Summary */ }
-<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-    <Shield className="h-5 w-5" />
-    <span>Staff Workload Summary</span>
-  </h3>
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-    {filteredStaff.filter(member => member.is_active).map((member) => {
-      const memberTasks = tasks.filter(t => t.staff_id === member.user_id);
-      const activeTasks = memberTasks.filter(t => t.status !== 'filed_completed').length;
-      const overdueTasks = memberTasks.filter(t =>
-        t.status !== 'filed_completed' &&
-        new Date(t.due_date) < new Date()
-      ).length;
-
-      return (
-        <div key={member.id} className="bg-gray-50 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900">{member.name}</h4>
-          <p className="text-sm text-gray-600 mb-2">{getRoleLabel(member.role)}</p>
-          <div className="flex items-center justify-between text-sm">
-            <span>Active Tasks:</span>
-            <span className={`font-medium ${activeTasks > 5 ? 'text-orange-600' : 'text-gray-900'}`}>{activeTasks}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span>Overdue:</span>
-            <span className={`font-medium ${overdueTasks > 0 ? 'text-red-600' : 'text-green-600'}`}>{overdueTasks}</span>
-          </div>
-        </div>
-      );
-    })}
-  </div>
-</div>
     </div >
   );
 };
