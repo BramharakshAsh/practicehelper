@@ -39,6 +39,7 @@ const ResetPasswordPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('ResetPasswordPage: Starting password update...');
 
         if (password !== confirmPassword) {
             setErrorMessage('Passwords do not match');
@@ -57,13 +58,19 @@ const ResetPasswordPage: React.FC = () => {
         setErrorMessage('');
 
         try {
+            console.log('ResetPasswordPage: Calling authService.updatePassword...');
             await authService.updatePassword(password);
+            console.log('ResetPasswordPage: Password update successful.');
+
+            // Set success immediately
             setStatus('success');
+            setIsLoading(false);
+
+            console.log('ResetPasswordPage: Status set to success.');
         } catch (error: any) {
-            console.error('Update password error:', error);
+            console.error('ResetPasswordPage: Error updating password:', error);
             setStatus('error');
             setErrorMessage(error.message || 'Failed to update password. Your session might have expired.');
-        } finally {
             setIsLoading(false);
         }
     };
