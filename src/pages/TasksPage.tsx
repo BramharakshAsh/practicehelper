@@ -14,7 +14,7 @@ const TasksPage: React.FC = () => {
     const { user } = useAuthStore();
 
     const currentRole = user?.role || 'staff';
-    const currentStaffId = user?.role === 'staff' ? user.id : undefined;
+    const currentStaffId = ['staff', 'paid_staff', 'articles'].includes(currentRole) ? user?.id : undefined;
 
     return (
         <TaskBoard

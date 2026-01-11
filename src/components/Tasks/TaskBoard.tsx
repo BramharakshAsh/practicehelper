@@ -43,10 +43,15 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
     { value: 'filed_completed', label: 'Filed/Completed', count: 0 },
   ];
 
+  const isStaffView = ['staff', 'paid_staff', 'articles'].includes(currentRole);
+
   // Filter tasks based on current role
   let filteredTasks = tasks;
-  if (currentRole === 'staff' && currentStaffId) {
-    filteredTasks = tasks.filter(task => task.staff_id === currentStaffId);
+  if (isStaffView && currentStaffId) {
+    filteredTasks = tasks.filter(task =>
+      task.staff_id === currentStaffId ||
+      task.assigned_by === currentStaffId
+    );
   }
 
   // Apply filters
@@ -90,11 +95,11 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            {currentRole === 'staff' ? 'My Tasks' : 'Task Management'}
+            {isStaffView ? 'My Tasks' : 'Task Management'}
           </h2>
           <p className="text-gray-600 mt-1">
-            {currentRole === 'staff'
-              ? 'View and manage your assigned tasks'
+            {isStaffView
+              ? 'View and manage your tasks'
               : 'Manage and track all tasks across your practice'
             }
           </p>
@@ -114,7 +119,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
               List
             </button>
           </div>
-          {currentRole === 'partner' && (
+          {['partner', 'manager', 'staff', 'paid_staff', 'articles'].includes(currentRole) && (
             <button
               onClick={() => setShowModal(true)}
               className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"

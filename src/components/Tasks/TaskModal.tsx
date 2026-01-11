@@ -29,6 +29,17 @@ const TaskModal: React.FC<TaskModalProps> = ({
     period: '',
   });
 
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (user && !formData.staff_id) {
+      const currentStaff = staff.find(s => s.user_id === user.id);
+      if (currentStaff) {
+        setFormData(prev => ({ ...prev, staff_id: user.id }));
+      }
+    }
+  }, [user, staff]);
+
   const [selectedPeriod, setSelectedPeriod] = useState({
     type: '', // 'month', 'quarter', 'year'
     month: new Date().getMonth() + 1,
@@ -133,22 +144,33 @@ const TaskModal: React.FC<TaskModalProps> = ({
     }));
   }, [selectedCompliance, selectedPeriod]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     if (!formData.client_id || !formData.staff_id || !formData.compliance_type_id || !formData.title || !formData.due_date) {
-      alert('Please fill in all required fields');
+      setError('Please fill in all required fields');
       return;
     }
 
-    const newTask: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'> = {
-      ...formData,
-      status: 'assigned',
-      assigned_by: useAuthStore.getState().user?.id || '',
-    };
+    try {
+      setIsSubmitting(true);
+      const newTask: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'> = {
+        ...formData,
+        status: 'assigned',
+        assigned_by: useAuthStore.getState().user?.id || '',
+      };
 
-    onSubmit(newTask);
-    onClose();
+      await onSubmit(newTask);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to create task. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -428,17 +450,32 @@ const TaskModal: React.FC<TaskModalProps> = ({
             />
           </div>
 
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
           <div className="flex space-x-4 pt-4">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={isSubmitting}
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold"
             >
-              Create Task
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating...
+                </>
+              ) : (
+                'Create Task'
+              )}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+              disabled={isSubmitting}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>

@@ -30,6 +30,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [selectedTaskTypes, setSelectedTaskTypes] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [generationStats, setGenerationStats] = useState<{ total: number; random: number; defined: number } | null>(null);
 
   // Helper function to map task types to parent compliance types
@@ -106,6 +107,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
 
   const generateTasks = async () => {
     setIsGenerating(true);
+    setError(null);
 
     try {
       const relations = await clientsService.getClientStaffRelations();
@@ -215,20 +217,20 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
         });
       });
 
-      // Don't close immediately, show stats
-      setGenerationStats({
-        total: tasks.length,
-        random: randomCount,
-        defined: definedCount
-      });
-
-      // Pass tasks to parent for actual creation
       if (tasks.length > 0) {
-        onGenerate(tasks);
+        setGenerationStats({
+          total: tasks.length,
+          random: randomCount,
+          defined: definedCount
+        });
+        await onGenerate(tasks);
+      } else {
+        setError('No tasks were generated based on current selection.');
       }
 
-    } catch (error) {
-      console.error("Error generating tasks", error);
+    } catch (err: any) {
+      console.error("Error generating tasks", err);
+      setError(err.message || 'Failed to generate tasks. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -359,8 +361,8 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
                       key={type}
                       onClick={() => setSelectedPeriod(prev => ({ ...prev, type }))}
                       className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${selectedPeriod.type === type
-                          ? 'bg-white text-blue-600 shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
                       {type.charAt(0).toUpperCase() + type.slice(1)}ly
@@ -531,6 +533,12 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
               </div>
             </div>
           </div>
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+              {error}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex space-x-4">

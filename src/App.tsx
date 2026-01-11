@@ -23,9 +23,10 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import AuditDashboard from './pages/AuditDashboard';
 import AuditWorkspace from './pages/AuditWorkspace';
 
+import ErrorBoundary from './components/Common/ErrorBoundary';
+
 function App() {
   const { user, isAuthenticated } = useAuthStore();
-
   // Data initialization (prefetching)
   const { fetchClients } = useClientsStore();
   const { fetchStaff } = useStaffStore();
@@ -38,42 +39,39 @@ function App() {
       fetchTasks();
     }
   }, [isAuthenticated]);
-
-  if (!isAuthenticated && !user && window.location.pathname === '/') {
-    // Optional: handle initial load redirect if needed, but Router handles it below
-  }
-
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/login"
-          element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
-        />
-        <Route
-          path="/forgot-password"
-          element={<ForgotPasswordPage />}
-        />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/login"
+            element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+          />
+          <Route
+            path="/forgot-password"
+            element={<ForgotPasswordPage />}
+          />
 
-        <Route
-          path="/"
-          element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />}
-        >
-          <Route index element={<DashboardPage />} />
-          <Route path="tasks" element={<TasksPage />} />
-          <Route path="clients" element={<ClientsPage />} />
-          <Route path="staff" element={<StaffPage />} />
-          <Route path="calendar" element={<CalendarPage />} />
-          <Route path="import" element={<ImportPage />} />
-          <Route path="auto-tasks" element={<AutoTasksPage />} />
-          <Route path="audits" element={<AuditDashboard />} />
-          <Route path="audits/:id" element={<AuditWorkspace />} />
-          <Route path="reports" element={<ReportsPage />} />
-          {/* Catch all redirect to dashboard */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+          <Route
+            path="/"
+            element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />}
+          >
+            <Route index element={<DashboardPage />} />
+            <Route path="tasks" element={<TasksPage />} />
+            <Route path="clients" element={<ClientsPage />} />
+            <Route path="staff" element={<StaffPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="import" element={<ImportPage />} />
+            <Route path="auto-tasks" element={<AutoTasksPage />} />
+            <Route path="audits" element={<AuditDashboard />} />
+            <Route path="audits/:id" element={<AuditWorkspace />} />
+            <Route path="reports" element={<ReportsPage />} />
+            {/* Catch all redirect to dashboard */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
