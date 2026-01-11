@@ -65,6 +65,11 @@ class AuthService {
     if (error) throw error;
   }
 
+  async updatePassword(password: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  }
+
   async registerOrganization(data: RegisterOrganizationData): Promise<void> {
     // 1. Sign up Partner
     const { data: authData, error: authError } = await supabase.auth.signUp({

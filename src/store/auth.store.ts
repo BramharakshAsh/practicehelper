@@ -13,6 +13,7 @@ interface AuthState {
   // Actions
   login: (role: UserRole, credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  setUser: (user: User | null) => void;
   clearError: () => void;
 }
 
@@ -60,6 +61,10 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false
           });
         });
+      },
+
+      setUser: (user: User | null) => {
+        set({ user, isAuthenticated: !!user, isLoading: false });
       },
 
       clearError: () => set({ error: null }),
