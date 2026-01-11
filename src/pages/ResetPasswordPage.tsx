@@ -27,6 +27,16 @@ const ResetPasswordPage: React.FC = () => {
         checkSession();
     }, []);
 
+    const handleGoToLogin = async () => {
+        try {
+            await authService.logout();
+            navigate('/login');
+        } catch (error) {
+            console.error('Logout error:', error);
+            navigate('/login');
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -49,9 +59,6 @@ const ResetPasswordPage: React.FC = () => {
         try {
             await authService.updatePassword(password);
             setStatus('success');
-            // Sign out after password update to force fresh login if desired, 
-            // or just let them proceed. Typically it's better to force login.
-            await authService.logout();
         } catch (error: any) {
             console.error('Update password error:', error);
             setStatus('error');
@@ -83,12 +90,12 @@ const ResetPasswordPage: React.FC = () => {
                             <p className="text-sm text-gray-500 mb-6">
                                 Your password has been successfully reset. You can now login with your new password.
                             </p>
-                            <Link
-                                to="/login"
+                            <button
+                                onClick={handleGoToLogin}
                                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             >
                                 Go to Login
-                            </Link>
+                            </button>
                         </div>
                     ) : (
                         <form className="space-y-6" onSubmit={handleSubmit}>
