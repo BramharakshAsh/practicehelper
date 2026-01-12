@@ -58,10 +58,11 @@ class ErrorBoundary extends Component<Props, State> {
                                 Go Back
                             </button>
                         </div>
-                        {process.env.NODE_ENV === 'development' && this.state.error && (
+                        {this.state.error && (
                             <div className="mt-8 text-left">
-                                <div className="p-4 bg-gray-100 rounded-lg overflow-auto">
-                                    <p className="text-xs font-mono text-gray-800 break-words">
+                                <div className="p-4 bg-gray-100 rounded-lg overflow-auto border border-gray-200 shadow-inner">
+                                    <p className="text-xs font-mono text-red-800 break-words font-semibold mb-2 uppercase tracking-wider">Error Details:</p>
+                                    <p className="text-xs font-mono text-gray-800 break-words leading-relaxed">
                                         {this.state.error.toString()}
                                     </p>
                                 </div>

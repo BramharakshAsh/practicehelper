@@ -49,7 +49,7 @@ const CriticalAlertBanner: React.FC<CriticalAlertBannerProps> = ({ tasks, compli
     };
 
     return (
-        <div className="sticky top-0 z-50 w-full bg-red-600 text-white shadow-md">
+        <div className="sticky top-0 z-10 w-full bg-red-600 text-white shadow-md">
             <div className="container mx-auto max-w-7xl flex items-center justify-between px-4 py-2 sm:py-3 sm:px-6 lg:px-8">
                 <div className="flex items-center space-x-2 sm:space-x-3 overflow-hidden">
                     <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-white animate-pulse flex-shrink-0" />

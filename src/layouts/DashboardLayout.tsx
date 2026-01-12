@@ -37,7 +37,7 @@ const DashboardLayout: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             {/* Top Header */}
-            <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-[100]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex items-center">
@@ -52,8 +52,9 @@ const DashboardLayout: React.FC = () => {
                                     <Menu className="h-6 w-6" />
                                 )}
                             </button>
-                            <div className="flex items-center ml-2 lg:ml-0">
-                                <img src={Logo} alt="Firm Flow Logo" className="h-60 w-60 object-contain" />
+                            <div className="flex items-center ml-2 lg:ml-0 overflow-hidden">
+                                <img src={Logo} alt="Firm Flow Logo" className="h-8 sm:h-10 w-auto object-contain flex-shrink-0" />
+                                <span className="ml-2 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hidden sm:inline-block">Firm Flow</span>
                             </div>
                         </div>
 
@@ -101,7 +102,7 @@ const DashboardLayout: React.FC = () => {
 
                 {/* Mobile Navigation Drawer */}
                 {isMobileMenuOpen && (
-                    <div className="lg:hidden fixed inset-0 z-40 flex">
+                    <div className="lg:hidden fixed inset-0 z-[200] flex">
                         <div
                             className="fixed inset-0 bg-gray-600 bg-opacity-75"
                             onClick={closeMobileMenu}
@@ -117,7 +118,7 @@ const DashboardLayout: React.FC = () => {
                             </div>
                             <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
                                 <div className="flex-shrink-0 flex items-center px-4">
-                                    <img src={Logo} alt="Firm Flow Logo" className="h-20 w-20 object-contain" />
+                                    <img src={Logo} alt="Firm Flow Logo" className="h-10 w-auto object-contain" />
                                     <span className="text-xl font-bold text-gray-900 ml-2">Firm Flow</span>
                                 </div>
                                 <nav className="mt-5 px-2 space-y-1">
@@ -133,7 +134,7 @@ const DashboardLayout: React.FC = () => {
                                                 }`
                                             }
                                         >
-                                            <item.icon className={`mr-20 h-20 w-20 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                                            <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}`} />
                                             {item.label}
                                         </NavLink>
                                     ))}
