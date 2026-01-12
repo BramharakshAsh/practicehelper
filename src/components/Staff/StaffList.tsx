@@ -29,6 +29,8 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
     switch (role) {
       case 'partner':
         return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'manager':
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
       case 'paid_staff':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'articles':
@@ -42,6 +44,8 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
     switch (role) {
       case 'partner':
         return 'Partner';
+      case 'manager':
+        return 'Manager';
       case 'paid_staff':
         return 'Paid Staff';
       case 'articles':
@@ -108,6 +112,7 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
             >
               <option value="all">All Roles</option>
               <option value="partner">Partners</option>
+              <option value="manager">Managers</option>
               <option value="paid_staff">Paid Staff</option>
               <option value="articles">Articles</option>
             </select>
@@ -236,6 +241,7 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
         showModal && (
           <StaffModal
             staff={selectedStaff || undefined}
+            allStaff={staff}
             mode={viewMode}
             onClose={closeModal}
             onSubmit={(staffData) => {

@@ -37,6 +37,7 @@ export interface Client {
   work_types: string[];
   is_active: boolean;
   created_by?: string;
+  manager_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +57,7 @@ export interface Staff {
   is_available: boolean;
   is_active: boolean;
   date_of_joining?: string;
+  manager_id?: string;
   created_at: string;
   updated_at: string;
 }

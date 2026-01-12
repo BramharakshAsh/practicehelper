@@ -4,6 +4,7 @@ import { Building2, User, Lock, Eye, EyeOff } from 'lucide-react';
 import { UserRole } from '../../types';
 import { useAuthStore } from '../../store/auth.store';
 import RegisterOrganizationModal from './RegisterOrganizationModal';
+import Logo from '../../assets/Logo.png';
 
 const LoginPage: React.FC = () => {
   const { login, isLoading, error, clearError } = useAuthStore();
@@ -33,9 +34,8 @@ const LoginPage: React.FC = () => {
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
-          <div className="flex items-center justify-center space-x-3 mb-2 sm:mb-4">
-            <Building2 className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Firm Flow</h1>
+          <div className="flex flex-col items-center justify-center mb-2 sm:mb-4">
+            <img src={Logo} alt="Firm Flow Logo" className="w-64 sm:w-80 h-auto object-contain mb-4" />
           </div>
           <p className="text-gray-600 text-sm sm:text-base">Streamline your firm's workflow</p>
         </div>
