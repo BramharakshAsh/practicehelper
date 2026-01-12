@@ -4,15 +4,21 @@ import { useAuthStore } from '../store/auth.store';
 
 class ClientsService {
   async getClients(): Promise<Client[]> {
-    const firmId = useAuthStore.getState().user?.firm_id;
+    const user = useAuthStore.getState().user;
+    const firmId = user?.firm_id;
     if (!firmId) return [];
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('clients')
       .select('*')
       .eq('firm_id', firmId)
-      .eq('is_active', true)
-      .order('name');
+      .eq('is_active', true);
+
+    if (user.role === 'manager') {
+      query = query.eq('manager_id', user.id);
+    }
+
+    const { data, error } = await query.order('name');
 
     if (error) throw error;
     return data || [];
@@ -21,6 +27,9 @@ class ClientsService {
   async createClient(client: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>): Promise<Client> {
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated or missing firm ID');
+
+    const currentUser = useAuthStore.getState().user;
+    const finalManagerId = client.manager_id || (currentUser?.role === 'manager' ? currentUser.id : undefined);
 
     const normalizedClient = {
       ...client,
@@ -31,6 +40,7 @@ class ClientsService {
       phone: client.phone?.trim() || null,
       address: client.address?.trim() || null,
       firm_id: firmId,
+      manager_id: finalManagerId,
     };
 
     const { data, error } = await supabase

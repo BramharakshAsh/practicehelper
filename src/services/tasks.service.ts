@@ -16,10 +16,11 @@ const mapDBTask = (task: any): Task => ({
 
 class TasksService {
   async getTasks(): Promise<Task[]> {
-    const firmId = useAuthStore.getState().user?.firm_id;
+    const user = useAuthStore.getState().user;
+    const firmId = user?.firm_id;
     if (!firmId) return [];
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('tasks')
       .select(`
         *,
@@ -27,8 +28,27 @@ class TasksService {
         staff:users!tasks_staff_id_fkey(*),
         compliance_type:compliance_types(*)
       `)
-      .eq('firm_id', firmId)
-      .order('due_date', { ascending: true });
+      .eq('firm_id', firmId);
+
+    if (user.role === 'manager') {
+      // Manager sees tasks for clients or staff assigned to them
+      // We need to fetch assigned staff and client IDs first or use a join-based filter
+      // For now, let's use a simpler approach if possible, but manager access is across tables.
+      // Easiest is to filter by client's manager_id or staff's manager_id.
+
+      const { data: staffIds } = await supabase.from('staff').select('user_id').eq('manager_id', user.id);
+      const { data: clientIds } = await supabase.from('clients').select('id').eq('manager_id', user.id);
+
+      const sIds = (staffIds || []).map(s => s.user_id);
+      const cIds = (clientIds || []).map(c => c.id);
+
+      // Also include themselves as staff
+      sIds.push(user.id);
+
+      query = query.or(`staff_id.in.(${sIds.join(',')}),client_id.in.(${cIds.join(',')})`);
+    }
+
+    const { data, error } = await query.order('due_date', { ascending: true });
 
     if (error) throw error;
     return (data || []).map(mapDBTask);

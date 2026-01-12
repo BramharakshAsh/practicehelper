@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { Plus, Search, Building, Phone, Mail, FileText, CreditCard as Edit, Eye, Filter, Trash2 } from 'lucide-react';
-import { Client, ComplianceType } from '../../types';
+import { Client, ComplianceType, Staff } from '../../types';
 import ClientModal from './ClientModal';
 
 interface ClientListProps {
   clients: Client[];
+  staff: Staff[];
   complianceTypes: ComplianceType[];
   onClientUpdate: (clientId: string, updates: Partial<Client>) => void;
   onClientCreate: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => void;
   onClientDelete: (clientId: string) => void;
 }
 
-const ClientList: React.FC<ClientListProps> = ({ clients, complianceTypes, onClientUpdate, onClientCreate, onClientDelete }) => {
+const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes, onClientUpdate, onClientCreate, onClientDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterWorkType, setFilterWorkType] = useState('all');
   const [showModal, setShowModal] = useState(false);
@@ -194,6 +195,7 @@ const ClientList: React.FC<ClientListProps> = ({ clients, complianceTypes, onCli
       {showModal && (
         <ClientModal
           client={selectedClient || undefined}
+          allStaff={staff}
           mode={viewMode}
           onClose={closeModal}
           onSubmit={(clientData) => {

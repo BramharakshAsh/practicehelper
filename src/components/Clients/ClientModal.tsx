@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { X, Building, Phone, Mail, FileText, CreditCard } from 'lucide-react';
-import { Client } from '../../types';
+import { Client, Staff } from '../../types';
+import { useAuthStore } from '../../store/auth.store';
 
 interface ClientModalProps {
   client?: Client;
+  allStaff?: Staff[];
   onClose: () => void;
   onSubmit: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => void;
   mode: 'create' | 'edit' | 'view';
 }
 
-const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSubmit, mode }) => {
+const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClose, onSubmit, mode }) => {
+  const { user: currentUser } = useAuthStore();
   const [formData, setFormData] = useState({
     name: client?.name || '',
     gstin: client?.gstin || '',
@@ -18,7 +21,20 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSubmit, mo
     phone: client?.phone || '',
     address: client?.address || '',
     work_types: client?.work_types || [],
+    manager_id: client?.manager_id || '',
   });
+
+  const getRoleLabel = (role: Staff['role']) => {
+    switch (role) {
+      case 'partner': return 'Partner';
+      case 'manager': return 'Manager';
+      case 'paid_staff': return 'Paid Staff';
+      case 'articles': return 'Articles';
+      default: return role;
+    }
+  };
+
+  const managers = allStaff.filter(s => s.role === 'manager' || s.role === 'partner');
 
   const workTypeOptions = ['GST', 'TDS', 'IT', 'ROC', 'Audit', 'Accounting'];
 
@@ -147,23 +163,33 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSubmit, mo
                 readOnly={isReadOnly}
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Phone className="h-4 w-4 inline mr-2" />
-                Phone
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="+91 98765 43210"
-                readOnly={isReadOnly}
-              />
-            </div>
           </div>
+
+          {currentUser?.role === 'partner' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Building className="h-4 w-4 inline mr-2 text-blue-500" />
+                  Assigned Manager
+                </label>
+                <select
+                  name="manager_id"
+                  value={formData.manager_id}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isReadOnly}
+                >
+                  <option value="">No Manager (Unassigned)</option>
+                  {managers.map(m => (
+                    <option key={m.user_id} value={m.user_id}>
+                      {m.name} ({getRoleLabel(m.role)})
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">The assigned manager will be able to manage this client's tasks.</p>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

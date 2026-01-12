@@ -5,18 +5,25 @@ import { useAuthStore } from '../store/auth.store';
 
 class StaffService {
   async getStaff(): Promise<Staff[]> {
-    const firmId = useAuthStore.getState().user?.firm_id;
+    const user = useAuthStore.getState().user;
+    const firmId = user?.firm_id;
     if (!firmId) return [];
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('staff')
       .select(`
         *,
-        user:users(*)
+        user:users!staff_user_id_fkey(*)
       `)
       .eq('firm_id', firmId)
-      .eq('is_active', true)
-      .order('name');
+      .eq('is_active', true);
+
+    if (user.role === 'manager') {
+      // Manager sees themselves AND staff assigned to them
+      query = query.or(`manager_id.eq.${user.id},user_id.eq.${user.id}`);
+    }
+
+    const { data, error } = await query.order('name');
 
     if (error) throw error;
 
@@ -90,12 +97,16 @@ class StaffService {
     }
 
     // 3. Create Staff Entry
+    const currentUser = useAuthStore.getState().user;
+    const finalManagerId = staffDetails.manager_id || (currentUser?.role === 'manager' ? currentUser.id : undefined);
+
     const { data, error } = await supabase
       .from('staff')
       .insert({
         ...staffDetails,
         user_id: userId,
         firm_id: firmId,
+        manager_id: finalManagerId,
       })
       .select()
       .single();

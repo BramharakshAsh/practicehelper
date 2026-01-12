@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
-import { X, User, Phone, Mail, Shield, Calendar, Key, Copy, Check } from 'lucide-react';
-import { Staff } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { X, User, Mail, Phone, Shield, Calendar, Check, Copy, Key } from 'lucide-react';
+import { Staff, UserRole } from '../../types';
+import { useAuthStore } from '../../store/auth.store';
 
 interface StaffModalProps {
   staff?: Staff;
+  allStaff?: Staff[];
   onClose: () => void;
   onSubmit: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => void;
   mode: 'create' | 'edit' | 'view';
 }
 
-const StaffModal: React.FC<StaffModalProps> = ({ staff, onClose, onSubmit, mode }) => {
+const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, onSubmit, mode }) => {
+  const { user: currentUser } = useAuthStore();
   const [formData, setFormData] = useState({
     name: staff?.name || '',
     email: staff?.email || '',
@@ -17,6 +20,7 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, onClose, onSubmit, mode 
     role: staff?.role || 'paid_staff' as Staff['role'],
     is_active: staff?.is_active ?? true,
     date_of_joining: staff?.date_of_joining || new Date().toISOString().split('T')[0],
+    manager_id: staff?.manager_id || '',
   });
 
   const [generateCredentials, setGenerateCredentials] = useState(false);
@@ -76,6 +80,8 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, onClose, onSubmit, mode 
     switch (role) {
       case 'partner':
         return 'Partner';
+      case 'manager':
+        return 'Manager';
       case 'paid_staff':
         return 'Paid Staff';
       case 'articles':
@@ -84,6 +90,8 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, onClose, onSubmit, mode 
         return role;
     }
   };
+
+  const managers = allStaff.filter(s => s.role === 'manager' || s.role === 'partner');
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -169,10 +177,37 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, onClose, onSubmit, mode 
               >
                 <option value="paid_staff">Paid Staff</option>
                 <option value="articles">Articles</option>
+                <option value="manager">Manager</option>
                 <option value="partner">Partner</option>
               </select>
             </div>
           </div>
+
+          {currentUser?.role === 'partner' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Shield className="h-4 w-4 inline mr-2 text-blue-500" />
+                  Assign to Manager
+                </label>
+                <select
+                  name="manager_id"
+                  value={formData.manager_id}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isReadOnly}
+                >
+                  <option value="">No Manager (Unassigned)</option>
+                  {managers.map(m => (
+                    <option key={m.user_id} value={m.user_id}>
+                      {m.name} ({getRoleLabel(m.role)})
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">Managers can manage tasks and staff assigned to them.</p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
