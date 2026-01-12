@@ -7,6 +7,7 @@ import {
     Calendar, PieChart, LogOut, Upload, Zap,
     ClipboardList, Menu, X
 } from 'lucide-react';
+import Logo from '../assets/Logo.png';
 
 const DashboardLayout: React.FC = () => {
     const { user, logout } = useAuthStore();
@@ -51,7 +52,9 @@ const DashboardLayout: React.FC = () => {
                                     <Menu className="h-6 w-6" />
                                 )}
                             </button>
-                            <span className="text-xl font-bold text-gray-900 ml-2 lg:ml-0">Firm Flow</span>
+                            <div className="flex items-center ml-2 lg:ml-0">
+                                <img src={Logo} alt="Firm Flow Logo" className="h-60 w-60 object-contain" />
+                            </div>
                         </div>
 
                         <div className="flex items-center space-x-2 sm:space-x-4">
@@ -114,7 +117,8 @@ const DashboardLayout: React.FC = () => {
                             </div>
                             <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
                                 <div className="flex-shrink-0 flex items-center px-4">
-                                    <span className="text-xl font-bold text-gray-900">Firm Flow</span>
+                                    <img src={Logo} alt="Firm Flow Logo" className="h-20 w-20 object-contain" />
+                                    <span className="text-xl font-bold text-gray-900 ml-2">Firm Flow</span>
                                 </div>
                                 <nav className="mt-5 px-2 space-y-1">
                                     {navItems.map((item) => (
@@ -129,7 +133,7 @@ const DashboardLayout: React.FC = () => {
                                                 }`
                                             }
                                         >
-                                            <item.icon className={`mr-4 h-6 w-6 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                                            <item.icon className={`mr-20 h-20 w-20 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}`} />
                                             {item.label}
                                         </NavLink>
                                     ))}
