@@ -7,9 +7,9 @@ interface ClientListProps {
   clients: Client[];
   staff: Staff[];
   complianceTypes: ComplianceType[];
-  onClientUpdate: (clientId: string, updates: Partial<Client>) => void;
-  onClientCreate: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => void;
-  onClientDelete: (clientId: string) => void;
+  onClientUpdate: (clientId: string, updates: Partial<Client>) => Promise<void>;
+  onClientCreate: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  onClientDelete: (clientId: string) => Promise<void>;
 }
 
 const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes, onClientUpdate, onClientCreate, onClientDelete }) => {
@@ -83,7 +83,7 @@ const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes
             >
               <option value="all">All Work Types</option>
               {complianceTypes.map(type => (
-                <option key={type.id} value={type.id}>{type.name}</option>
+                <option key={type.id} value={type.name}>{type.name}</option>
               ))}
             </select>
           </div>
@@ -198,11 +198,11 @@ const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes
           allStaff={staff}
           mode={viewMode}
           onClose={closeModal}
-          onSubmit={(clientData) => {
+          onSubmit={async (clientData) => {
             if (viewMode === 'create') {
-              onClientCreate(clientData);
+              await onClientCreate(clientData);
             } else if (viewMode === 'edit' && selectedClient) {
-              onClientUpdate(selectedClient.id, clientData);
+              await onClientUpdate(selectedClient.id, clientData);
             }
             closeModal();
           }}
