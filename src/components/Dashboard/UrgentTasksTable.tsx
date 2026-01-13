@@ -85,7 +85,7 @@ const UrgentTasksTable: React.FC<UrgentTasksTableProps> = ({ tasks, clients, sta
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Urgent & Overdue Tasks</h3>
                 <button
-                    onClick={() => navigate('/tasks')}
+                    onClick={() => navigate('/dashboard/tasks')}
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center"
                 >
                     View All Tasks
@@ -120,7 +120,7 @@ const UrgentTasksTable: React.FC<UrgentTasksTableProps> = ({ tasks, clients, sta
                                     <td className="py-3 pl-2 max-w-[200px] truncate">
                                         <span className="text-sm font-medium text-gray-900">{getClientName(task.client_id)}</span>
                                     </td>
-                                    <td className="py-3 text-sm text-blue-600 font-medium cursor-pointer" onClick={() => navigate('/tasks')}>
+                                    <td className="py-3 text-sm text-blue-600 font-medium cursor-pointer" onClick={() => navigate('/dashboard/tasks')}>
                                         {task.title}
                                     </td>
                                     <td className="py-3 text-sm text-gray-600">
@@ -150,7 +150,7 @@ const UrgentTasksTable: React.FC<UrgentTasksTableProps> = ({ tasks, clients, sta
                     </div>
                 ) : (
                     displayTasks.map(task => (
-                        <div key={task.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 active:bg-gray-100" onClick={() => navigate('/tasks')}>
+                        <div key={task.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 active:bg-gray-100" onClick={() => navigate('/dashboard/tasks')}>
                             <div className="flex justify-between items-start mb-2">
                                 <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase">
                                     {getClientName(task.client_id)}
@@ -175,7 +175,7 @@ const UrgentTasksTable: React.FC<UrgentTasksTableProps> = ({ tasks, clients, sta
             {urgentTasks.length > 5 && (
                 <div className="mt-4 text-center">
                     <button
-                        onClick={() => navigate('/tasks?sort=due_asc')}
+                        onClick={() => navigate('/dashboard/tasks?sort=due_asc')}
                         className="text-sm text-gray-500 hover:text-gray-700"
                     >
                         {urgentTasks.length - 5} more urgent tasks...

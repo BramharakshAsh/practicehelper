@@ -40,9 +40,9 @@ const DashboardPage: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 animate-fade-in">
             {/* Section A: Critical Alert Strip - Sticky */}
-            <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-8 mb-6 sticky top-0 z-30">
+            <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-8 mb-8 sticky top-0 z-30">
                 <CriticalAlertBanner tasks={tasks} complianceTypes={complianceTypes} />
             </div>
 
@@ -53,30 +53,40 @@ const DashboardPage: React.FC = () => {
                 complianceTypes={complianceTypes}
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Column (2/3 width) */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-2 space-y-8">
                     {/* Section C: Statutory Heatmap */}
-                    <StatutoryHeatmap tasks={tasks} complianceTypes={complianceTypes} />
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
+                        <StatutoryHeatmap tasks={tasks} complianceTypes={complianceTypes} />
+                    </div>
 
                     {/* Section D: Urgent Tasks Table */}
-                    <UrgentTasksTable tasks={tasks} clients={clients} staff={staff} />
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
+                        <UrgentTasksTable tasks={tasks} clients={clients} staff={staff} />
+                    </div>
 
                     {/* Section E: Client Dependency Tracker */}
-                    <ClientDependencyWidget tasks={tasks} clients={clients} />
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
+                        <ClientDependencyWidget tasks={tasks} clients={clients} />
+                    </div>
                 </div>
 
                 {/* Side Column (1/3 width) */}
-                <div className="space-y-6">
-                    {/* Section G: Quick Actions (Moved up for better access on desktop based on layout flow) */}
-                    <QuickActions
-                        onAddTask={() => setShowTaskModal(true)}
-                        onScheduleFiling={() => setShowAutoScheduleModal(true)}
-                        onSendReminder={handleSendReminder}
-                    />
+                <div className="space-y-8">
+                    {/* Section G: Quick Actions */}
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
+                        <QuickActions
+                            onAddTask={() => setShowTaskModal(true)}
+                            onScheduleFiling={() => setShowAutoScheduleModal(true)}
+                            onSendReminder={handleSendReminder}
+                        />
+                    </div>
 
                     {/* Section F: Staff Load Snapshot */}
-                    <StaffLoadSnapshot tasks={tasks} staff={staff} />
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
+                        <StaffLoadSnapshot tasks={tasks} staff={staff} />
+                    </div>
                 </div>
             </div>
 

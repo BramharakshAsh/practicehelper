@@ -1,0 +1,58 @@
+Practice Helper – Your All‑in‑One Practice Management Hub
+==========================================================
+
+## Overview
+Practice Helper is a sleek, single‑pane SaaS solution built for accounting and finance firms. It centralises **clients**, **staff**, **tasks**, and **audit/compliance** activities, letting you focus on delivering value rather than juggling spreadsheets.
+
+## Getting Started
+1. **Open the app** – Navigate to the URL where the app is hosted (e.g. `http://localhost:5173` for local development or the deployed Vercel URL).
+2. **Log in** – Use the credentials provided by your admin. If you forget your password, click **Forgot Password** on the login screen and follow the email link.
+3. **Dashboard** – After logging in you land on the Dashboard. It shows:
+   - Quick stats on client count, upcoming tasks, and compliance deadlines (total clients, pending tasks, next audit dates).
+   - Staff workload snapshots (visual bar charts of each staff member’s active, due‑today, and overdue tasks).
+   - Alerts for overdue items (highlighted red notifications with quick actions to reassign or extend tasks).
+   - **Instant firm overview** – A single glance tells you how the practice is performing, which clients need attention, and which compliance deadlines are approaching.
+
+## Managing Clients
+- **Add a client** – Click the **+ New Client** button on the Clients page, fill in the required fields (name, contact, engagement details) and hit **Save**.
+- **Edit a client** – Select a client from the list, click **Edit**, modify the information and save.
+- **View client details** – Click a client’s name to open the client profile, where you can see associated staff, tasks, and documents.
+
+## Managing Staff
+- **Add staff** – Go to the Staff page and click **+ Add Staff**. Provide name, email, role (partner, manager, staff, paid_staff, articles) and optionally a start date.
+- **Assign roles** – Roles control which UI sections a user can access. The admin can change a staff member’s role from the staff detail view.
+- **Workload view** – The Staff Load Snapshot on the Dashboard shows each staff member’s active, due‑today, and overdue tasks.
+- **Role Access**
+  - **Partner** – Complete access to everything: clients, staff, tasks, audits, and settings.
+  - **Manager** – Assigned a subset of clients and staff members that they can manage; they cannot modify global settings.
+  - **Staff** – Can see and work only on their own tasks; they cannot view other people's tasks.
+
+## Creating & Tracking Tasks
+- **Create a task** – Click **+ New Task** on the Tasks page. Fill in:
+  - Title, description
+  - Client (optional)
+  - Assign to a staff member (auto‑suggested based on workload)
+  - Due date
+  - Priority
+- **Auto‑Task Generation** – Use the **Auto‑Task Wizard** to generate multiple tasks based on client‑staff relations and compliance periods. You can select the compliance type (monthly, quarterly, yearly) and the wizard will automatically create tasks for the appropriate period, saving time by eliminating manual entry.
+- **Track progress** – The Tasks board shows tasks by status (To‑Do, In‑Progress, Done). Click a task to update its status or add comments.
+
+## Audit & Compliance
+- **Audit plans** – From the Audits page you can create a detailed audit plan for the selected compliance period. The plan is a checklist‑based system; each checklist item can be assigned to different staff members, providing clear responsibility and traceability.
+- **Period selection** – The UI adapts based on the frequency of the compliance type, showing appropriate month/quarter/year selectors.
+
+## Reporting & Insights
+- The Dashboard provides real‑time metrics and alerts. Use the **Export** button to download CSV reports of clients, tasks, or staff workload.
+
+## Import Clients/Tasks
+- **Bulk import** – You can import client and task data via CSV files through the **Import** option in the respective sections. The system validates the file format and merges records, allowing bulk onboarding. (Under development)
+- **Time‑saving** – Importing eliminates repetitive manual entry, instantly populating the system with large datasets and generating the associated tasks automatically.
+
+## Tips & Best Practices
+- **Balance staff workload** – Regularly check the Staff Load Snapshot and re‑assign tasks if someone is overloaded.
+- **Use the search bar** – Quickly find clients, staff, or tasks by name.
+- **Regularly review audit deadlines** – The compliance calendar highlights upcoming audit periods.
+- **Keep client information up‑to‑date** – Accurate client data ensures correct task generation and reporting.
+
+## Support
+If you encounter any issues, contact your system administrator or raise a ticket via the **Help** menu.

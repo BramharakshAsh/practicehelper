@@ -47,7 +47,7 @@ const StaffLoadSnapshot: React.FC<StaffLoadSnapshotProps> = ({ tasks, staff }) =
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Staff Workload Snapshot</h3>
                 <button
-                    onClick={() => navigate('/staff')}
+                    onClick={() => navigate('/dashboard/staff')}
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center"
                 >
                     View All Staff
@@ -66,7 +66,7 @@ const StaffLoadSnapshot: React.FC<StaffLoadSnapshotProps> = ({ tasks, staff }) =
                         const percentage = Math.min(100, (member.activeCount / maxCapacity) * 100);
 
                         return (
-                            <div key={member.id} className="cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors" onClick={() => navigate('/staff')}>
+                            <div key={member.id} className="cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors border border-transparent hover:border-gray-200" onClick={() => navigate(`/dashboard/tasks?staff_id=${member.user_id}`)}>
                                 <div className="flex justify-between items-center mb-1">
                                     <div className="font-medium text-gray-900 text-sm">{member.name}</div>
                                     <div className="text-xs text-gray-500">

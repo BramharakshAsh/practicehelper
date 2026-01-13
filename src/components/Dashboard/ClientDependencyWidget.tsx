@@ -40,7 +40,7 @@ const ClientDependencyWidget: React.FC<ClientDependencyWidgetProps> = ({ tasks, 
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Client Dependencies</h3>
                 <button
-                    onClick={() => navigate('/tasks?status=awaiting_client_data')}
+                    onClick={() => navigate('/dashboard/tasks?status=awaiting_client_data')}
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
                     View All
@@ -72,7 +72,7 @@ const ClientDependencyWidget: React.FC<ClientDependencyWidgetProps> = ({ tasks, 
             {blockedTasks.length > 0 && (
                 <div className="mt-4 pt-3 border-t border-gray-100 flex justify-end">
                     <button
-                        onClick={() => navigate('/tasks?status=awaiting_client_data')}
+                        onClick={() => navigate('/dashboard/tasks?status=awaiting_client_data')}
                         className="text-xs text-gray-500 flex items-center hover:text-gray-900"
                     >
                         See all blocking items <ChevronRight className="h-3 w-3 ml-1" />

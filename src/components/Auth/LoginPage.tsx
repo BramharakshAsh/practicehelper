@@ -30,113 +30,83 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center px-4 py-8">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-[#fcfcfd] flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      {/* Background blobs for premium feel */}
+      <div className="absolute top-0 -left-20 w-96 h-96 bg-teal-50 rounded-full blur-3xl opacity-50"></div>
+      <div className="absolute bottom-0 -right-20 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50"></div>
+
+      <div className="max-w-md w-full relative z-10">
         {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="flex flex-col items-center justify-center mb-2 sm:mb-4">
-            <img src={Logo} alt="Firm Flow Logo" className="w-64 sm:w-80 h-auto object-contain mb-4" />
-          </div>
-          <p className="text-gray-600 text-sm sm:text-base">Streamline your firm's workflow</p>
+        <div className="text-center mb-10">
+          <Link to="/" className="inline-flex flex-col items-center justify-center mb-6 hover:scale-105 transition-transform">
+            <img src={Logo} alt="Firm Flow Logo" className="w-20 h-auto object-contain mb-3" />
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">Firm Flow</h1>
+          </Link>
+          <p className="text-gray-500 font-medium">Streamline your firm's workflow</p>
         </div>
 
-        {/* Role Selection */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sm:p-8">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6 text-center">Choose Your Role</h2>
+        {/* Form Card */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-gray-200/50 border border-white p-8 sm:p-10">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center italic">Welcome Back</h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 sm:mb-6">
-            <button
-              onClick={() => setSelectedRole('partner')}
-              className={`p-4 rounded-lg border-2 transition-all flex sm:flex-col items-center sm:justify-center space-x-4 sm:space-x-0 ${selectedRole === 'partner'
-                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                }`}
-            >
-              <Building2 className="h-8 w-8 sm:mb-2 flex-shrink-0" />
-              <div className="text-left sm:text-center">
-                <div className="font-medium">Partner</div>
-                <div className="text-xs opacity-75">Full Access</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setSelectedRole('manager')}
-              className={`p-4 rounded-lg border-2 transition-all flex sm:flex-col items-center sm:justify-center space-x-4 sm:space-x-0 ${selectedRole === 'manager'
-                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                }`}
-            >
-              <User className="h-8 w-8 sm:mb-2 flex-shrink-0" />
-              <div className="text-left sm:text-center">
-                <div className="font-medium">Manager</div>
-                <div className="text-xs opacity-75">Team Management</div>
-              </div>
-            </button>
+          {/* Role Selection */}
+          <div className="flex p-1 bg-gray-100 rounded-2xl mb-8">
+            {(['partner', 'manager', 'staff'] as UserRole[]).map((role) => (
+              <button
+                key={role}
+                onClick={() => setSelectedRole(role)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${selectedRole === role
+                    ? 'bg-white text-teal-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                {role.charAt(0).toUpperCase() + role.slice(1)}
+              </button>
+            ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 mb-6">
-            <button
-              onClick={() => setSelectedRole('staff')}
-              className={`p-4 rounded-lg border-2 transition-all flex items-center space-x-4 sm:justify-center sm:space-x-4 ${selectedRole === 'staff'
-                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                }`}
-            >
-              <User className="h-8 w-8 flex-shrink-0 sm:mb-0" />
-              <div className="text-left sm:text-center">
-                <div className="font-medium">Staff</div>
-                <div className="text-xs opacity-75">Task Management</div>
-              </div>
-            </button>
-          </div>
-
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                Username
-              </label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700 ml-1">Username</label>
               <div className="relative">
-                <User className="h-4 w-4 absolute left-3 top-3.5 sm:top-3 text-gray-400" />
+                <User className="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   name="username"
                   value={credentials.username}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                  placeholder="Enter your username"
+                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium"
+                  placeholder="name@firm.com"
                   required
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                Password
-              </label>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700 ml-1">Password</label>
               <div className="relative">
-                <Lock className="h-4 w-4 absolute left-3 top-3.5 sm:top-3 text-gray-400" />
+                <Lock className="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={credentials.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-12 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                  placeholder="Enter your password"
+                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium"
+                  placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3.5 sm:top-3 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-teal-600"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
             <div className="flex items-center justify-end">
-              <Link to="/forgot-password" university-link="true" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+              <Link to="/forgot-password" university-link="true" className="text-sm font-bold text-teal-600 hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -144,32 +114,31 @@ const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2.5 sm:py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold shadow-sm active:scale-95 transform transition-transform"
+              className="w-full bg-gradient-to-r from-teal-500 to-blue-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {isLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
               ) : (
-                `Login as ${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}`
+                'Sign In'
               )}
             </button>
           </form>
 
           {/* Error Message */}
           {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-2xl animate-shake">
+              <p className="text-sm text-red-600 font-medium text-center">{error}</p>
             </div>
           )}
 
-          {/* Registration Section - Moved Inside Card */}
-          <div className="mt-6 pt-6 border-t border-gray-100 text-center">
-            <p className="text-sm text-gray-600 mb-3">New Firm to the platform?</p>
+          {/* Registration Section */}
+          <div className="mt-10 pt-8 border-t border-gray-100 text-center">
+            <p className="text-gray-500 font-medium mb-4">New to Firm Flow?</p>
             <button
               onClick={() => setIsRegisterModalOpen(true)}
-              className="w-full flex items-center justify-center space-x-2 bg-white border-2 border-blue-600 text-blue-600 py-2.5 rounded-lg hover:bg-blue-50 transition-all font-bold group shadow-sm active:scale-95 transform transition-transform"
+              className="text-teal-600 font-bold hover:underline"
             >
-              <Building2 className="h-5 w-5 group-hover:scale-110 transition-transform" />
-              <span>Register Organization</span>
+              Register your organization today
             </button>
           </div>
         </div>

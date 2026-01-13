@@ -50,7 +50,7 @@ const StatutoryHeatmap: React.FC<StatutoryHeatmapProps> = ({ tasks, complianceTy
 
     const handleCategoryClick = (category: string) => {
         // Navigate with filter
-        navigate(`/tasks?category=${category}`);
+        navigate(`/dashboard/tasks?category=${category}`);
     };
 
     return (

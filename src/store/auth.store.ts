@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { UserRole, User } from '../types';
 import { authService, LoginCredentials } from '../services/auth.service';
 import { ErrorService, handleAsyncError } from '../services/error.service';
@@ -18,63 +17,53 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      error: null,
+  (set) => ({
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    error: null,
 
-      login: async (role: UserRole, credentials: LoginCredentials) => {
-        set({ isLoading: true, error: null });
+    login: async (role: UserRole, credentials: LoginCredentials) => {
+      set({ isLoading: true, error: null });
 
-        await handleAsyncError(async () => {
-          const user = await authService.login(role, credentials);
-          set({
-            user,
-            isAuthenticated: true,
-            isLoading: false
-          });
-        }, 'User login').catch((error) => {
-          set({
-            error: ErrorService.getErrorMessage(error),
-            isLoading: false
-          });
-          throw error;
+      await handleAsyncError(async () => {
+        const user = await authService.login(role, credentials);
+        set({
+          user,
+          isAuthenticated: true,
+          isLoading: false
         });
-      },
+      }, 'User login').catch((error) => {
+        set({
+          error: ErrorService.getErrorMessage(error),
+          isLoading: false
+        });
+        throw error;
+      });
+    },
 
-      logout: async () => {
-        set({ isLoading: true });
+    logout: async () => {
+      set({ isLoading: true });
 
+      try {
         await handleAsyncError(async () => {
           await authService.logout();
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null
-          });
-        }, 'User logout').catch((error) => {
-          set({
-            error: ErrorService.getErrorMessage(error),
-            isLoading: false
-          });
+        }, 'User logout');
+      } finally {
+        // Always clear local auth state regardless of whether server-side logout succeeded
+        set({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null
         });
-      },
+      }
+    },
 
-      setUser: (user: User | null) => {
-        set({ user, isAuthenticated: !!user, isLoading: false });
-      },
+    setUser: (user: User | null) => {
+      set({ user, isAuthenticated: !!user, isLoading: false });
+    },
 
-      clearError: () => set({ error: null }),
-    }),
-    {
-      name: 'auth-storage',
-      partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated
-      }),
-    }
-  )
+    clearError: () => set({ error: null }),
+  })
 );

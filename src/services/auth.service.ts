@@ -13,7 +13,7 @@ export interface RegisterOrganizationData {
   contactNumber: string;
   primaryPartner: {
     fullName: string;
-    username: string;
+    pan: string;
     email: string;
     password: string;
   };
@@ -45,7 +45,8 @@ class AuthService {
       id: profile.id,
       firm_id: profile.firm_id,
       email: profile.email,
-      username: profile.username,
+      username: profile.username || '',
+      pan: profile.pan,
       full_name: profile.full_name,
       role: profile.role as UserRole,
       is_active: profile.is_active,
@@ -78,7 +79,7 @@ class AuthService {
       options: {
         data: {
           full_name: data.primaryPartner.fullName,
-          username: data.primaryPartner.username,
+          pan: data.primaryPartner.pan,
         }
       }
     });
@@ -128,7 +129,7 @@ class AuthService {
         id: userId,
         firm_id: firm.id,
         email: data.primaryPartner.email,
-        username: data.primaryPartner.username,
+        pan: data.primaryPartner.pan,
         full_name: data.primaryPartner.fullName,
         role: 'partner',
         is_active: true,

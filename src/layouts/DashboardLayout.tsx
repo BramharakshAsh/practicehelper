@@ -20,31 +20,31 @@ const DashboardLayout: React.FC = () => {
     };
 
     const navItems = [
-        { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/tasks', label: 'Tasks', icon: CheckSquare },
-        { to: '/clients', label: 'Clients', icon: Users },
-        { to: '/staff', label: 'Staff', icon: UserSquare2 },
-        { to: '/calendar', label: 'Calendar', icon: Calendar },
-        { to: '/audits', label: 'Audits', icon: ClipboardList },
-        { to: '/auto-tasks', label: 'Auto Tasks', icon: Zap },
-        { to: '/import', label: 'Import', icon: Upload },
-        { to: '/reports', label: 'Reports', icon: PieChart },
+        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/dashboard/tasks', label: 'Tasks', icon: CheckSquare },
+        { to: '/dashboard/clients', label: 'Clients', icon: Users },
+        { to: '/dashboard/staff', label: 'Staff', icon: UserSquare2 },
+        { to: '/dashboard/calendar', label: 'Calendar', icon: Calendar },
+        { to: '/dashboard/audits', label: 'Audits', icon: ClipboardList },
+        { to: '/dashboard/auto-tasks', label: 'Auto Tasks', icon: Zap },
+        { to: '/dashboard/import', label: 'Import', icon: Upload },
+        { to: '/dashboard/reports', label: 'Reports', icon: PieChart },
     ];
 
     const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
     const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Top Header */}
-            <header className="bg-white border-b border-gray-200 sticky top-0 z-[100]">
+        <div className="min-h-screen bg-[#f8fafc] flex flex-col">
+            {/* Premium Top Header */}
+            <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-[100]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16">
+                    <div className="flex justify-between h-20">
                         <div className="flex items-center">
                             {/* Mobile menu button */}
                             <button
                                 onClick={toggleMobileMenu}
-                                className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none"
+                                className="lg:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100 focus:outline-none transition-colors"
                             >
                                 {isMobileMenuOpen ? (
                                     <X className="h-6 w-6" />
@@ -52,23 +52,25 @@ const DashboardLayout: React.FC = () => {
                                     <Menu className="h-6 w-6" />
                                 )}
                             </button>
-                            <div className="flex items-center ml-2 lg:ml-0 overflow-hidden">
-                                <img src={Logo} alt="Firm Flow Logo" className="h-8 sm:h-10 w-auto object-contain flex-shrink-0" />
-                                <span className="ml-2 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hidden sm:inline-block">Firm Flow</span>
+                            <div className="flex items-center ml-2 lg:ml-0 overflow-hidden group">
+                                <img src={Logo} alt="Firm Flow Logo" className="h-10 w-auto object-contain flex-shrink-0 group-hover:scale-110 transition-transform" />
+                                <span className="ml-3 text-xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent hidden sm:inline-block">Firm Flow</span>
                             </div>
                         </div>
 
-                        <div className="flex items-center space-x-2 sm:space-x-4">
-                            <div className="hidden sm:block text-sm text-gray-700">
-                                <span className="font-semibold">{user?.full_name}</span> ({user?.role})
+                        <div className="flex items-center space-x-3 sm:space-x-6">
+                            <div className="hidden sm:flex flex-col items-end">
+                                <span className="text-sm font-bold text-gray-900 leading-tight">{user?.full_name}</span>
+                                <span className="text-xs font-semibold text-teal-600 capitalize leading-tight">{user?.role}</span>
                             </div>
-                            {/* Mobile user info (role only or shortened) */}
-                            <div className="sm:hidden text-xs text-gray-500 font-medium">
+
+                            <div className="sm:hidden text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-md uppercase tracking-wider">
                                 {user?.role}
                             </div>
+
                             <button
                                 onClick={handleLogout}
-                                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-red-600 transition-colors"
+                                className="p-2.5 rounded-xl bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-600 transition-all border border-gray-100"
                                 title="Logout"
                             >
                                 <LogOut className="h-5 w-5" />
@@ -78,7 +80,7 @@ const DashboardLayout: React.FC = () => {
                 </div>
 
                 {/* Desktop Navigation Tabs */}
-                <div className="hidden lg:block border-t border-gray-100">
+                <div className="hidden lg:block border-t border-gray-50">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <nav className="flex space-x-1" aria-label="Tabs">
                             {navItems.map((item) => (
@@ -86,13 +88,13 @@ const DashboardLayout: React.FC = () => {
                                     key={item.to}
                                     to={item.to}
                                     className={({ isActive }) =>
-                                        `flex items-center px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${isActive
-                                            ? 'border-blue-500 text-blue-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        `flex items-center px-5 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition-all ${isActive
+                                            ? 'border-teal-500 text-teal-600 bg-teal-50/30'
+                                            : 'border-transparent text-gray-500 hover:text-teal-600 hover:bg-gray-50/50'
                                         }`
                                     }
                                 >
-                                    <item.icon className="h-4 w-4 mr-2" />
+                                    <item.icon className={`h-4.5 w-4.5 mr-2.5 transition-colors`} />
                                     {item.label}
                                 </NavLink>
                             ))}
@@ -104,39 +106,33 @@ const DashboardLayout: React.FC = () => {
                 {isMobileMenuOpen && (
                     <div className="lg:hidden fixed inset-0 z-[200] flex">
                         <div
-                            className="fixed inset-0 bg-gray-600 bg-opacity-75"
+                            className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm"
                             onClick={closeMobileMenu}
                         ></div>
-                        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-xl">
-                            <div className="absolute top-0 right-0 -mr-12 pt-2">
-                                <button
-                                    onClick={closeMobileMenu}
-                                    className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-                                >
-                                    <X className="h-6 w-6 text-white" />
-                                </button>
-                            </div>
-                            <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-                                <div className="flex-shrink-0 flex items-center px-4">
-                                    <img src={Logo} alt="Firm Flow Logo" className="h-10 w-auto object-contain" />
-                                    <span className="text-xl font-bold text-gray-900 ml-2">Firm Flow</span>
+                        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-2xl animate-slide-in-left">
+                            <div className="p-6 border-b border-gray-100">
+                                <div className="flex items-center">
+                                    <img src={Logo} alt="Firm Flow Logo" className="h-10 w-auto" />
+                                    <span className="text-xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent ml-3">Firm Flow</span>
                                 </div>
-                                <nav className="mt-5 px-2 space-y-1">
+                            </div>
+                            <div className="flex-1 h-0 pt-4 pb-4 overflow-y-auto">
+                                <nav className="px-3 space-y-1">
                                     {navItems.map((item) => (
                                         <NavLink
                                             key={item.to}
                                             to={item.to}
                                             onClick={closeMobileMenu}
                                             className={({ isActive }) =>
-                                                `group flex items-center px-4 py-3 text-base font-medium rounded-lg transition-colors ${isActive
-                                                    ? 'bg-blue-50 text-blue-600'
-                                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                                `group flex items-center px-4 py-3.5 text-base font-bold rounded-xl transition-all ${isActive
+                                                    ? 'bg-teal-50 text-teal-700 shadow-sm shadow-teal-500/10'
+                                                    : 'text-gray-600 hover:bg-gray-50 hover:text-teal-600'
                                                 }`
                                             }
                                         >
                                             {({ isActive }) => (
                                                 <>
-                                                    <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                                                    <item.icon className={`mr-4 h-5.5 w-5.5 ${isActive ? 'text-teal-600' : 'text-gray-400 group-hover:text-teal-500'}`} />
                                                     {item.label}
                                                 </>
                                             )}
@@ -144,19 +140,21 @@ const DashboardLayout: React.FC = () => {
                                     ))}
                                 </nav>
                             </div>
-                            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-                                <div className="flex-shrink-0 group block">
-                                    <div className="flex items-center">
-                                        <div>
-                                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                                <UserSquare2 className="h-6 w-6 text-blue-600" />
-                                            </div>
-                                        </div>
-                                        <div className="ml-3">
-                                            <p className="text-base font-medium text-gray-700">{user?.full_name}</p>
-                                            <p className="text-sm font-medium text-gray-500">{user?.role}</p>
-                                        </div>
+                            <div className="flex-shrink-0 flex border-t border-gray-100 p-6 bg-gray-50/50">
+                                <div className="flex items-center w-full">
+                                    <div className="h-12 w-12 rounded-2xl bg-teal-100 flex items-center justify-center border border-teal-200 shadow-sm">
+                                        <UserSquare2 className="h-7 w-7 text-teal-600" />
                                     </div>
+                                    <div className="ml-4 flex-1">
+                                        <p className="text-base font-bold text-gray-900 leading-tight">{user?.full_name}</p>
+                                        <p className="text-xs font-semibold text-teal-600 uppercase tracking-wider mt-0.5">{user?.role}</p>
+                                    </div>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="p-2.5 rounded-xl bg-gray-100 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all border border-gray-200"
+                                    >
+                                        <LogOut className="h-5 w-5" />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -165,7 +163,7 @@ const DashboardLayout: React.FC = () => {
             </header>
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full flex-1">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
                 <Outlet />
             </main>
         </div>
