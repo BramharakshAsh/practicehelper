@@ -145,6 +145,26 @@ class AuthService {
     } else if (profileError) {
       throw profileError;
     }
+
+    // 4. Create Staff Entry for the Partner
+    // This ensures the partner appears in staff lists and can be assigned tasks
+    const { error: staffError } = await supabase
+      .from('staff')
+      .insert({
+        user_id: userId,
+        firm_id: firm.id,
+        name: data.primaryPartner.fullName,
+        email: data.primaryPartner.email,
+        role: 'partner',
+        is_active: true,
+        date_of_joining: new Date().toISOString().split('T')[0],
+      });
+
+    if (staffError && !staffError.message.includes('duplicate key')) {
+      console.error('Error creating staff entry for partner:', staffError);
+      // We don't throw here to avoid failing registration if just the staff entry fails,
+      // but ideally this should succeed.
+    }
   }
 
   async getCurrentUser(): Promise<AuthUser | null> {

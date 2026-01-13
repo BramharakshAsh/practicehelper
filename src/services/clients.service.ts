@@ -29,7 +29,9 @@ class ClientsService {
     if (!firmId) throw new Error('User not authenticated or missing firm ID');
 
     const currentUser = useAuthStore.getState().user;
-    const finalManagerId = client.manager_id || (currentUser?.role === 'manager' ? currentUser.id : undefined);
+    // Ensure manager_id is null if it's an empty string
+    const sanitizedManagerId = client.manager_id === '' ? null : client.manager_id;
+    const finalManagerId = sanitizedManagerId || (currentUser?.role === 'manager' ? currentUser.id : null);
 
     const normalizedClient = {
       ...client,
@@ -54,9 +56,14 @@ class ClientsService {
   }
 
   async updateClient(id: string, updates: Partial<Client>): Promise<Client> {
+    const sanitizedUpdates = {
+      ...updates,
+      manager_id: updates.manager_id === '' ? null : updates.manager_id
+    };
+
     const { data, error } = await supabase
       .from('clients')
-      .update(updates)
+      .update(sanitizedUpdates)
       .eq('id', id)
       .select()
       .single();

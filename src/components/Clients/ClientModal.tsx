@@ -7,12 +7,14 @@ interface ClientModalProps {
   client?: Client;
   allStaff?: Staff[];
   onClose: () => void;
-  onSubmit: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => void;
+  onSubmit: (client: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   mode: 'create' | 'edit' | 'view';
 }
 
 const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClose, onSubmit, mode }) => {
   const { user: currentUser } = useAuthStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: client?.name || '',
     gstin: client?.gstin || '',
@@ -38,16 +40,17 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
 
   const workTypeOptions = ['GST', 'TDS', 'IT', 'ROC', 'Audit', 'Accounting'];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     if (!formData.name || !formData.pan) {
-      alert('Please fill in all required fields');
+      setError('Name and PAN are required');
       return;
     }
 
     if (formData.work_types.length === 0) {
-      alert('Please select at least one work type');
+      setError('Please select at least one work type');
       return;
     }
 
@@ -61,9 +64,15 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
       address: formData.address.trim() || null,
     };
 
-    onSubmit(normalizedData);
+    setIsSubmitting(true);
+    try {
+      await onSubmit(normalizedData);
+    } catch (err: any) {
+      console.error('[ClientModal] Submission error:', err);
+      setError(err.message || 'An error occurred while saving client');
+      setIsSubmitting(false);
+    }
   };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -90,12 +99,18 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            disabled={isSubmitting}
           >
             <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg relative flex items-center space-x-2">
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -231,14 +246,17 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
             <div className="flex space-x-4 pt-4">
               <button
                 type="submit"
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                disabled={isSubmitting}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
-                {mode === 'create' ? 'Create Client' : 'Update Client'}
+                {isSubmitting && <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>}
+                <span>{mode === 'create' ? 'Create Client' : 'Update Client'}</span>
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                disabled={isSubmitting}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
