@@ -34,6 +34,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
   const [filterStaff, setFilterStaff] = useState(searchParams.get('staff_id') || 'all');
   const [filterPriority, setFilterPriority] = useState(searchParams.get('priority') || 'all');
   const [filterComplianceType, setFilterComplianceType] = useState(searchParams.get('compliance_id') || 'all');
+  const [filterAssignedBy, setFilterAssignedBy] = useState(searchParams.get('assigned_by') || 'all');
   const [filterTimeline, setFilterTimeline] = useState(searchParams.get('timeline') || 'all');
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [showModal, setShowModal] = useState(false);
@@ -45,6 +46,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
     setFilterTimeline(searchParams.get('timeline') || 'all');
     setFilterPriority(searchParams.get('priority') || 'all');
     setFilterComplianceType(searchParams.get('compliance_id') || 'all');
+    setFilterAssignedBy(searchParams.get('assigned_by') || 'all');
     setSearchTerm(searchParams.get('search') || '');
   }, [searchParams]);
 
@@ -100,6 +102,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
 
   if (filterComplianceType !== 'all') {
     filteredTasks = filteredTasks.filter(task => task.compliance_type_id === filterComplianceType);
+  }
+
+  if (filterAssignedBy !== 'all') {
+    filteredTasks = filteredTasks.filter(task => task.assigned_by === filterAssignedBy);
   }
 
   if (filterTimeline !== 'all') {
@@ -195,7 +201,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
             <div className="relative">
               <select
                 value={filterTimeline}
@@ -272,6 +278,33 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                 <option value="low">Low Priority</option>
                 <option value="medium">Medium Priority</option>
                 <option value="high">High Priority</option>
+              </select>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                <Filter className="h-3 w-3 text-gray-400" />
+              </div>
+            </div>
+
+            <div className="relative">
+              <select
+                value={filterAssignedBy}
+                onChange={(e) => {
+                  setFilterAssignedBy(e.target.value);
+                  updateSearchParams('assigned_by', e.target.value);
+                }}
+                className="w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm appearance-none truncate font-semibold text-blue-600"
+              >
+                <option value="all">Any Assigner</option>
+                {Array.from(new Set(tasks.map(t => t.assigned_by)))
+                  .filter(Boolean)
+                  .map(id => {
+                    const creator = tasks.find(t => t.assigned_by === id)?.creator;
+                    return (
+                      <option key={id} value={id}>
+                        {creator?.full_name || 'System'}
+                      </option>
+                    );
+                  })
+                }
               </select>
               <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                 <Filter className="h-3 w-3 text-gray-400" />
@@ -449,6 +482,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                     setFilterStaff('all');
                     setFilterPriority('all');
                     setFilterComplianceType('all');
+                    setFilterAssignedBy('all');
                     setFilterTimeline('all');
                     setSearchParams({});
                   }}

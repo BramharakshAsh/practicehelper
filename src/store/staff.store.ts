@@ -23,12 +23,15 @@ export const useStaffStore = create<StaffState>((set) => ({
   error: null,
 
   fetchStaff: async () => {
+    console.log('[StaffStore] fetchStaff called');
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
       const staff = await staffService.getStaff();
+      console.log('[StaffStore] fetchStaff success, records:', staff.length);
       set({ staff, isLoading: false });
     }, 'Fetch staff').catch((error) => {
+      console.error('[StaffStore] fetchStaff error:', error);
       set({
         error: ErrorService.getErrorMessage(error),
         isLoading: false
@@ -37,15 +40,18 @@ export const useStaffStore = create<StaffState>((set) => ({
   },
 
   createStaff: async (staffData) => {
+    console.log('[StaffStore] createStaff called with:', staffData.email);
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
       const newStaff = await staffService.createStaff(staffData);
+      console.log('[StaffStore] createStaff success, new member:', newStaff);
       set(state => ({
         staff: [newStaff, ...state.staff],
         isLoading: false
       }));
     }, 'Create staff').catch((error) => {
+      console.error('[StaffStore] createStaff error:', error);
       set({
         error: ErrorService.getErrorMessage(error),
         isLoading: false

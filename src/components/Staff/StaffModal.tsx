@@ -7,12 +7,14 @@ interface StaffModalProps {
   staff?: Staff;
   allStaff?: Staff[];
   onClose: () => void;
-  onSubmit: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => void;
+  onSubmit: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => Promise<void>;
   mode: 'create' | 'edit' | 'view';
 }
 
 const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, onSubmit, mode }) => {
   const { user: currentUser } = useAuthStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: staff?.name || '',
     email: staff?.email || '',
@@ -42,8 +44,9 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, 
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     if (!formData.name || !formData.email) {
       alert('Please fill in all required fields');
@@ -60,10 +63,18 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, 
       return;
     }
 
-    onSubmit({
-      ...formData,
-      password: generateCredentials ? generatedPassword : undefined
-    });
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        ...formData,
+        password: generateCredentials ? generatedPassword : undefined
+      });
+    } catch (err: any) {
+      console.error('[StaffModal] Submission error:', err);
+      setError(err.message || 'An error occurred while saving staff member');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -103,12 +114,18 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, 
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            disabled={isSubmitting}
           >
             <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg relative flex items-center space-x-2">
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -291,14 +308,17 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, 
             <div className="flex space-x-4 pt-4">
               <button
                 type="submit"
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                disabled={isSubmitting}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
-                {mode === 'create' ? 'Add Staff Member' : 'Update Staff Member'}
+                {isSubmitting && <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>}
+                <span>{mode === 'create' ? 'Add Staff Member' : 'Update Staff Member'}</span>
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                disabled={isSubmitting}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>

@@ -37,6 +37,13 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
     setSearchParams(newParams);
   };
 
+  useEffect(() => {
+    console.log('[StaffList] Rendering with staff:', staff.length, 'tasks:', tasks.length);
+    if (staff.length > 0) {
+      console.log('[StaffList] First 3 staff roles:', staff.slice(0, 3).map(s => `${s.name}: ${s.role}`));
+    }
+  }, [staff, tasks]);
+
   const filteredStaff = staff.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -291,11 +298,11 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
             allStaff={staff}
             mode={viewMode}
             onClose={closeModal}
-            onSubmit={(staffData) => {
+            onSubmit={async (staffData) => {
               if (viewMode === 'create') {
-                onStaffCreate(staffData);
+                await onStaffCreate(staffData);
               } else if (viewMode === 'edit' && selectedStaff) {
-                onStaffUpdate(selectedStaff.id, staffData);
+                await onStaffUpdate(selectedStaff.id, staffData);
               }
               closeModal();
             }}

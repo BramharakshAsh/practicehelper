@@ -268,12 +268,33 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 required
               >
                 <option value="">Select Staff</option>
-                {staff.map(member => (
-                  <option key={member.id} value={member.user_id}>
-                    {member.name} ({member.role})
-                  </option>
-                ))}
+                {staff
+                  .filter(member => {
+                    if (user && ['staff', 'paid_staff', 'articles'].includes(user.role)) {
+                      return member.user_id === user.id;
+                    }
+                    return true;
+                  })
+                  .map(member => (
+                    <option key={member.id} value={member.user_id}>
+                      {member.name} ({member.role})
+                    </option>
+                  ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
+                <User className="h-4 w-4 inline mr-2 text-gray-400" />
+                Assigned By (You)
+              </label>
+              <input
+                type="text"
+                value={user?.full_name || 'Current User'}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 bg-gray-50 focus:outline-none text-sm sm:text-base text-gray-500"
+                disabled
+                readOnly
+              />
             </div>
           </div>
 

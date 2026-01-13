@@ -10,7 +10,10 @@ const mapDBTask = (task: any): Task => ({
   staff: task.staff ? {
     ...task.staff,
     name: task.staff.full_name || task.staff.name,
-    // If needed, we can map other fields, but name is critical for display
+  } : undefined,
+  creator: task.creator ? {
+    ...task.creator,
+    name: task.creator.full_name || task.creator.name,
   } : undefined
 });
 
@@ -26,6 +29,7 @@ class TasksService {
         *,
         client:clients(*),
         staff:users!tasks_staff_id_fkey(*),
+        creator:users!tasks_assigned_by_fkey(*),
         compliance_type:compliance_types(*)
       `)
       .eq('firm_id', firmId);
@@ -61,6 +65,7 @@ class TasksService {
         *,
         client:clients(*),
         staff:users!tasks_staff_id_fkey(*),
+        creator:users!tasks_assigned_by_fkey(*),
         compliance_type:compliance_types(*)
       `)
       .eq('staff_id', staffId)
@@ -84,6 +89,7 @@ class TasksService {
         *,
         client:clients(*),
         staff:users!tasks_staff_id_fkey(*),
+        creator:users!tasks_assigned_by_fkey(*),
         compliance_type:compliance_types(*)
       `)
       .single();
@@ -101,6 +107,7 @@ class TasksService {
         *,
         client:clients(*),
         staff:users!tasks_staff_id_fkey(*),
+        creator:users!tasks_assigned_by_fkey(*),
         compliance_type:compliance_types(*)
       `)
       .single();
@@ -129,6 +136,7 @@ class TasksService {
         *,
         client:clients(*),
         staff:users!tasks_staff_id_fkey(*),
+        creator:users!tasks_assigned_by_fkey(*),
         compliance_type:compliance_types(*)
       `);
 
