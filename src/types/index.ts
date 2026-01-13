@@ -15,7 +15,8 @@ export interface User {
   id: string;
   firm_id: string;
   email: string;
-  username: string;
+  username?: string;
+  pan?: string;
   full_name: string;
   role: UserRole;
   phone?: string;

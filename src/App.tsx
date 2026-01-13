@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth.store';
@@ -26,10 +25,12 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import AuditDashboard from './pages/AuditDashboard';
 import AuditWorkspace from './pages/AuditWorkspace';
 
+import LandingPage from './pages/LandingPage';
 import ErrorBoundary from './components/Common/ErrorBoundary';
+import { SessionTimeout } from './components/Auth/SessionTimeout';
 
 function App() {
-  const { user, isAuthenticated, setUser } = useAuthStore();
+  const { isAuthenticated, setUser } = useAuthStore();
   // Data initialization (prefetching)
   const { fetchClients } = useClientsStore();
   const { fetchStaff } = useStaffStore();
@@ -81,12 +82,15 @@ function App() {
       fetchTasks();
     }
   }, [isAuthenticated]);
+
   return (
     <ErrorBoundary>
+      <SessionTimeout />
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route
           path="/login"
-          element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
         />
         <Route
           path="/forgot-password"
@@ -98,7 +102,7 @@ function App() {
         />
 
         <Route
-          path="/"
+          path="/dashboard"
           element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />}
         >
           <Route index element={<DashboardPage />} />
@@ -111,9 +115,11 @@ function App() {
           <Route path="audits" element={<AuditDashboard />} />
           <Route path="audits/:id" element={<AuditWorkspace />} />
           <Route path="reports" element={<ReportsPage />} />
-          {/* Catch all redirect to dashboard */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
+
+        {/* Catch all redirect to landing page */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ErrorBoundary>
   );

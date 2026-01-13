@@ -20,7 +20,7 @@ const RegisterOrganizationModal: React.FC<RegisterOrganizationModalProps> = ({ i
         contactNumber: '',
         primaryPartner: {
             fullName: '',
-            username: '',
+            pan: '',
             email: '',
             password: '',
         },
@@ -187,15 +187,15 @@ const RegisterOrganizationModal: React.FC<RegisterOrganizationModalProps> = ({ i
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
-                                            <label className="text-sm font-semibold text-gray-700">Username</label>
+                                            <label className="text-sm font-semibold text-gray-700">Partner PAN</label>
                                             <input
                                                 type="text"
-                                                name="partner_username"
+                                                name="partner_pan"
                                                 required
-                                                value={formData.primaryPartner.username}
+                                                value={formData.primaryPartner.pan}
                                                 onChange={handleInputChange}
-                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none"
-                                                placeholder="rajesh_sharma"
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none uppercase"
+                                                placeholder="ABCDE1234F"
                                             />
                                         </div>
                                         <div className="space-y-1">

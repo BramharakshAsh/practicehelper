@@ -18,7 +18,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-blue-500',
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-700',
-      path: '/clients',
+      path: '/dashboard/clients',
     },
     {
       title: 'Total Staff',
@@ -27,7 +27,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-green-500',
       bgColor: 'bg-green-50',
       textColor: 'text-green-700',
-      path: '/staff',
+      path: '/dashboard/staff',
     },
     {
       title: 'Overdue Tasks',
@@ -36,7 +36,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-red-500',
       bgColor: 'bg-red-50',
       textColor: 'text-red-700',
-      path: '/tasks',
+      path: '/dashboard/tasks',
     },
     {
       title: 'Pending Review',
@@ -45,7 +45,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-orange-500',
       bgColor: 'bg-orange-50',
       textColor: 'text-orange-700',
-      path: '/tasks',
+      path: '/dashboard/tasks',
     },
     {
       title: 'Completed Today',
@@ -54,7 +54,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-emerald-500',
       bgColor: 'bg-emerald-50',
       textColor: 'text-emerald-700',
-      path: '/tasks',
+      path: '/dashboard/tasks',
     },
     {
       title: 'Upcoming Due Dates',
@@ -63,7 +63,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       color: 'bg-purple-500',
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-700',
-      path: '/calendar',
+      path: '/dashboard/calendar',
     },
   ];
 

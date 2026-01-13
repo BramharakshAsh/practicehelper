@@ -9,4 +9,10 @@ if (!supabaseUrl || !supabaseKey) {
     );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+        persistSession: false,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+    }
+});

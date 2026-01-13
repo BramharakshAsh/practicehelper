@@ -142,8 +142,8 @@ const AuditWorkspace: React.FC = () => {
                         <button
                             onClick={() => toggleComplete(item)}
                             className={`p-1 mr-3 rounded-full transition-colors ${hasChildren
-                                    ? 'cursor-default opacity-50'
-                                    : 'hover:bg-blue-50 text-blue-600'
+                                ? 'cursor-default opacity-50'
+                                : 'hover:bg-blue-50 text-blue-600'
                                 }`}
                             disabled={hasChildren}
                         >
@@ -238,7 +238,7 @@ const AuditWorkspace: React.FC = () => {
             <div className="bg-white border-b border-gray-200 p-4 px-6 flex justify-between items-center z-10">
                 <div className="flex items-center space-x-4">
                     <button
-                        onClick={() => navigate('/audits')}
+                        onClick={() => navigate('/dashboard/audits')}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-100"
                     >
                         <ArrowLeft className="h-5 w-5 text-gray-600" />

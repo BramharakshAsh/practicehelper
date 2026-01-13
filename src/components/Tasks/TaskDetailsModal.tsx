@@ -17,7 +17,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
 
     const handleOpenAudit = async () => {
         if (task.audit_id) {
-            navigate(`/audits/${task.audit_id}`);
+            navigate(`/dashboard/audits/${task.audit_id}`);
             onClose();
         } else {
             if (window.confirm('Initialize a dedicated Audit Workspace for this task?')) {
@@ -53,7 +53,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                         await auditManagementService.createAuditFromTemplate(selectedTemplateId, newAudit.id);
                     }
 
-                    navigate(`/audits/${newAudit.id}`);
+                    navigate(`/dashboard/audits/${newAudit.id}`);
                     onClose();
                 } catch (error) {
                     console.error('Failed to initialize audit', error);

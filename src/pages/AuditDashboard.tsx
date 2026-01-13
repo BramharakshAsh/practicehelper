@@ -76,7 +76,7 @@ const AuditDashboard: React.FC = () => {
                 await auditManagementService.createAuditFromTemplate(selectedTemplateId, newAudit.id);
             }
 
-            navigate(`/audits/${newAudit.id}`);
+            navigate(`/dashboard/audits/${newAudit.id}`);
         } catch (error) {
             console.error('Failed to initialize audit', error);
             alert('Error creating audit workspace');
@@ -91,7 +91,7 @@ const AuditDashboard: React.FC = () => {
                     <p className="text-gray-500">Track and manage active audit plans and checklists</p>
                 </div>
                 <button
-                    onClick={() => navigate('/tasks')}
+                    onClick={() => navigate('/dashboard/tasks')}
                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-bold shadow-md"
                 >
                     <Plus className="h-4 w-4 mr-2" />
@@ -122,7 +122,7 @@ const AuditDashboard: React.FC = () => {
                                     <div
                                         key={audit.id}
                                         className="bg-white rounded-xl shadow-sm border border-gray-200 hover:border-blue-300 transition-all cursor-pointer overflow-hidden group"
-                                        onClick={() => navigate(`/audits/${audit.id}`)}
+                                        onClick={() => navigate(`/dashboard/audits/${audit.id}`)}
                                     >
                                         <div className="p-6">
                                             <div className="flex justify-between items-start mb-4">
@@ -232,7 +232,7 @@ const AuditDashboard: React.FC = () => {
                                 Create a task with "Audit" in the name or category to see it here for worksheet initialization.
                             </p>
                             <button
-                                onClick={() => navigate('/tasks')}
+                                onClick={() => navigate('/dashboard/tasks')}
                                 className="mt-6 px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:shadow-lg transition-all"
                             >
                                 Create Audit Task

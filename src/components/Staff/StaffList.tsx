@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard as Edit, Eye, Calendar, Trash2 } from 'lucide-react';
 import { Staff, Task } from '../../types';
 import StaffModal from './StaffModal';
@@ -12,17 +13,42 @@ interface StaffListProps {
 }
 
 const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onStaffCreate, onStaffDelete }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [filterRole, setFilterRole] = useState(searchParams.get('role') || 'all');
+  const [filterOverloaded, setFilterOverloaded] = useState(searchParams.get('filter') === 'overloaded');
   const [showModal, setShowModal] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [viewMode, setViewMode] = useState<'create' | 'edit' | 'view'>('create');
+
+  useEffect(() => {
+    setFilterOverloaded(searchParams.get('filter') === 'overloaded');
+    setFilterRole(searchParams.get('role') || 'all');
+    setSearchTerm(searchParams.get('search') || '');
+  }, [searchParams]);
+
+  const updateSearchParams = (key: string, value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === 'all' || !value || value === 'false') {
+      newParams.delete(key);
+    } else {
+      newParams.set(key, value);
+    }
+    setSearchParams(newParams);
+  };
 
   const filteredStaff = staff.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || member.role === filterRole;
-    return matchesSearch && matchesRole;
+
+    let matchesOverloaded = true;
+    if (filterOverloaded) {
+      const activeTasks = tasks.filter(t => t.staff_id === member.user_id && t.status !== 'filed_completed').length;
+      matchesOverloaded = activeTasks > 5;
+    }
+
+    return matchesSearch && matchesRole && matchesOverloaded;
   });
 
   const getRoleColor = (role: Staff['role']) => {
@@ -99,7 +125,10 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
             placeholder="Search staff by name or email..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              updateSearchParams('search', e.target.value);
+            }}
           />
         </div>
         <div className="flex items-center space-x-3 w-full sm:w-auto">
@@ -107,7 +136,10 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
             <Shield className="h-5 w-5 text-gray-400" />
             <select
               value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
+              onChange={(e) => {
+                setFilterRole(e.target.value);
+                updateSearchParams('role', e.target.value);
+              }}
               className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
             >
               <option value="all">All Roles</option>
@@ -223,8 +255,23 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
           <User className="h-12 w-12 mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No staff members found</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first team member'}
+            {searchTerm || filterOverloaded || filterRole !== 'all'
+              ? 'Try adjusting your filters or search terms'
+              : 'Get started by adding your first team member'}
           </p>
+          {(searchTerm || filterOverloaded || filterRole !== 'all') && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setFilterRole('all');
+                setFilterOverloaded(false);
+                setSearchParams({});
+              }}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Clear all filters
+            </button>
+          )}
           {!searchTerm && (
             <button
               onClick={() => openModal('create')}

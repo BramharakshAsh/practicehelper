@@ -146,7 +146,7 @@ const InsightCards: React.FC<InsightCardsProps> = ({ tasks, staff, complianceTyp
                         ))}
                     </div>
                 }
-                onClick={() => navigate('/tasks?filter=today')}
+                onClick={() => navigate('/dashboard/tasks?timeline=today')}
             />
 
             {/* 2. Overdue */}
@@ -157,7 +157,7 @@ const InsightCards: React.FC<InsightCardsProps> = ({ tasks, staff, complianceTyp
                 bgClass="bg-red-50"
                 colorClass="text-red-600"
                 subtitle={overdueTasks.length > 0 ? `Oldest ${oldestOverdueDays} days` : 'All clear'}
-                onClick={() => navigate('/tasks?filter=overdue')}
+                onClick={() => navigate('/dashboard/tasks?timeline=overdue')}
             />
 
             {/* 3. Awaiting Client Data */}
@@ -167,7 +167,7 @@ const InsightCards: React.FC<InsightCardsProps> = ({ tasks, staff, complianceTyp
                 icon={Clock}
                 bgClass="bg-orange-50"
                 colorClass="text-orange-600"
-                onClick={() => navigate('/tasks?status=awaiting_client_data')}
+                onClick={() => navigate('/dashboard/tasks?status=awaiting_client_data')}
             />
 
             {/* 4. Pending Partner Review */}
@@ -177,7 +177,7 @@ const InsightCards: React.FC<InsightCardsProps> = ({ tasks, staff, complianceTyp
                 icon={CheckSquare}
                 bgClass="bg-green-50"
                 colorClass="text-green-600"
-                onClick={() => navigate('/tasks?status=ready_for_review')}
+                onClick={() => navigate('/dashboard/tasks?status=ready_for_review')}
             />
 
             {/* 5. Staff Overloaded */}
@@ -188,7 +188,7 @@ const InsightCards: React.FC<InsightCardsProps> = ({ tasks, staff, complianceTyp
                 bgClass="bg-yellow-50"
                 colorClass="text-yellow-600"
                 subtitle={overloadedStaffCount > 0 ? '> 5 active tasks' : 'Load balanced'}
-                onClick={() => navigate('/staff')}
+                onClick={() => navigate('/dashboard/staff?filter=overloaded')}
             />
 
             {/* 6. Upcoming */}
@@ -205,7 +205,7 @@ const InsightCards: React.FC<InsightCardsProps> = ({ tasks, staff, complianceTyp
                         ))}
                     </div>
                 }
-                onClick={() => navigate('/tasks?filter=upcoming')}
+                onClick={() => navigate('/dashboard/tasks?timeline=upcoming')}
             />
         </div>
     );

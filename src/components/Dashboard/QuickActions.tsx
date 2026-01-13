@@ -39,7 +39,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onAddTask, onScheduleFiling
         {
             label: 'Import Data',
             icon: Upload,
-            onClick: () => navigate('/import'), // Assuming /import route exists or will exist
+            onClick: () => navigate('/dashboard/import'), // Assuming /dashboard/import route exists or will exist
             color: 'text-green-600',
             bg: 'bg-green-50',
             hover: 'hover:bg-green-100'

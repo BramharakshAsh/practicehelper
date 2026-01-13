@@ -45,7 +45,7 @@ const CriticalAlertBanner: React.FC<CriticalAlertBannerProps> = ({ tasks, compli
 
     const handleViewTasks = () => {
         // Navigate to tasks page with filter
-        navigate('/tasks?filter=overdue');
+        navigate('/dashboard/tasks?timeline=overdue');
     };
 
     return (
