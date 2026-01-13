@@ -148,9 +148,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, currentRo
         {currentRole === 'partner' && (
           <div className="flex items-center space-x-2">
             <User className="h-3 w-3" />
-            <span>{task.staff?.name}</span>
+            <span>To: {task.staff?.name}</span>
           </div>
         )}
+
+        <div className="flex items-center space-x-2">
+          <User className="h-3 w-3 text-gray-400" />
+          <span className="text-xs italic">By: {task.creator?.full_name || 'System'}</span>
+        </div>
 
         <div className="flex items-center space-x-2">
           <Calendar className="h-3 w-3" />

@@ -121,6 +121,7 @@ export interface Task {
   assigned_by: string;
   client?: Client;
   staff?: Staff;
+  creator?: User;
   compliance_type?: ComplianceType;
 }
 

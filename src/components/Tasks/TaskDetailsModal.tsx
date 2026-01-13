@@ -120,6 +120,13 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                             <p className="text-sm font-semibold text-gray-900">{task.staff?.name}</p>
                                         </div>
                                     </div>
+                                    <div className="flex items-center space-x-2">
+                                        <User className="h-5 w-5 text-gray-400" />
+                                        <div>
+                                            <p className="text-xs text-gray-400 font-medium lowercase">Assigned by</p>
+                                            <p className="text-sm font-medium text-gray-600 italic">{task.creator?.full_name || 'System'}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
