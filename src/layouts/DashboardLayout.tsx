@@ -101,66 +101,76 @@ const DashboardLayout: React.FC = () => {
                         </nav>
                     </div>
                 </div>
+            </header>
 
-                {/* Mobile Navigation Drawer */}
-                {isMobileMenuOpen && (
-                    <div className="lg:hidden fixed inset-0 z-[200] flex">
-                        <div
-                            className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm"
-                            onClick={closeMobileMenu}
-                        ></div>
-                        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-2xl animate-slide-in-left">
-                            <div className="p-6 border-b border-gray-100">
-                                <div className="flex items-center">
-                                    <img src={Logo} alt="Firm Flow Logo" className="h-10 w-auto" />
-                                    <span className="text-xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent ml-3">Firm Flow</span>
-                                </div>
+            {/* Mobile Navigation Drawer - Moved outside header for better stacking context */}
+            {isMobileMenuOpen && (
+                <div className="lg:hidden fixed inset-0 z-[200]">
+                    {/* Backdrop with fade-in effect */}
+                    <div
+                        className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300 pointer-events-auto"
+                        onClick={closeMobileMenu}
+                        aria-hidden="true"
+                    ></div>
+
+                    {/* Sidebar Drawer */}
+                    <div className="relative flex flex-col max-w-xs w-[85%] h-full bg-white shadow-2xl animate-slide-in-left">
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                            <div className="flex items-center">
+                                <img src={Logo} alt="Firm Flow Logo" className="h-10 w-auto" />
+                                <span className="text-xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent ml-3">Firm Flow</span>
                             </div>
-                            <div className="flex-1 h-0 pt-4 pb-4 overflow-y-auto">
-                                <nav className="px-3 space-y-1">
-                                    {navItems.map((item) => (
-                                        <NavLink
-                                            key={item.to}
-                                            to={item.to}
-                                            onClick={closeMobileMenu}
-                                            className={({ isActive }) =>
-                                                `group flex items-center px-4 py-3.5 text-base font-bold rounded-xl transition-all ${isActive
-                                                    ? 'bg-teal-50 text-teal-700 shadow-sm shadow-teal-500/10'
-                                                    : 'text-gray-600 hover:bg-gray-50 hover:text-teal-600'
-                                                }`
-                                            }
-                                        >
-                                            {({ isActive }) => (
-                                                <>
-                                                    <item.icon className={`mr-4 h-5.5 w-5.5 ${isActive ? 'text-teal-600' : 'text-gray-400 group-hover:text-teal-500'}`} />
-                                                    {item.label}
-                                                </>
-                                            )}
-                                        </NavLink>
-                                    ))}
-                                </nav>
-                            </div>
-                            <div className="flex-shrink-0 flex border-t border-gray-100 p-6 bg-gray-50/50">
-                                <div className="flex items-center w-full">
-                                    <div className="h-12 w-12 rounded-2xl bg-teal-100 flex items-center justify-center border border-teal-200 shadow-sm">
-                                        <UserSquare2 className="h-7 w-7 text-teal-600" />
-                                    </div>
-                                    <div className="ml-4 flex-1">
-                                        <p className="text-base font-bold text-gray-900 leading-tight">{user?.full_name}</p>
-                                        <p className="text-xs font-semibold text-teal-600 uppercase tracking-wider mt-0.5">{user?.role}</p>
-                                    </div>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="p-2.5 rounded-xl bg-gray-100 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all border border-gray-200"
+                            <button
+                                onClick={closeMobileMenu}
+                                className="p-2 -mr-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                            >
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+                        <div className="flex-1 h-0 pt-4 pb-4 overflow-y-auto">
+                            <nav className="px-3 space-y-1">
+                                {navItems.map((item) => (
+                                    <NavLink
+                                        key={item.to}
+                                        to={item.to}
+                                        onClick={closeMobileMenu}
+                                        className={({ isActive }) =>
+                                            `group flex items-center px-4 py-3.5 text-base font-bold rounded-xl transition-all ${isActive
+                                                ? 'bg-teal-50 text-teal-700 shadow-sm shadow-teal-500/10'
+                                                : 'text-gray-600 hover:bg-gray-50 hover:text-teal-600'
+                                            }`
+                                        }
                                     >
-                                        <LogOut className="h-5 w-5" />
-                                    </button>
+                                        {({ isActive }) => (
+                                            <>
+                                                <item.icon className={`mr-4 h-5.5 w-5.5 ${isActive ? 'text-teal-600' : 'text-gray-400 group-hover:text-teal-500'}`} />
+                                                {item.label}
+                                            </>
+                                        )}
+                                    </NavLink>
+                                ))}
+                            </nav>
+                        </div>
+                        <div className="flex-shrink-0 flex border-t border-gray-100 p-6 bg-gray-50/50">
+                            <div className="flex items-center w-full">
+                                <div className="h-12 w-12 rounded-2xl bg-teal-100 flex items-center justify-center border border-teal-200 shadow-sm">
+                                    <UserSquare2 className="h-7 w-7 text-teal-600" />
                                 </div>
+                                <div className="ml-4 flex-1">
+                                    <p className="text-base font-bold text-gray-900 leading-tight">{user?.full_name}</p>
+                                    <p className="text-xs font-semibold text-teal-600 uppercase tracking-wider mt-0.5">{user?.role}</p>
+                                </div>
+                                <button
+                                    onClick={handleLogout}
+                                    className="p-2.5 rounded-xl bg-gray-100 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all border border-gray-200"
+                                >
+                                    <LogOut className="h-5 w-5" />
+                                </button>
                             </div>
                         </div>
                     </div>
-                )}
-            </header>
+                </div>
+            )}
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
