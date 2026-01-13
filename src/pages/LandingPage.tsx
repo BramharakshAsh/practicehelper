@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import {
     Users, CheckSquare, Zap, ClipboardList,
     BarChart3, ShieldCheck, ArrowRight, PlayCircle,
-    Menu, X
+    Menu, X, Compass, BookOpen, UserCheck, Settings,
+    HelpCircle, Database
 } from 'lucide-react';
 import Logo from '../assets/Logo.png';
 
@@ -26,6 +27,7 @@ const LandingPage: React.FC = () => {
                         {/* Desktop Nav */}
                         <div className="hidden md:flex items-center space-x-8">
                             <a href="#features" className="text-gray-600 hover:text-teal-600 transition-colors font-medium">Features</a>
+                            <a href="#about" className="text-gray-600 hover:text-teal-600 transition-colors font-medium">About</a>
                             <a href="#benefits" className="text-gray-600 hover:text-teal-600 transition-colors font-medium">Benefits</a>
                             <Link to="/login" className="text-gray-600 hover:text-teal-600 transition-colors font-medium">Login</Link>
                             <Link
@@ -49,6 +51,7 @@ const LandingPage: React.FC = () => {
                 {isMenuOpen && (
                     <div className="md:hidden bg-white border-b border-gray-100 py-4 px-4 space-y-4 shadow-xl">
                         <a href="#features" onClick={() => setIsMenuOpen(false)} className="block text-gray-600 font-medium">Features</a>
+                        <a href="#about" onClick={() => setIsMenuOpen(false)} className="block text-gray-600 font-medium">About</a>
                         <a href="#benefits" onClick={() => setIsMenuOpen(false)} className="block text-gray-600 font-medium">Benefits</a>
                         <Link to="/login" className="block text-gray-600 font-medium">Login</Link>
                         <Link
@@ -210,6 +213,117 @@ const LandingPage: React.FC = () => {
                             </div>
                             {/* Decorative rings/blobs */}
                             <div className="absolute -z-10 -bottom-10 -right-10 w-64 h-64 bg-teal-50 rounded-full blur-3xl"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* About the App Section */}
+            <section id="about" className="py-24 bg-gray-50 border-y border-gray-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">About the <span className="text-teal-600">App</span></h2>
+                        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                            Practice Helper (Firm Flow) is designed to give you total control over your practice,
+                            automating repetitive tasks and centralizing client data.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        {/* Getting Started */}
+                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                            <div className="flex items-center space-x-4 mb-6">
+                                <div className="p-3 bg-teal-50 rounded-2xl text-teal-600">
+                                    <PlayCircle className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900">Getting Started</h3>
+                            </div>
+                            <ol className="space-y-4">
+                                <li className="flex items-start">
+                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
+                                    <p className="text-gray-600"><span className="font-bold text-gray-800">Log in</span> – Use your admin credentials. Land on the Dashboard to see real-time metrics and alerts immediately.</p>
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+                                    <p className="text-gray-600"><span className="font-bold text-gray-800">Managing Clients</span> – Add engaged clients, fill details, and centralize engagement history in one pulse.</p>
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+                                    <p className="text-gray-600"><span className="font-bold text-gray-800">Assign Tasks</span> – Create tasks for staff members. The system auto-suggests staff based on current workload.</p>
+                                </li>
+                            </ol>
+                        </div>
+
+                        {/* User Roles */}
+                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                            <div className="flex items-center space-x-4 mb-6">
+                                <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
+                                    <UserCheck className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900">Role-Based Access</h3>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-gray-50 rounded-2xl">
+                                    <p className="font-bold text-gray-900">Partner</p>
+                                    <p className="text-sm text-gray-600">Complete visibility. Manage clients, staff, audits, and firm-wide configurations.</p>
+                                </div>
+                                <div className="p-4 bg-gray-50 rounded-2xl">
+                                    <p className="font-bold text-gray-900">Manager</p>
+                                    <p className="text-sm text-gray-600">Supervise assigned portfolios and staff workload without modifying global settings.</p>
+                                </div>
+                                <div className="p-4 bg-gray-50 rounded-2xl">
+                                    <p className="font-bold text-gray-900">Staff & Articles</p>
+                                    <p className="text-sm text-gray-600">Focus on individual task queues and personal compliance deadlines.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Smart Automation */}
+                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                            <div className="flex items-center space-x-4 mb-6">
+                                <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
+                                    <Zap className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900">Smart Automation</h3>
+                            </div>
+                            <div className="space-y-6">
+                                <div>
+                                    <p className="font-bold text-gray-900 flex items-center"><Compass className="w-4 h-4 mr-2 text-indigo-500" /> Auto-Task Wizard</p>
+                                    <p className="text-gray-600 text-sm mt-1">Generate recurring compliance tasks (GST, TDS, IT) automatically based on client relations and frequency.</p>
+                                </div>
+                                <div>
+                                    <p className="font-bold text-gray-900 flex items-center"><Database className="w-4 h-4 mr-2 text-indigo-500" /> Bulk Import</p>
+                                    <p className="text-gray-600 text-sm mt-1">Onboard your entire firm in minutes via CSV import. The system validates and populates your hub instantly.</p>
+                                </div>
+                                <div>
+                                    <p className="font-bold text-gray-900 flex items-center"><Settings className="w-4 h-4 mr-2 text-indigo-500" /> Audit Checklists</p>
+                                    <p className="text-gray-600 text-sm mt-1">Detailed audit workspaces with assigned line-items provide clear responsibility and traceability.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Best Practices */}
+                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                            <div className="flex items-center space-x-4 mb-6">
+                                <div className="p-3 bg-orange-50 rounded-2xl text-orange-600">
+                                    <HelpCircle className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900">Tips & Best Practices</h3>
+                            </div>
+                            <ul className="space-y-4">
+                                <li className="flex items-start">
+                                    <div className="mt-1.5 mr-3 w-1.5 h-1.5 rounded-full bg-orange-400"></div>
+                                    <p className="text-gray-600"><span className="font-semibold text-gray-800">Balance Workload</span> – Use the Staff Load Snapshot to reassign tasks if a team member is overloaded.</p>
+                                </li>
+                                <li className="flex items-start">
+                                    <div className="mt-1.5 mr-3 w-1.5 h-1.5 rounded-full bg-orange-400"></div>
+                                    <p className="text-gray-600"><span className="font-semibold text-gray-800">Universal Search</span> – Quickly find any client, staff, or task using the global search bar on any page.</p>
+                                </li>
+                                <li className="flex items-start">
+                                    <div className="mt-1.5 mr-3 w-1.5 h-1.5 rounded-full bg-orange-400"></div>
+                                    <p className="text-gray-600"><span className="font-semibold text-gray-800">Stay Updated</span> – Keep client engagement details accurate to ensure correct task generation and reporting.</p>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
