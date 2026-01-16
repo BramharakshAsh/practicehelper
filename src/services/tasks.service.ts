@@ -36,10 +36,6 @@ class TasksService {
 
     if (user.role === 'manager') {
       // Manager sees tasks for clients or staff assigned to them
-      // We need to fetch assigned staff and client IDs first or use a join-based filter
-      // For now, let's use a simpler approach if possible, but manager access is across tables.
-      // Easiest is to filter by client's manager_id or staff's manager_id.
-
       const { data: staffIds } = await supabase.from('staff').select('user_id').eq('manager_id', user.id);
       const { data: clientIds } = await supabase.from('clients').select('id').eq('manager_id', user.id);
 
@@ -50,6 +46,9 @@ class TasksService {
       sIds.push(user.id);
 
       query = query.or(`staff_id.in.(${sIds.join(',')}),client_id.in.(${cIds.join(',')})`);
+    } else if (user.role !== 'partner') {
+      // For 'paid_staff', 'articles', 'staff' or any other role, they only see their own tasks
+      query = query.eq('staff_id', user.id);
     }
 
     const { data, error } = await query.order('due_date', { ascending: true });

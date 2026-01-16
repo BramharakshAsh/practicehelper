@@ -10,7 +10,7 @@ interface AuthState {
   error: string | null;
 
   // Actions
-  login: (role: UserRole, credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   clearError: () => void;
@@ -23,11 +23,11 @@ export const useAuthStore = create<AuthState>()(
     isLoading: false,
     error: null,
 
-    login: async (role: UserRole, credentials: LoginCredentials) => {
+    login: async (credentials: LoginCredentials) => {
       set({ isLoading: true, error: null });
 
       await handleAsyncError(async () => {
-        const user = await authService.login(role, credentials);
+        const user = await authService.login(credentials);
         set({
           user,
           isAuthenticated: true,

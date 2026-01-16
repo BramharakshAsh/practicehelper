@@ -10,7 +10,7 @@ import ImportModal from '../components/Import/ImportModal';
 
 const ImportPage: React.FC = () => {
     const [showImportModal, setShowImportModal] = useState(false);
-    const [importType, setImportType] = useState<'clients' | 'staff' | 'tasks'>('clients');
+    const [importType, setImportType] = useState<'clients' | 'tasks'>('clients');
 
     const { clients, importClients } = useClients();
     const { staff, importStaff } = useStaff();
@@ -23,9 +23,6 @@ const ImportPage: React.FC = () => {
             switch (type) {
                 case 'clients':
                     await importClients(data);
-                    break;
-                case 'staff':
-                    await importStaff(data);
                     break;
                 case 'tasks':
                     // Process task data to match client and staff
@@ -62,7 +59,6 @@ const ImportPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                     { type: 'clients' as const, title: 'Import Clients', desc: 'Upload client master data' },
-                    { type: 'staff' as const, title: 'Import Staff', desc: 'Upload staff member data' },
                     { type: 'tasks' as const, title: 'Import Tasks', desc: 'Upload task assignments' }
                 ].map(item => (
                     <button

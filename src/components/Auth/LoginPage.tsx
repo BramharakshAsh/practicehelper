@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, User, Lock, Eye, EyeOff } from 'lucide-react';
-import { UserRole } from '../../types';
+import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import RegisterOrganizationModal from './RegisterOrganizationModal';
 import Logo from '../../assets/Logo.png';
 
 const LoginPage: React.FC = () => {
   const { login, isLoading, error, clearError } = useAuthStore();
-  const [selectedRole, setSelectedRole] = useState<UserRole>('partner');
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -18,7 +16,7 @@ const LoginPage: React.FC = () => {
     clearError();
 
     try {
-      await login(selectedRole, credentials);
+      await login(credentials);
     } catch (error) {
       // Error is handled in the store
     }
@@ -49,21 +47,6 @@ const LoginPage: React.FC = () => {
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-gray-200/50 border border-white p-8 sm:p-10">
           <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center italic">Welcome Back</h2>
 
-          {/* Role Selection */}
-          <div className="flex p-1 bg-gray-100 rounded-2xl mb-8">
-            {(['partner', 'manager', 'staff'] as UserRole[]).map((role) => (
-              <button
-                key={role}
-                onClick={() => setSelectedRole(role)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${selectedRole === role
-                    ? 'bg-white text-teal-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                {role.charAt(0).toUpperCase() + role.slice(1)}
-              </button>
-            ))}
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">

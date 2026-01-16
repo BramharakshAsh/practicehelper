@@ -25,12 +25,15 @@ const DashboardLayout: React.FC = () => {
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/dashboard/tasks', label: 'Tasks', icon: CheckSquare },
         { to: '/dashboard/clients', label: 'Clients', icon: Users },
-        { to: '/dashboard/staff', label: 'Staff', icon: UserSquare2 },
-        { to: '/dashboard/calendar', label: 'Calendar', icon: Calendar },
         { to: '/dashboard/audits', label: 'Audits', icon: ClipboardList },
         { to: '/dashboard/auto-tasks', label: 'Auto Tasks', icon: Zap },
-        { to: '/dashboard/import', label: 'Import', icon: Upload },
-        { to: '/dashboard/reports', label: 'Reports', icon: PieChart },
+        // Partner/Manager only items
+        ...(['partner', 'manager'].includes(user?.role || '') ? [
+            { to: '/dashboard/staff', label: 'Staff', icon: UserSquare2 },
+            { to: '/dashboard/reports', label: 'Reports', icon: PieChart },
+            { to: '/dashboard/import', label: 'Import', icon: Upload },
+        ] : []),
+        { to: '/dashboard/calendar', label: 'Calendar', icon: Calendar },
     ];
 
     const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
