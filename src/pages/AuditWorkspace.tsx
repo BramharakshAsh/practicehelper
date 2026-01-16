@@ -248,7 +248,7 @@ const AuditWorkspace: React.FC = () => {
                         <div className="flex items-center text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-1">
                             <span className="text-blue-600 mr-2">{audit.client?.name}</span>
                             <span className="mx-2">•</span>
-                            <span>Lead: {audit.lead_staff?.full_name}</span>
+                            <span>Lead: {audit.lead_staff?.name}</span>
                         </div>
                     </div>
                 </div>

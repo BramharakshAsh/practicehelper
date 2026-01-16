@@ -24,7 +24,7 @@ const ImportPage: React.FC = () => {
                 case 'clients':
                     await importClients(data);
                     break;
-                case 'tasks':
+                case 'tasks': {
                     // Process task data to match client and staff
                     const processedTasks = data.map(item => {
                         const client = clients.find(c => c.name === item.client_name);
@@ -42,6 +42,7 @@ const ImportPage: React.FC = () => {
                     });
                     await importTasks(processedTasks);
                     break;
+                }
             }
         } catch (error) {
             console.error('Import failed:', error);

@@ -154,7 +154,7 @@ const AuditDashboard: React.FC = () => {
                                             <div className="space-y-3 mb-6">
                                                 <div className="flex items-center text-sm text-gray-600">
                                                     <User className="h-4 w-4 mr-2" />
-                                                    <span>{audit.lead_staff?.full_name || 'Unassigned'}</span>
+                                                    <span>{audit.lead_staff?.name || 'Unassigned'}</span>
                                                 </div>
                                                 <div className="flex items-center text-sm text-gray-600">
                                                     <Calendar className="h-4 w-4 mr-2" />
