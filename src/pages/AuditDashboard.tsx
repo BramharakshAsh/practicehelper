@@ -17,17 +17,21 @@ const AuditDashboard: React.FC = () => {
     }, []);
 
     const loadData = async () => {
+        console.log('AuditDashboard: loadData started');
         setLoading(true);
         try {
+            console.log('AuditDashboard: Fetching audits and tasks...');
             const [activeAudits, pendingTasks] = await Promise.all([
                 auditManagementService.getAuditPlans(),
                 auditManagementService.getPotentialAuditTasks()
             ]);
+            console.log('AuditDashboard: Fetch success', { audits: activeAudits.length, tasks: pendingTasks.length });
             setAudits(activeAudits);
             setPotentialTasks(pendingTasks);
         } catch (error) {
             console.error('Failed to load audits', error);
         } finally {
+            console.log('AuditDashboard: loadData finished');
             setLoading(false);
         }
     };

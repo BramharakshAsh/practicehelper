@@ -24,9 +24,13 @@ const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const AuditDashboard = lazy(() => import('./pages/AuditDashboard'));
 const AuditWorkspace = lazy(() => import('./pages/AuditWorkspace'));
+const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
+const BillingPage = lazy(() => import('./pages/BillingPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 import LandingPage from './pages/LandingPage';
 import ErrorBoundary from './components/Common/ErrorBoundary';
+import ProtectedRoute from './components/Common/ProtectedRoute';
 import { SessionTimeout } from './components/Auth/SessionTimeout';
 
 
@@ -66,7 +70,7 @@ function App() {
 
     // 2. Auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // console.log('App: Auth event detected:', event);
+      console.log('App: Auth event detected:', event);
 
       if (event === 'PASSWORD_RECOVERY') {
         navigate('/reset-password');
@@ -76,13 +80,13 @@ function App() {
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         if (session) {
           const fetchedUser = await authService.getCurrentUser();
-          // console.log('App: User profile loaded:', fetchedUser?.email);
+          console.log('App: User profile loaded:', fetchedUser?.email);
           setUser(fetchedUser);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       } else if (event === 'USER_UPDATED') {
-        // console.log('App: User updated, bypassing profile fetch for reset flow.');
+        console.log('App: User updated, bypassing profile fetch for reset flow.');
         return;
       }
     });
@@ -134,9 +138,26 @@ function App() {
               <Route path="import" element={<ImportPage />} />
               <Route path="auto-tasks" element={<AutoTasksPage />} />
               <Route path="audits" element={<AuditDashboard />} />
-              <Route path="audits/:id" element={<AuditWorkspace />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="audits/:auditId" element={
+                <ProtectedRoute>
+                  <AuditWorkspace />
+                </ProtectedRoute>
+              } />
+              <Route path="documents" element={
+                <ProtectedRoute>
+                  <DocumentsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="billing" element={
+                <ProtectedRoute roles={['partner', 'manager']}>
+                  <BillingPage />
+                </ProtectedRoute>
+              } />
+              <Route path="settings" element={
+                <ProtectedRoute roles={['partner', 'manager']}>
+                  <SettingsPage />
+                </ProtectedRoute>
+              } />
             </Route>
 
             {/* Catch all redirect to landing page */}

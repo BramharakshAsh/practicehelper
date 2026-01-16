@@ -39,7 +39,16 @@ const DashboardPage: React.FC = () => {
     };
 
     const handleSendReminder = () => {
-        alert('Client Reminder feature coming soon!');
+        const msg = "Dear Client, \n\nThis is a reminder to please submit your pending documents for the upcoming statutory deadlines.\n\nRegards,\nFirm Flow";
+        navigator.clipboard.writeText(msg).then(() => {
+            // In a real app we would use a toast notification here
+            // For now, using a more descriptive alert or just relying on user action
+            // But since we can't show toast easily without adding a lib or context, let's just alert for now but validly.
+            alert('Reminder text copied to clipboard! You can now paste it into WhatsApp/Email.');
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy reminder text.');
+        });
     };
 
     return (

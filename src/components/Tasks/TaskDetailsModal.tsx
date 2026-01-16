@@ -1,9 +1,13 @@
-import { X, Calendar, User, Building, FileText, ExternalLink } from 'lucide-react';
+import { X, Calendar, User, Building, FileText, ExternalLink, CheckSquare, Plus, Paperclip, Clock, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auditManagementService } from '../../services/audit-management.service';
 import { tasksService } from '../../services/tasks.service';
-import { Task } from '../../types';
+import { Task, Document } from '../../types';
 import TaskComments from './TaskComments';
+import { useDocuments } from '../../store/documents.store';
+import { useTimeEntriesStore } from '../../store/time-entries.store';
+import DocumentList from '../Documents/DocumentList';
+import DocumentUploadModal from '../Documents/DocumentUploadModal';
 
 interface TaskDetailsModalProps {
     task: Task;
@@ -14,6 +18,24 @@ interface TaskDetailsModalProps {
 
 const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onStatusChange, onUpdateTask }) => {
     const navigate = useNavigate();
+    const { documents, fetchDocuments, uploadDocument, deleteDocument } = useDocuments();
+    const { startTimer, activeTimer } = useTimeEntriesStore();
+    const [showUploadModal, setShowUploadModal] = React.useState(false);
+    const [taskDocuments, setTaskDocuments] = React.useState<Document[]>([]);
+
+    React.useEffect(() => {
+        fetchDocuments({ taskId: task.id }).then(() => {
+            // Filter documents for this task from the store
+            // Note: fetchDocuments updates the global store. To avoid filtering global state issues if multiple modals open (unlikely here but good practice),
+            // a better pattern might be specialized selector or local state.
+            // For now, since fetchDocuments replaces 'documents' in store, this works if we assume one active view at a time usage of store for list.
+            // However, store design is single-list. Let's rely on the fetch we just did.
+        });
+    }, [task.id]);
+
+    React.useEffect(() => {
+        setTaskDocuments(documents.filter(d => d.task_id === task.id));
+    }, [documents, task.id]);
 
     const handleOpenAudit = async () => {
         if (task.audit_id) {
@@ -133,18 +155,66 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                             <div className="space-y-4">
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Status</h4>
-                                    <select
-                                        value={task.status}
-                                        onChange={(e) => onStatusChange(task.id, e.target.value as Task['status'])}
-                                        className="w-full md:w-auto border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    >
-                                        <option value="assigned">Assigned</option>
-                                        <option value="in_progress">In Progress</option>
-                                        <option value="awaiting_client_data">Awaiting Client Data</option>
-                                        <option value="ready_for_review">Ready for Review</option>
-                                        <option value="filed_completed">Filed & Completed</option>
-                                    </select>
+                                    <div className="flex items-center space-x-2">
+                                        <select
+                                            value={task.status}
+                                            onChange={(e) => onStatusChange(task.id, e.target.value as Task['status'])}
+                                            className={`rounded-lg text-sm font-medium px-3 py-1 border-0 ring-1 ring-inset focus:ring-2 focus:ring-blue-600 ${statusColors[task.status]}`}
+                                        >
+                                            <option value="assigned">Assigned</option>
+                                            <option value="in_progress">In Progress</option>
+                                            <option value="awaiting_client_data">Awaiting Data</option>
+                                            <option value="ready_for_review">Ready for Review</option>
+                                            <option value="filed_completed">Filed / Completed</option>
+                                        </select>
+
+                                        <button
+                                            onClick={() => startTimer(task.id)}
+                                            disabled={activeTimer.activeTaskId === task.id}
+                                            className={`p-2 rounded-full transition-colors ${activeTimer.activeTaskId === task.id
+                                                    ? 'bg-green-100 text-green-600 cursor-default'
+                                                    : 'bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600'
+                                                }`}
+                                            title={activeTimer.activeTaskId === task.id ? 'Timer Running' : 'Start Timer'}
+                                        >
+                                            {activeTimer.activeTaskId === task.id ? <Clock className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                                        </button>
+                                    </div>
                                 </div>
+
+                                {task.status === 'filed_completed' && (
+                                    <div className="bg-green-50 p-4 rounded-lg border border-green-100 animate-fade-in">
+                                        <h4 className="text-sm font-bold text-green-700 uppercase tracking-wider mb-3 flex items-center">
+                                            <CheckSquare className="h-4 w-4 mr-2" />
+                                            Filing Details
+                                        </h4>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-green-800 mb-1">
+                                                    Reference / ARN No.
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={task.filing_reference || ''}
+                                                    onChange={(e) => onUpdateTask?.(task.id, { filing_reference: e.target.value })}
+                                                    placeholder="e.g. AA070224123456"
+                                                    className="w-full text-sm border-green-200 rounded-md shadow-sm focus:border-green-500 focus:ring-green-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-green-800 mb-1">
+                                                    Date of Filing
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={task.filing_date || ''}
+                                                    onChange={(e) => onUpdateTask?.(task.id, { filing_date: e.target.value })}
+                                                    className="w-full text-sm border-green-200 rounded-md shadow-sm focus:border-green-500 focus:ring-green-500"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Details</h4>
@@ -175,6 +245,25 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                 )}
 
                                 <div className="pt-4 mt-4 border-t border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider flex items-center">
+                                            <Paperclip className="h-4 w-4 mr-2" />
+                                            Documents
+                                        </h4>
+                                        <button
+                                            onClick={() => setShowUploadModal(true)}
+                                            className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center"
+                                        >
+                                            <Plus className="h-3 w-3 mr-1" />
+                                            Add
+                                        </button>
+                                    </div>
+                                    <div className="max-h-40 overflow-y-auto">
+                                        <DocumentList documents={taskDocuments} onDelete={deleteDocument} />
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 mt-4 border-t border-gray-100">
                                     <button
                                         onClick={handleOpenAudit}
                                         className="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold shadow-indigo-100 shadow-lg active:scale-[0.98]"
@@ -196,6 +285,15 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
 
                     </div>
                 </div>
+
+                {showUploadModal && (
+                    <DocumentUploadModal
+                        onClose={() => setShowUploadModal(false)}
+                        onUpload={uploadDocument}
+                        preselectedClientId={task.client_id}
+                        preselectedTaskId={task.id}
+                    />
+                )}
 
             </div>
         </div>
