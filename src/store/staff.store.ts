@@ -7,20 +7,23 @@ interface StaffState {
   staff: Staff[];
   isLoading: boolean;
   error: string | null;
+  pendingDeletions: Record<string, { timer: any; staff: Staff }>;
 
   // Actions
   fetchStaff: () => Promise<void>;
   createStaff: (staff: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'> & { password?: string }) => Promise<void>;
   updateStaff: (id: string, updates: Partial<Staff>) => Promise<void>;
   deleteStaff: (id: string) => Promise<void>;
+  undoStaffDeletion: (id: string) => void;
   importStaff: (staff: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
   clearError: () => void;
 }
 
-export const useStaffStore = create<StaffState>((set) => ({
+export const useStaffStore = create<StaffState>((set, get) => ({
   staff: [],
   isLoading: false,
   error: null,
+  pendingDeletions: {},
 
   fetchStaff: async () => {
     console.log('[StaffStore] fetchStaff called');
@@ -81,20 +84,54 @@ export const useStaffStore = create<StaffState>((set) => ({
   },
 
   deleteStaff: async (id) => {
-    set({ isLoading: true, error: null });
+    const staffMember = get().staff.find(s => s.id === id);
+    if (!staffMember) return;
 
-    await handleAsyncError(async () => {
-      await staffService.deleteStaff(id);
-      set(state => ({
-        staff: state.staff.filter(member => member.id !== id),
-        isLoading: false
-      }));
-    }, 'Delete staff').catch((error) => {
-      set({
-        error: ErrorService.getErrorMessage(error),
-        isLoading: false
-      });
-      throw error;
+    // Remove from active staff list immediately (Optimistic UI)
+    set(state => ({
+      staff: state.staff.filter(member => member.id !== id),
+    }));
+
+    // Start 2 minute timer (120000 ms)
+    const timeoutId = setTimeout(async () => {
+      const { pendingDeletions } = get();
+      if (pendingDeletions[id]) {
+        try {
+          // Pass the user_id for permanent deletion from auth.users
+          await staffService.deleteStaffPermanently(staffMember.user_id!);
+          set(state => {
+            const newPending = { ...state.pendingDeletions };
+            delete newPending[id];
+            return { pendingDeletions: newPending };
+          });
+          console.log(`[StaffStore] Permanent deletion completed for ${staffMember.name}`);
+        } catch (error) {
+          console.error('[StaffStore] Final deletion failed:', error);
+        }
+      }
+    }, 120000);
+
+    set(state => ({
+      pendingDeletions: {
+        ...state.pendingDeletions,
+        [id]: { timer: timeoutId, staff: staffMember }
+      }
+    }));
+  },
+
+  undoStaffDeletion: (id) => {
+    const pending = get().pendingDeletions[id];
+    if (!pending) return;
+
+    clearTimeout(pending.timer);
+
+    set(state => {
+      const newPending = { ...state.pendingDeletions };
+      delete newPending[id];
+      return {
+        staff: [pending.staff, ...state.staff].sort((a, b) => a.name.localeCompare(b.name)),
+        pendingDeletions: newPending
+      };
     });
   },
 

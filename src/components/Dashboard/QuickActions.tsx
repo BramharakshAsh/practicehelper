@@ -54,6 +54,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onAddTask, onScheduleFiling
                     <button
                         key={index}
                         onClick={action.onClick}
+                        data-walkthrough={action.label === 'Add Task' ? 'add-task' : action.label === 'Import Data' ? 'import-button' : undefined}
                         className={`w-full flex items-center p-3 rounded-lg border border-transparent ${action.bg} ${action.color} ${action.hover} transition-all font-medium`}
                     >
                         <action.icon className="h-5 w-5 mr-3" />

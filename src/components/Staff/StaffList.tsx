@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard as Edit, Eye, Calendar, Trash2 } from 'lucide-react';
 import { Staff, Task } from '../../types';
 import StaffModal from './StaffModal';
+import { useStaffStore } from '../../store/staff.store';
+import { RotateCcw as Undo } from 'lucide-react';
 
 interface StaffListProps {
   staff: Staff[];
@@ -20,6 +22,7 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
   const [showModal, setShowModal] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [viewMode, setViewMode] = useState<'create' | 'edit' | 'view'>('create');
+  const { pendingDeletions, undoStaffDeletion } = useStaffStore();
 
   useEffect(() => {
     setFilterOverloaded(searchParams.get('filter') === 'overloaded');
@@ -112,10 +115,11 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Staff Management</h2>
-          <p className="text-gray-600 mt-1">Manage your team members and their roles</p>
+          <p className="text-gray-600 mt-1" data-walkthrough="manager-info">Manage your team members and their roles</p>
         </div>
         <button
           onClick={() => openModal('create')}
+          data-walkthrough="add-staff"
           className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="h-4 w-4" />
@@ -224,7 +228,7 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
               </button>
               <button
                 onClick={() => {
-                  if (confirm(`Are you sure you want to delete ${member.name}?`)) {
+                  if (confirm(`Are you sure you want to delete ${member.name}? Deleting the staff will also delete the tasks assigned to the staff.`)) {
                     onStaffDelete(member.id);
                   }
                 }}
@@ -342,7 +346,33 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
           })}
         </div>
       </div>
-    </div >
+      {/* Undo Notifications */}
+      <div className="fixed bottom-6 left-6 z-50 flex flex-col-reverse gap-3">
+        {Object.entries(pendingDeletions).map(([id, { staff: member }]) => (
+          <div
+            key={id}
+            className="bg-gray-900/95 backdrop-blur-sm text-white px-4 py-3 rounded-xl shadow-2xl border border-white/10 flex items-center space-x-6 animate-in slide-in-from-left-4 fade-in duration-300 min-w-[300px]"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="bg-red-500/20 p-2 rounded-lg">
+                <Trash2 className="h-4 w-4 text-red-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Deleted {member.name}</p>
+                <p className="text-[10px] text-gray-400">Restorable for 2 minutes</p>
+              </div>
+            </div>
+            <button
+              onClick={() => undoStaffDeletion(id)}
+              className="ml-auto flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all text-xs font-bold uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95"
+            >
+              <Undo className="h-3 w-3" />
+              <span>Undo</span>
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 

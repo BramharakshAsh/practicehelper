@@ -59,8 +59,30 @@ class StaffService {
 
     // 1. Create Auth User
     console.log('[StaffService] Creating Auth User...');
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://demo.supabase.co';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'demo-key';
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('[StaffService] Missing Supabase environment variables');
+      throw new Error('Supabase configuration is missing. Please check the server environment.');
+    }
+
+    // Pre-check: Does a user with this email already exist in our public profiles?
+    console.log('[StaffService] Checking for existing user profile...');
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('email', staffData.email.trim())
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('[StaffService] Error checking existing user:', checkError);
+    }
+
+    if (existingUser) {
+      console.error('[StaffService] User already exists with this email:', staffData.email);
+      throw new Error('A user with this email address already exists.');
+    }
 
     const tempClient = createClient(supabaseUrl, supabaseKey, {
       auth: {
@@ -74,12 +96,12 @@ class StaffService {
     console.log('[StaffService] Using role for Auth/Profile:', authRole);
 
     const { data: authData, error: authError } = await tempClient.auth.signUp({
-      email: staffData.email,
+      email: staffData.email.trim(),
       password: staffData.password,
       options: {
         data: {
           full_name: staffData.name,
-          username: staffData.email, // Use full email for uniqueness
+          username: staffData.email.trim(), // Use full email for uniqueness
           role: authRole,
         }
       }
@@ -87,10 +109,17 @@ class StaffService {
 
     if (authError) {
       console.error('[StaffService] Auth SignUp Error:', authError);
-      // Log more details if available
+
+      // Provide more helpful error messages for common scenarios
+      if (authError.message.includes('already registered') || authError.status === 400) {
+        throw new Error('This email is already registered. Please use a different email or log in.');
+      }
+
       if (authError.message.includes('rate limit')) {
         console.warn('[StaffService] Supabase rate limit hit for emails');
+        throw new Error('Too many requests. Please try again in a few minutes.');
       }
+
       throw authError;
     }
     if (!authData.user) {
@@ -183,13 +212,16 @@ class StaffService {
     return { ...data, role: data.user?.role || data.role } as Staff;
   }
 
-  async deleteStaff(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('staff')
-      .update({ is_active: false })
-      .eq('id', id);
+  async deleteStaffPermanently(userId: string): Promise<void> {
+    console.log('[StaffService] Deleting user permanently:', userId);
+    const { error } = await supabase.rpc('delete_user_permanent', {
+      target_user_id: userId
+    });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[StaffService] Error in permanent deletion:', error);
+      throw error;
+    }
   }
 
   async importStaff(staffList: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]): Promise<Staff[]> {

@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { X, Upload, Download, FileSpreadsheet, AlertCircle } from 'lucide-react';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import { useClientsStore } from '../../store/clients.store';
+import { useStaffStore } from '../../store/staff.store';
+import { useComplianceStore } from '../../store/compliance.store';
 
 interface ImportModalProps {
-  type: 'clients' | 'staff' | 'tasks';
+  type: 'clients' | 'tasks';
   onClose: () => void;
   onImport: (data: any[]) => void;
 }
@@ -12,51 +17,113 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getTemplateData = () => {
-    switch (type) {
-      case 'clients':
-        return {
-          filename: 'clients_template.csv',
-          headers: ['name', 'pan', 'gstin', 'email', 'phone', 'address', 'gst_work', 'tds_work', 'it_work', 'roc_work', 'audit_work', 'accounting_work'],
-          sample: [
-            'ABC Enterprises Pvt Ltd,ABCDE1234F,29ABCDE1234F1Z5,contact@abc.com,+91 98765 43210,"123 Business Park Mumbai",Yes,Yes,Yes,No,No,Yes'
-          ]
-        };
-      case 'staff':
-        return {
-          filename: 'staff_template.csv',
-          headers: ['name', 'email', 'phone', 'role', 'is_active'],
-          sample: [
-            'John Doe,john@firm.com,+91 98765 12345,paid_staff,Yes'
-          ]
-        };
-      case 'tasks':
-        return {
-          filename: 'tasks_template.csv',
-          headers: ['client_name', 'staff_name', 'compliance_type', 'title', 'due_date', 'priority', 'period'],
-          sample: [
-            '"ABC Enterprises","John Doe","GST","GST Return - March 2024","2024-04-20","high","March 2024"'
-          ]
-        };
-      default:
-        return { filename: '', headers: [], sample: [] };
-    }
-  };
+  const { clients } = useClientsStore();
+  const { staff } = useStaffStore();
+  const { complianceTypes } = useComplianceStore();
 
-  const downloadTemplate = () => {
-    const template = getTemplateData();
-    const csvContent = [
-      template.headers.join(','),
-      ...template.sample
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = template.filename;
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const downloadTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(type === 'clients' ? 'Clients' : 'Tasks');
+
+    if (type === 'clients') {
+      worksheet.columns = [
+        { header: 'Name', key: 'name', width: 30 },
+        { header: 'PAN', key: 'pan', width: 15 },
+        { header: 'GSTIN', key: 'gstin', width: 20 },
+        { header: 'Email', key: 'email', width: 25 },
+        { header: 'Phone', key: 'phone', width: 15 },
+        { header: 'Address', key: 'address', width: 40 },
+        { header: 'GST Work (Yes/No)', key: 'gst_work', width: 15 },
+        { header: 'TDS Work (Yes/No)', key: 'tds_work', width: 15 },
+        { header: 'IT Work (Yes/No)', key: 'it_work', width: 15 },
+        { header: 'ROC Work (Yes/No)', key: 'roc_work', width: 15 },
+        { header: 'Audit Work (Yes/No)', key: 'audit_work', width: 15 },
+        { header: 'Accounting Work (Yes/No)', key: 'accounting_work', width: 20 },
+      ];
+
+      // Add Data Validation for Yes/No columns
+      for (let i = 7; i <= 12; i++) {
+        worksheet.getColumn(i).eachCell({ includeEmpty: true }, (cell, rowNumber) => {
+          if (rowNumber > 1) {
+            cell.dataValidation = {
+              type: 'list',
+              allowBlank: true,
+              formulae: ['"Yes,No"'],
+            };
+          }
+        });
+      }
+
+      // Add sample data
+      worksheet.addRow({
+        name: 'ABC Enterprises Pvt Ltd',
+        pan: 'ABCDE1234F',
+        gstin: '29ABCDE1234F1Z5',
+        email: 'contact@abc.com',
+        phone: '+91 98765 43210',
+        address: '123 Business Park Mumbai',
+        gst_work: 'Yes',
+        tds_work: 'Yes',
+        it_work: 'Yes',
+        roc_work: 'No',
+        audit_work: 'No',
+        accounting_work: 'Yes',
+      });
+    } else {
+      worksheet.columns = [
+        { header: 'Client Name', key: 'client_name', width: 30 },
+        { header: 'Staff Name', key: 'staff_name', width: 25 },
+        { header: 'Compliance Type', key: 'compliance_type', width: 25 },
+        { header: 'Task Title', key: 'title', width: 40 },
+        { header: 'Due Date (YYYY-MM-DD)', key: 'due_date', width: 25 },
+        { header: 'Priority', key: 'priority', width: 15 },
+        { header: 'Period', key: 'period', width: 20 },
+      ];
+
+      // Prepare validation lists
+      const clientNames = clients.map(c => c.name).join(',');
+      const staffNames = staff.map(s => s.name).join(',');
+      const compTypes = complianceTypes.map(ct => ct.name).join(',');
+      const priorities = 'low,medium,high';
+
+      // Apply validations to first 100 rows
+      for (let i = 2; i <= 101; i++) {
+        const row = worksheet.getRow(i);
+        if (clientNames) {
+          row.getCell(1).dataValidation = { type: 'list', allowBlank: false, formulae: [`"${clientNames}"`] };
+        }
+        if (staffNames) {
+          row.getCell(2).dataValidation = { type: 'list', allowBlank: false, formulae: [`"${staffNames}"`] };
+        }
+        if (compTypes) {
+          row.getCell(3).dataValidation = { type: 'list', allowBlank: false, formulae: [`"${compTypes}"`] };
+        }
+        row.getCell(6).dataValidation = { type: 'list', allowBlank: false, formulae: [`"${priorities}"`] };
+      }
+
+      // Add sample
+      worksheet.addRow({
+        client_name: clients[0]?.name || 'Sample Client',
+        staff_name: staff[0]?.name || 'Sample Staff',
+        compliance_type: complianceTypes[0]?.name || 'GST',
+        title: 'Monthly Return Filing',
+        due_date: '2024-04-20',
+        priority: 'high',
+        period: 'March 2024',
+      });
+    }
+
+    // Styling
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `${type}_template.xlsx`);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,85 +134,66 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
     }
   };
 
-  const parseCSV = (text: string): any[] => {
-    const lines = text.trim().split('\n').filter(line => line.trim());
-    if (lines.length < 2) return [];
-    
-    // Parse CSV properly handling quoted values
-    const parseCSVLine = (line: string): string[] => {
-      const result = [];
-      let current = '';
-      let inQuotes = false;
-      
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          result.push(current.trim());
-          current = '';
-        } else {
-          current += char;
+  const parseXlsx = async (buffer: ArrayBuffer): Promise<any[]> => {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    const worksheet = workbook.worksheets[0];
+    const data: any[] = [];
+
+    const headers: string[] = [];
+    worksheet.getRow(1).eachCell((cell) => {
+      headers.push(cell.text.trim().toLowerCase().replace(/\s+/g, '_').split('(')[0].replace(/_$/, ''));
+    });
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+
+      const rowData: any = {};
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        const header = headers[colNumber - 1];
+        if (!header) return;
+
+        let value = cell.value;
+        // Handle formulae or rich text
+        if (value && typeof value === 'object') {
+          if ('result' in value) value = value.result;
+          else if ('text' in value) value = (value as any).text;
         }
-      }
-      
-      result.push(current.trim());
-      return result;
-    };
-    
-    const headers = parseCSVLine(lines[0]);
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i]);
-      const row: any = {};
-      
-      headers.forEach((header, index) => {
-        const value = values[index] || '';
-        
+
         if (type === 'clients' && header.endsWith('_work')) {
-          // Convert Yes/No to boolean and build work_types array
-          const isYes = value.toLowerCase() === 'yes';
-          if (!row.work_types) row.work_types = [];
+          const isYes = String(value).toLowerCase() === 'yes';
+          if (!rowData.work_types) rowData.work_types = [];
           if (isYes) {
             const workType = header.replace('_work', '').toUpperCase();
-            row.work_types.push(workType);
+            rowData.work_types.push(workType);
           }
-        } else if (header === 'is_active' && type === 'staff') {
-          row[header] = value.toLowerCase() === 'yes';
         } else {
-          row[header] = value;
+          rowData[header] = value;
         }
       });
-      
-      // Clean up temporary work type fields for clients
-      if (type === 'clients') {
-        ['gst_work', 'tds_work', 'it_work', 'roc_work', 'audit_work', 'accounting_work'].forEach(field => {
-          delete row[field];
-        });
+
+      if (Object.keys(rowData).length > 0) {
+        data.push(rowData);
       }
-      
-      data.push(row);
-    }
-    
+    });
+
     return data;
   };
 
   const handleImport = async () => {
     if (!file) return;
-    
+
     setIsProcessing(true);
     setError(null);
-    
+
     try {
-      const text = await file.text();
-      const data = parseCSV(text);
-      
+      const buffer = await file.arrayBuffer();
+      const data = await parseXlsx(buffer);
+
       if (data.length === 0) {
         throw new Error('No valid data found in the file');
       }
-      
+
       onImport(data);
       onClose();
     } catch (err) {
@@ -178,7 +226,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
               <div className="flex-1">
                 <h3 className="font-medium text-blue-900">Download Template</h3>
                 <p className="text-sm text-blue-700">
-                  Download the CSV template with the correct format and sample data
+                  Download the Excel (.xlsx) template with formatting and validations
                 </p>
               </div>
               <button
@@ -193,18 +241,15 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
 
           {/* File Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Upload CSV File
-            </label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
               <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">
-                  Click to upload or drag and drop your CSV file
+                  Click to upload or drag and drop your Excel (.xlsx) file
                 </p>
                 <input
                   type="file"
-                  accept=".csv"
+                  accept=".xlsx"
                   onChange={handleFileChange}
                   className="hidden"
                   id="file-upload"
@@ -217,7 +262,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
                 </label>
               </div>
             </div>
-            
+
             {file && (
               <div className="mt-2 text-sm text-gray-600">
                 Selected: {file.name}

@@ -22,7 +22,7 @@ export interface RegisterOrganizationData {
 export type AuthUser = User;
 
 class AuthService {
-  async login(role: UserRole, credentials: LoginCredentials): Promise<AuthUser> {
+  async login(credentials: LoginCredentials): Promise<AuthUser> {
     // Supabase Login
     const { data, error } = await supabase.auth.signInWithPassword({
       email: credentials.username.includes('@') ? credentials.username : `${credentials.username}@demo.com`, // Fallback mapping

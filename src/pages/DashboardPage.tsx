@@ -14,7 +14,10 @@ import TaskModal from '../components/Tasks/TaskModal';
 import AutoTaskModal from '../components/Tasks/AutoTaskModal';
 import { Task } from '../types';
 
+import { useAuthStore } from '../store/auth.store';
+
 const DashboardPage: React.FC = () => {
+    const { user } = useAuthStore();
     const { tasks, createTask } = useTasks();
     const { clients } = useClients();
     const { staff } = useStaff();
@@ -40,7 +43,7 @@ const DashboardPage: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 animate-fade-in">
+        <div className="space-y-8 animate-fade-in" data-walkthrough="dashboard-overview">
             {/* Section A: Critical Alert Strip - Sticky */}
             <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-8 mb-8 sticky top-0 z-30">
                 <CriticalAlertBanner tasks={tasks} complianceTypes={complianceTypes} />
@@ -83,10 +86,12 @@ const DashboardPage: React.FC = () => {
                         />
                     </div>
 
-                    {/* Section F: Staff Load Snapshot */}
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
-                        <StaffLoadSnapshot tasks={tasks} staff={staff} />
-                    </div>
+                    {/* Section F: Staff Load Snapshot - Only for Partners/Managers */}
+                    {['partner', 'manager'].includes(user?.role || '') && (
+                        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
+                            <StaffLoadSnapshot tasks={tasks} staff={staff} />
+                        </div>
+                    )}
                 </div>
             </div>
 
