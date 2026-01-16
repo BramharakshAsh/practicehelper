@@ -40,7 +40,7 @@ const DashboardPage: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 animate-fade-in">
+        <div className="space-y-8 animate-fade-in" data-walkthrough="dashboard-overview">
             {/* Section A: Critical Alert Strip - Sticky */}
             <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-8 mb-8 sticky top-0 z-30">
                 <CriticalAlertBanner tasks={tasks} complianceTypes={complianceTypes} />

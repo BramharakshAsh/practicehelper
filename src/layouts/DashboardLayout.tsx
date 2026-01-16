@@ -5,12 +5,14 @@ import { useAuthStore } from '../store/auth.store';
 import {
     LayoutDashboard, Users, UserSquare2, CheckSquare,
     Calendar, PieChart, LogOut, Upload, Zap,
-    ClipboardList, Menu, X
+    ClipboardList, Menu, X, HelpCircle
 } from 'lucide-react';
 import Logo from '../assets/Logo.png';
+import { useWalkthrough } from '../components/Walkthrough/WalkthroughProvider';
 
 const DashboardLayout: React.FC = () => {
     const { user, logout } = useAuthStore();
+    const { restartWalkthrough } = useWalkthrough();
     const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -58,23 +60,32 @@ const DashboardLayout: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-center space-x-3 sm:space-x-6">
+                        <div className="flex items-center space-x-3 sm:space-x-4">
                             <div className="hidden sm:flex flex-col items-end">
                                 <span className="text-sm font-bold text-gray-900 leading-tight">{user?.full_name}</span>
                                 <span className="text-xs font-semibold text-teal-600 capitalize leading-tight">{user?.role}</span>
                             </div>
 
-                            <div className="sm:hidden text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-md uppercase tracking-wider">
-                                {user?.role}
-                            </div>
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        restartWalkthrough();
+                                    }}
+                                    className="p-2.5 rounded-xl bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-all border border-gray-100"
+                                    title="Restart Tutorial"
+                                >
+                                    <HelpCircle className="h-5 w-5" />
+                                </button>
 
-                            <button
-                                onClick={handleLogout}
-                                className="p-2.5 rounded-xl bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-600 transition-all border border-gray-100"
-                                title="Logout"
-                            >
-                                <LogOut className="h-5 w-5" />
-                            </button>
+                                <button
+                                    onClick={handleLogout}
+                                    className="p-2.5 rounded-xl bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-600 transition-all border border-gray-100"
+                                    title="Logout"
+                                >
+                                    <LogOut className="h-5 w-5" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -87,6 +98,7 @@ const DashboardLayout: React.FC = () => {
                                 <NavLink
                                     key={item.to}
                                     to={item.to}
+                                    data-walkthrough={item.to === '/dashboard/calendar' ? 'calendar-view' : item.to === '/dashboard/audits' ? 'audit-section' : item.to === '/dashboard/import' ? 'import-button' : undefined}
                                     className={({ isActive }) =>
                                         `flex items-center px-5 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition-all ${isActive
                                             ? 'border-teal-500 text-teal-600 bg-teal-50/30'
@@ -103,17 +115,15 @@ const DashboardLayout: React.FC = () => {
                 </div>
             </header>
 
-            {/* Mobile Navigation Drawer - Moved outside header for better stacking context */}
+            {/* Mobile Navigation Drawer */}
             {isMobileMenuOpen && (
                 <div className="lg:hidden fixed inset-0 z-[200]">
-                    {/* Backdrop with fade-in effect */}
                     <div
                         className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300 pointer-events-auto"
                         onClick={closeMobileMenu}
                         aria-hidden="true"
                     ></div>
 
-                    {/* Sidebar Drawer */}
                     <div className="relative flex flex-col max-w-xs w-[85%] h-full bg-white shadow-2xl animate-slide-in-left">
                         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
                             <div className="flex items-center">
@@ -160,6 +170,16 @@ const DashboardLayout: React.FC = () => {
                                     <p className="text-base font-bold text-gray-900 leading-tight">{user?.full_name}</p>
                                     <p className="text-xs font-semibold text-teal-600 uppercase tracking-wider mt-0.5">{user?.role}</p>
                                 </div>
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        restartWalkthrough();
+                                    }}
+                                    className="p-2.5 rounded-xl bg-gray-100 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-200 mr-2"
+                                    title="Restart Tutorial"
+                                >
+                                    <HelpCircle className="h-5 w-5" />
+                                </button>
                                 <button
                                     onClick={handleLogout}
                                     className="p-2.5 rounded-xl bg-gray-100 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all border border-gray-200"

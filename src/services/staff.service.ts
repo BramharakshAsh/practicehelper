@@ -183,13 +183,16 @@ class StaffService {
     return { ...data, role: data.user?.role || data.role } as Staff;
   }
 
-  async deleteStaff(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('staff')
-      .update({ is_active: false })
-      .eq('id', id);
+  async deleteStaffPermanently(userId: string): Promise<void> {
+    console.log('[StaffService] Deleting user permanently:', userId);
+    const { error } = await supabase.rpc('delete_user_permanent', {
+      target_user_id: userId
+    });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[StaffService] Error in permanent deletion:', error);
+      throw error;
+    }
   }
 
   async importStaff(staffList: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]): Promise<Staff[]> {

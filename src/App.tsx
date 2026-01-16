@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy } from 'react';
+import { useEffect, Suspense, lazy, useState } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth.store';
 import { useClientsStore } from './store/clients.store';
@@ -37,6 +37,8 @@ const PageLoader = () => (
   </div>
 );
 
+import { WalkthroughProvider } from './components/Walkthrough/WalkthroughProvider';
+
 function App() {
   const { isAuthenticated, setUser } = useAuthStore();
   // Data initialization (prefetching)
@@ -44,15 +46,20 @@ function App() {
   const { fetchStaff } = useStaffStore();
   const { fetchTasks } = useTasksStore();
 
+  const [isInitialized, setIsInitialized] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     // 1. Initial check
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const user = await authService.getCurrentUser();
-        setUser(user);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const user = await authService.getCurrentUser();
+          setUser(user);
+        }
+      } finally {
+        setIsInitialized(true);
       }
     };
     initAuth();
@@ -89,48 +96,54 @@ function App() {
       fetchStaff();
       fetchTasks();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchClients, fetchStaff, fetchTasks]);
+
+  if (!isInitialized) {
+    return <PageLoader />;
+  }
 
   return (
     <ErrorBoundary>
-      <SessionTimeout />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route
-            path="/login"
-            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
-          />
-          <Route
-            path="/forgot-password"
-            element={<ForgotPasswordPage />}
-          />
-          <Route
-            path="/reset-password"
-            element={<ResetPasswordPage />}
-          />
+      <WalkthroughProvider>
+        <SessionTimeout />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route
+              path="/login"
+              element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+            />
+            <Route
+              path="/forgot-password"
+              element={<ForgotPasswordPage />}
+            />
+            <Route
+              path="/reset-password"
+              element={<ResetPasswordPage />}
+            />
 
-          <Route
-            path="/dashboard"
-            element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />}
-          >
-            <Route index element={<DashboardPage />} />
-            <Route path="tasks" element={<TasksPage />} />
-            <Route path="clients" element={<ClientsPage />} />
-            <Route path="staff" element={<StaffPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
-            <Route path="import" element={<ImportPage />} />
-            <Route path="auto-tasks" element={<AutoTasksPage />} />
-            <Route path="audits" element={<AuditDashboard />} />
-            <Route path="audits/:id" element={<AuditWorkspace />} />
-            <Route path="reports" element={<ReportsPage />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Route>
+            <Route
+              path="/dashboard"
+              element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />}
+            >
+              <Route index element={<DashboardPage />} />
+              <Route path="tasks" element={<TasksPage />} />
+              <Route path="clients" element={<ClientsPage />} />
+              <Route path="staff" element={<StaffPage />} />
+              <Route path="calendar" element={<CalendarPage />} />
+              <Route path="import" element={<ImportPage />} />
+              <Route path="auto-tasks" element={<AutoTasksPage />} />
+              <Route path="audits" element={<AuditDashboard />} />
+              <Route path="audits/:id" element={<AuditWorkspace />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
 
-          {/* Catch all redirect to landing page */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+            {/* Catch all redirect to landing page */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </WalkthroughProvider>
     </ErrorBoundary>
   );
 }
