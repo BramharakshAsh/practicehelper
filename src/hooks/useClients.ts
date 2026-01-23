@@ -6,6 +6,7 @@ export const useClients = () => {
   const {
     clients,
     isLoading,
+    hasFetched,
     error,
     fetchClients,
     createClient,
@@ -16,46 +17,15 @@ export const useClients = () => {
   } = useClientsStore();
 
   useEffect(() => {
-    if (clients.length === 0 && !isLoading) {
+    if (!hasFetched && !isLoading) {
       fetchClients();
     }
-  }, [clients.length, isLoading, fetchClients]);
+  }, [hasFetched, isLoading, fetchClients]);
 
-  const handleCreateClient = async (clientData: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => {
-    try {
-      await createClient(clientData);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
-
-  const handleUpdateClient = async (id: string, updates: Partial<Client>) => {
-    try {
-      await updateClient(id, updates);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
-
-  const handleDeleteClient = async (id: string) => {
-    try {
-      await deleteClient(id);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
-
-  const handleImportClients = async (clientsData: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => {
-    try {
-      await importClients(clientsData);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
+  const handleCreateClient = (clientData: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => createClient(clientData);
+  const handleUpdateClient = (id: string, updates: Partial<Client>) => updateClient(id, updates);
+  const handleDeleteClient = (id: string) => deleteClient(id);
+  const handleImportClients = (clientsData: any[]) => importClients(clientsData);
 
   return {
     clients,

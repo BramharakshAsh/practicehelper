@@ -10,7 +10,7 @@ import ImportModal from '../components/Import/ImportModal';
 
 const ImportPage: React.FC = () => {
     const [showImportModal, setShowImportModal] = useState(false);
-    const [importType, setImportType] = useState<'clients' | 'tasks'>('clients');
+    const [importType, setImportType] = useState<'clients' | 'staff' | 'tasks'>('clients');
 
     const { clients, importClients } = useClients();
     const { staff, importStaff } = useStaff();
@@ -19,17 +19,48 @@ const ImportPage: React.FC = () => {
     const { user } = useAuthStore();
 
     const handleImport = async (type: 'clients' | 'staff' | 'tasks', data: any[]) => {
+        console.log(`[Import] Starting import for ${type}, ${data.length} records`);
+        let successCount = 0;
+        const errors: string[] = [];
+
         try {
             switch (type) {
                 case 'clients':
-                    await importClients(data);
+                    console.log('[Import] Importing clients...', data);
+                    const clientResult = await importClients(data) as any;
+                    successCount = clientResult.success;
+                    console.log(`[Import] Import completed: ${clientResult.success} success, ${clientResult.failures} failures`);
+                    if (clientResult.failures > 0) {
+                        alert(`⚠️ Imported ${clientResult.success} client(s) with ${clientResult.failures} failure(s):\n${clientResult.errors.slice(0, 3).join('\n')}${clientResult.errors.length > 3 ? '\n...' : ''}`);
+                    } else {
+                        alert(`✅ Successfully imported ${clientResult.success} client${clientResult.success !== 1 ? 's' : ''}!`);
+                    }
+                    break;
+                case 'staff':
+                    console.log('[Import] Importing staff...', data);
+                    const staffResult = await importStaff(data) as any;
+                    successCount = staffResult.success;
+                    console.log(`[Import] Import completed: ${staffResult.success} success, ${staffResult.failures} failures`);
+                    if (staffResult.failures > 0) {
+                        alert(`⚠️ Imported ${staffResult.success} staff with ${staffResult.failures} failure(s):\n${staffResult.errors.slice(0, 3).join('\n')}${staffResult.errors.length > 3 ? '\n...' : ''}`);
+                    } else {
+                        alert(`✅ Successfully imported ${staffResult.success} staff member${staffResult.success !== 1 ? 's' : ''}!`);
+                    }
                     break;
                 case 'tasks': {
+                    console.log('[Import] Processing task data...');
                     // Process task data to match client and staff
                     const processedTasks = data.map(item => {
                         const client = clients.find(c => c.name === item.client_name);
                         const staffMember = staff.find(s => s.name === item.staff_name);
                         const complianceType = complianceTypes.find(ct => ct.name === item.compliance_type);
+
+                        if (!client) {
+                            errors.push(`Client "${item.client_name}" not found for task "${item.title}"`);
+                        }
+                        if (!staffMember) {
+                            errors.push(`Staff "${item.staff_name}" not found for task "${item.title}"`);
+                        }
 
                         return {
                             ...item,
@@ -40,12 +71,25 @@ const ImportPage: React.FC = () => {
                             assigned_by: user?.id || '',
                         };
                     });
+
+                    console.log('[Import] Importing tasks...', processedTasks);
                     await importTasks(processedTasks);
+                    successCount = processedTasks.length;
+
+                    if (errors.length > 0) {
+                        console.warn('[Import] Warnings:', errors);
+                        alert(`⚠️ Imported ${successCount} tasks with ${errors.length} warning(s):\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? '\n...' : ''}`);
+                    } else {
+                        console.log(`[Import] Successfully imported ${successCount} tasks`);
+                        alert(`✅ Successfully imported ${successCount} task${successCount !== 1 ? 's' : ''}!`);
+                    }
                     break;
                 }
             }
         } catch (error) {
-            console.error('Import failed:', error);
+            console.error('[Import] Import failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            alert(`❌ Import failed: ${errorMessage}`);
             // Error handling is done in the hooks/stores
         }
     };
@@ -60,6 +104,7 @@ const ImportPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                     { type: 'clients' as const, title: 'Import Clients', desc: 'Upload client master data' },
+                    { type: 'staff' as const, title: 'Import Staff', desc: 'Upload staff/team members' },
                     { type: 'tasks' as const, title: 'Import Tasks', desc: 'Upload task assignments' }
                 ].map(item => (
                     <button

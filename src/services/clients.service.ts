@@ -1,6 +1,7 @@
 import { Client } from '../types';
 import { supabase } from './supabase';
 import { useAuthStore } from '../store/auth.store';
+import { DBClientResponse } from '../types/database.types';
 
 class ClientsService {
   async getClients(): Promise<Client[]> {
@@ -21,7 +22,7 @@ class ClientsService {
     const { data, error } = await query.order('name');
 
     if (error) throw error;
-    return data || [];
+    return (data as unknown as DBClientResponse[]) || [];
   }
 
   async createClient(client: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>): Promise<Client> {
@@ -52,7 +53,7 @@ class ClientsService {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as unknown as DBClientResponse;
   }
 
   async updateClient(id: string, updates: Partial<Client>): Promise<Client> {
@@ -69,7 +70,7 @@ class ClientsService {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as unknown as DBClientResponse;
   }
 
   async deleteClient(id: string): Promise<void> {
@@ -81,28 +82,55 @@ class ClientsService {
     if (error) throw error;
   }
 
-  async importClients(clientsData: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]): Promise<Client[]> {
+  async importClients(clientsData: any[]): Promise<{ success: number; failures: number; errors: string[] }> {
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated or missing firm ID');
 
-    const normalizedClients = clientsData.map(c => ({
-      ...c,
-      name: c.name.trim(),
-      pan: c.pan.trim().toUpperCase(),
-      gstin: c.gstin?.trim() || null,
-      email: c.email?.trim() || null,
-      phone: c.phone?.trim() || null,
-      address: c.address?.trim() || null,
-      firm_id: firmId,
-    }));
+    const results = {
+      success: 0,
+      failures: 0,
+      errors: [] as string[]
+    };
 
-    const { data, error } = await supabase
-      .from('clients')
-      .insert(normalizedClients)
-      .select();
+    let rowIndex = 2; // Data starts at row 2
+    for (const item of clientsData) {
+      const rowNum = rowIndex++;
+      try {
+        if (!item.name || !item.pan) {
+          throw new Error(`Name and PAN are required fields.`);
+        }
 
-    if (error) throw error;
-    return data || [];
+        const normalizedClient = {
+          name: String(item.name).trim(),
+          pan: String(item.pan).trim().toUpperCase(),
+          gstin: item.gstin ? String(item.gstin).trim() : null,
+          email: item.email ? String(item.email).trim() : null,
+          phone: item.phone ? String(item.phone).trim() : null,
+          address: item.address ? String(item.address).trim() : null,
+          work_types: item.work_types || [],
+          firm_id: firmId,
+          is_active: true
+        };
+
+        const { error } = await supabase
+          .from('clients')
+          .insert(normalizedClient);
+
+        if (error) {
+          if (error.code === '23505') throw new Error(`Client with this PAN already exists.`);
+          throw error;
+        }
+
+        results.success++;
+      } catch (err: any) {
+        console.error(`[ClientsService] Row ${rowNum} failure:`, err);
+        results.failures++;
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        results.errors.push(`Row ${rowNum}: ${errorMessage}`);
+      }
+    }
+
+    return results;
   }
 
   async getClientStaffRelations(): Promise<import('../types').ClientStaffRelation[]> {

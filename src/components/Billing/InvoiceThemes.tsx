@@ -146,7 +146,7 @@ export const InvoiceThemeModern: React.FC<InvoiceThemeProps> = ({ invoice, firm 
 };
 
 export const InvoiceThemeClassic: React.FC<InvoiceThemeProps> = ({ invoice, firm }) => {
-    const { services, reimbursements, serviceSubtotal, reimbursementTotal, tax } = calculateTotals(invoice);
+    const { services, serviceSubtotal, reimbursementTotal, tax } = calculateTotals(invoice);
 
     return (
         <div className="font-serif text-gray-900 p-8 max-w-4xl mx-auto bg-white min-h-[1000px]">

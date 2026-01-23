@@ -17,13 +17,13 @@ const CalendarPage: React.FC = () => {
     const { staff } = useStaffStore();
 
     const [showMeetingModal, setShowMeetingModal] = useState(false);
+    const [filterStaffId, setFilterStaffId] = useState<string>(user?.role === 'staff' ? user.id : 'all');
 
     useEffect(() => {
         fetchMeetings();
     }, []);
 
-    const currentRole = user?.role || 'staff';
-    const currentStaffId = user?.role === 'staff' ? user.id : undefined;
+    const activeStaffId = filterStaffId === 'all' ? undefined : filterStaffId;
 
     const handleCreateMeeting = async (meetingData: any) => {
         try {
@@ -45,20 +45,40 @@ const CalendarPage: React.FC = () => {
                     <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Calendar</h1>
                     <p className="text-sm text-gray-600 mt-1">Track due dates and important deadlines</p>
                 </div>
-                <button
-                    onClick={() => setShowMeetingModal(true)}
-                    className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm active:scale-95 transform transition-transform text-sm font-semibold"
-                >
-                    <Plus className="h-5 w-5" />
-                    <span>Schedule Meeting</span>
-                </button>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                    {user?.role !== 'staff' && (
+                        <div className="flex items-center space-x-2 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">View:</span>
+                            <select
+                                value={filterStaffId}
+                                onChange={(e) => setFilterStaffId(e.target.value)}
+                                className="bg-transparent text-sm font-medium focus:outline-none"
+                            >
+                                <option value="all">Firm Overview (All)</option>
+                                <optgroup label="Staff Members">
+                                    {staff.map(s => (
+                                        <option key={s.id} value={s.user_id}>{s.name}</option>
+                                    ))}
+                                </optgroup>
+                            </select>
+                        </div>
+                    )}
+                    <button
+                        onClick={() => setShowMeetingModal(true)}
+                        className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm active:scale-95 transform transition-transform text-sm font-semibold"
+                    >
+                        <Plus className="h-5 w-5" />
+                        <span>Schedule Meeting</span>
+                    </button>
+                </div>
             </div>
 
             <CalendarView
                 tasks={tasks}
                 meetings={meetings}
-                currentRole={currentRole as 'partner' | 'staff'}
-                currentStaffId={currentStaffId}
+                currentRole={(user?.role === 'staff' || activeStaffId) ? 'staff' : 'partner'}
+                currentStaffId={activeStaffId}
             />
 
             {showMeetingModal && (

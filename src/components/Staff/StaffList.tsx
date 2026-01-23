@@ -9,8 +9,8 @@ import { RotateCcw as Undo } from 'lucide-react';
 interface StaffListProps {
   staff: Staff[];
   tasks: Task[];
-  onStaffUpdate: (staffId: string, updates: Partial<Staff>) => void;
-  onStaffCreate: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => void;
+  onStaffUpdate: (staffId: string, updates: Partial<Staff>) => Promise<void>;
+  onStaffCreate: (staff: Omit<Staff, 'id' | 'firm_id' | 'user_id' | 'created_at' | 'updated_at'> & { password?: string }) => Promise<void>;
   onStaffDelete: (staffId: string) => void;
 }
 
@@ -313,39 +313,6 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
           />
         )
       }
-
-      {/* Workload Summary */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-          <Shield className="h-5 w-5" />
-          <span>Staff Workload Summary</span>
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {filteredStaff.filter(member => member.is_active).map((member) => {
-            const memberTasks = tasks.filter(t => t.staff_id === member.user_id);
-            const activeTasks = memberTasks.filter(t => t.status !== 'filed_completed').length;
-            const overdueTasks = memberTasks.filter(t =>
-              t.status !== 'filed_completed' &&
-              new Date(t.due_date) < new Date()
-            ).length;
-
-            return (
-              <div key={member.id} className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900">{member.name}</h4>
-                <p className="text-sm text-gray-600 mb-2">{getRoleLabel(member.role)}</p>
-                <div className="flex items-center justify-between text-sm">
-                  <span>Active Tasks:</span>
-                  <span className={`font-medium ${activeTasks > 5 ? 'text-orange-600' : 'text-gray-900'}`}>{activeTasks}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span>Overdue:</span>
-                  <span className={`font-medium ${overdueTasks > 0 ? 'text-red-600' : 'text-green-600'}`}>{overdueTasks}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
       {/* Undo Notifications */}
       <div className="fixed bottom-6 left-6 z-50 flex flex-col-reverse gap-3">
         {Object.entries(pendingDeletions).map(([id, { staff: member }]) => (

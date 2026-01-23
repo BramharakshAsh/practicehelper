@@ -6,6 +6,7 @@ interface BillingState {
     invoices: Invoice[];
     templates: InvoiceTemplate[]; // Added templates
     isLoading: boolean;
+    hasFetched: boolean; // Note: using a single flag for data fetching state
     error: string | null;
 
     fetchInvoices: (clientId?: string) => Promise<void>;
@@ -26,15 +27,16 @@ export const useBillingStore = create<BillingState>((set, get) => ({
     invoices: [],
     templates: [],
     isLoading: false,
+    hasFetched: false,
     error: null,
 
     fetchInvoices: async (clientId) => {
         set({ isLoading: true, error: null });
         try {
             const invoices = await billingService.getInvoices(clientId);
-            set({ invoices, isLoading: false });
+            set({ invoices, isLoading: false, hasFetched: true });
         } catch (error: any) {
-            set({ error: error.message, isLoading: false });
+            set({ error: error.message, isLoading: false, hasFetched: true });
         }
     },
 
@@ -90,9 +92,10 @@ export const useBillingStore = create<BillingState>((set, get) => ({
     fetchTemplates: async () => {
         try {
             const templates = await billingService.getTemplates();
-            set({ templates });
+            set({ templates, hasFetched: true });
         } catch (error: any) {
             console.error('Failed to fetch templates', error);
+            set({ hasFetched: true });
         }
     },
 

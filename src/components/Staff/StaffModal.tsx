@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, Shield, Calendar, Check, Copy, Key } from 'lucide-react';
-import { Staff, UserRole } from '../../types';
+import React, { useState } from 'react';
+import { X, User, Mail, Phone, Shield, Calendar } from 'lucide-react';
+import { Staff } from '../../types';
 import { useAuthStore } from '../../store/auth.store';
 
 interface StaffModalProps {
   staff?: Staff;
   allStaff?: Staff[];
   onClose: () => void;
-  onSubmit: (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => Promise<void>;
+  onSubmit: (staff: Omit<Staff, 'id' | 'firm_id' | 'user_id' | 'created_at' | 'updated_at'> & { password?: string }) => Promise<void>;
   mode: 'create' | 'edit' | 'view';
 }
 
@@ -25,24 +25,7 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, 
     manager_id: staff?.manager_id || '',
   });
 
-  const [generateCredentials, setGenerateCredentials] = useState(false);
-  const [generatedPassword, setGeneratedPassword] = useState('');
-  const [copied, setCopied] = useState(false);
 
-  const handleGeneratePassword = () => {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-    let password = '';
-    for (let i = 0; i < 10; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setGeneratedPassword(password);
-  };
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedPassword);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,21 +36,15 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, 
       return;
     }
 
-    if (mode === 'create' && !generateCredentials) {
-      alert('Please generate login credentials for the new staff member');
-      return;
-    }
 
-    if (generateCredentials && !generatedPassword) {
-      alert('Please generate a password');
-      return;
-    }
 
     setIsSubmitting(true);
     try {
       await onSubmit({
         ...formData,
-        password: generateCredentials ? generatedPassword : undefined
+        specializations: [],
+        is_available: true,
+        password: undefined
       });
     } catch (err: any) {
       console.error('[StaffModal] Submission error:', err);
@@ -81,7 +58,7 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, 
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : (type === 'number' ? parseFloat(value) : value)
     }));
   };
 
@@ -257,51 +234,6 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, 
               <span className="text-sm text-gray-700">Active Staff Member</span>
             </label>
 
-            {mode === 'create' && !isReadOnly && (
-              <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={generateCredentials}
-                    onChange={(e) => {
-                      setGenerateCredentials(e.target.checked);
-                      if (e.target.checked && !generatedPassword) {
-                        handleGeneratePassword();
-                      }
-                    }}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Generate Login Credentials</span>
-                </label>
-
-                {generateCredentials && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-gray-500">A temporary password will be generated for the staff member.</p>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm">
-                        {generatedPassword}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={copyToClipboard}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                        title="Copy password"
-                      >
-                        {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-500" />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleGeneratePassword}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                        title="Regenerate password"
-                      >
-                        <Key className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {!isReadOnly && (

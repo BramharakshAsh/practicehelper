@@ -5,7 +5,7 @@ import { UploadDocumentParams } from '../../services/documents.service';
 
 interface DocumentUploadModalProps {
     onClose: () => void;
-    onUpload: (params: UploadDocumentParams) => Promise<void>;
+    onUpload: (params: UploadDocumentParams) => Promise<any>;
     preselectedClientId?: string;
     preselectedTaskId?: string;
 }

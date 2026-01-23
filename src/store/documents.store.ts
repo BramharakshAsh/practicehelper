@@ -5,6 +5,7 @@ import { documentsService, DocumentFilters, UploadDocumentParams } from '../serv
 interface DocumentsState {
     documents: Document[];
     isLoading: boolean;
+    hasFetched: boolean;
     error: string | null;
 
     fetchDocuments: (filters?: DocumentFilters) => Promise<void>;
@@ -12,9 +13,10 @@ interface DocumentsState {
     deleteDocument: (id: string, path: string) => Promise<void>;
 }
 
-export const useDocuments = create<DocumentsState>((set, get) => ({
+export const useDocuments = create<DocumentsState>((set) => ({
     documents: [],
     isLoading: false,
+    hasFetched: false,
     error: null,
 
     fetchDocuments: async (filters) => {
@@ -23,10 +25,10 @@ export const useDocuments = create<DocumentsState>((set, get) => ({
         try {
             const documents = await documentsService.getDocuments(filters);
             console.log('DocumentsStore: fetchDocuments success', documents.length);
-            set({ documents, isLoading: false });
+            set({ documents, isLoading: false, hasFetched: true });
         } catch (error: any) {
             console.error('DocumentsStore: fetchDocuments error', error);
-            set({ error: error.message, isLoading: false });
+            set({ error: error.message, isLoading: false, hasFetched: true });
         }
     },
 

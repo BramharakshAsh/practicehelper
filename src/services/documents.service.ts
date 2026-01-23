@@ -75,7 +75,7 @@ class DocumentsService {
 
         let query = supabase
             .from('documents')
-            .select('*')
+            .select('*, client:clients(name)')
             .eq('firm_id', user.firm_id)
             .eq('is_deleted', false)
             .order('uploaded_at', { ascending: false });
@@ -111,7 +111,7 @@ class DocumentsService {
         return data.publicUrl;
     }
 
-    async deleteDocument(id: string, storagePath: string): Promise<void> {
+    async deleteDocument(id: string, _storagePath: string): Promise<void> {
         // Soft delete in DB
         const { error: dbError } = await supabase
             .from('documents')

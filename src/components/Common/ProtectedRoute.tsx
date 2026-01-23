@@ -3,17 +3,17 @@ import { useAuthStore } from '../../store/auth.store';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
-    allowedRoles?: string[];
+    roles?: string[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
     const { user, isAuthenticated } = useAuthStore();
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
     }
 
-    if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    if (roles && user && !roles.includes(user.role)) {
         return <Navigate to="/dashboard" replace />;
     }
 

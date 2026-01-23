@@ -8,10 +8,12 @@ interface TaskCardProps {
   task: Task;
   onUpdate: (taskId: string, updates: Partial<Task>) => void;
   onDelete: (taskId: string) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (taskId: string) => void;
   currentRole: UserRole;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, currentRole }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelected, onToggleSelect, currentRole }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showRemarks, setShowRemarks] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -72,13 +74,24 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, currentRo
   const nextStatuses = getNextStatuses(task.status);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+    <div className={`bg-white rounded-lg border transition-all ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 shadow-md' : 'border-gray-200 hover:shadow-md'
+      } p-4`}>
       <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <h4 className="font-medium text-gray-900 mb-1">{task.title}</h4>
-          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
-            {task.priority} priority
-          </span>
+        <div className="flex items-start space-x-3 flex-1">
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onToggleSelect(task.id)}
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            />
+          )}
+          <div className="flex-1">
+            <h4 className="font-medium text-gray-900 mb-1">{task.title}</h4>
+            <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
+              {task.priority} priority
+            </span>
+          </div>
         </div>
 
         <div className="relative">

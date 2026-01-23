@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Building, Phone, Mail, FileText, CreditCard as Edit, Eye, Filter, Trash2 } from 'lucide-react';
+import { Plus, Search, Building, Phone, Mail, CreditCard as Edit, Eye, Filter, Trash2 } from 'lucide-react';
 import { Client, ComplianceType, Staff } from '../../types';
 import ClientModal from './ClientModal';
 
@@ -8,7 +8,7 @@ interface ClientListProps {
   staff: Staff[];
   complianceTypes: ComplianceType[];
   onClientUpdate: (clientId: string, updates: Partial<Client>) => Promise<void>;
-  onClientCreate: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  onClientCreate: (client: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   onClientDelete: (clientId: string) => Promise<void>;
 }
 
@@ -40,9 +40,6 @@ const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes
     setSelectedClient(null);
   };
 
-  const formatWorkTypes = (workTypes: string[]) => {
-    return workTypes.join(', ');
-  };
 
   return (
     <div className="space-y-6">
@@ -114,7 +111,14 @@ const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes
             </div>
 
             <div className="mb-4 flex-1">
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">{client.name}</h3>
+              <div className="flex items-start justify-between">
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">{client.name}</h3>
+                {client.client_group && (
+                  <span className="ml-2 flex-shrink-0 text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider border border-blue-200">
+                    {client.client_group}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-500 mt-1">PAN: {client.pan}</p>
               <div className="flex flex-wrap gap-1 mt-3">
                 {client.work_types.map((type) => (

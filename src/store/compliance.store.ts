@@ -6,6 +6,7 @@ import { ErrorService, handleAsyncError } from '../services/error.service';
 interface ComplianceState {
   complianceTypes: ComplianceType[];
   isLoading: boolean;
+  hasFetched: boolean;
   error: string | null;
 
   // Actions
@@ -17,6 +18,7 @@ interface ComplianceState {
 export const useComplianceStore = create<ComplianceState>((set) => ({
   complianceTypes: [],
   isLoading: false,
+  hasFetched: false,
   error: null,
 
   fetchComplianceTypes: async () => {
@@ -24,11 +26,12 @@ export const useComplianceStore = create<ComplianceState>((set) => ({
 
     await handleAsyncError(async () => {
       const complianceTypes = await complianceService.getComplianceTypes();
-      set({ complianceTypes, isLoading: false });
+      set({ complianceTypes, isLoading: false, hasFetched: true });
     }, 'Fetch compliance types').catch((error) => {
       set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false
+        isLoading: false,
+        hasFetched: true
       });
     });
   },

@@ -4,10 +4,10 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import {
     LayoutDashboard, Users, UserSquare2, CheckSquare,
-    Calendar, PieChart, LogOut, Upload, Zap,
-    ClipboardList, Menu, X, HelpCircle,
-    FileText, UserCircle, FileCheck, BarChart3, Receipt,
-    ChevronLeft, ChevronRight
+    Calendar, LogOut, Upload, Zap,
+    Menu, X, HelpCircle,
+    UserCircle, FileCheck,
+    ChevronLeft, ChevronRight, CheckCircle
 } from 'lucide-react';
 import Logo from '../assets/Logo.png';
 import { useWalkthrough } from '../components/Walkthrough/WalkthroughProvider';
@@ -20,42 +20,50 @@ const DashboardLayout: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isSidebarCollapsed, setSidebarCollapsed] = useState(false); // Optional: if we want collapsible sidebar later
+    const [isSidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        const saved = localStorage.getItem('sidebar-collapsed');
+        return saved ? JSON.parse(saved) : false;
+    });
 
     const handleLogout = async () => {
         await logout();
         navigate('/login');
     };
 
-    const navItems = [
+    React.useEffect(() => {
+        localStorage.setItem('sidebar-collapsed', JSON.stringify(isSidebarCollapsed));
+    }, [isSidebarCollapsed]);
+
+    const navItems = React.useMemo(() => [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/dashboard/tasks', label: 'Tasks', icon: CheckSquare },
-        { to: '/dashboard/documents', label: 'Documents', icon: FileText },
+        { to: '/dashboard/completed-tasks', label: 'Completed Tasks', icon: CheckCircle },
         { to: '/dashboard/clients', label: 'Clients', icon: Users },
         { to: '/dashboard/staff', label: 'Staff', icon: UserCircle, roles: ['partner', 'manager'] },
         { to: '/dashboard/calendar', label: 'Calendar', icon: Calendar },
         { to: '/dashboard/audits', label: 'Audits', icon: FileCheck },
         { to: '/dashboard/auto-tasks', label: 'Auto Tasks', icon: Zap },
-        { to: '/dashboard/reports', label: 'Reports', icon: BarChart3, roles: ['partner', 'manager'] },
         { to: '/dashboard/import', label: 'Import', icon: Upload, roles: ['partner', 'manager'] },
-        { to: '/dashboard/billing', label: 'Billing', icon: Receipt, roles: ['partner', 'manager'] },
         { to: '/dashboard/settings', label: 'Settings', icon: UserSquare2, roles: ['partner', 'manager'] },
-    ].filter(item => !item.roles || item.roles.includes(user?.role || ''));
+    ].filter(item => !item.roles || item.roles.includes(user?.role || '')), [user?.role]);
 
     const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
     const closeMobileMenu = () => setIsMobileMenuOpen(false);
+    const toggleSidebar = () => setSidebarCollapsed(!isSidebarCollapsed);
 
     // Sidebar Component
     const SidebarContent = () => (
         <div className="flex flex-col h-full bg-slate-900 text-white">
             {/* Logo Area */}
-            <div className="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-900 z-10">
+            <div className={`h-16 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'px-6'} border-b border-slate-800 bg-slate-900 z-10 transition-all duration-300`}>
                 <img src={Logo} alt="Firm Flow Logo" className="h-8 w-auto object-contain flex-shrink-0" />
-                <span className="ml-3 text-lg font-bold bg-gradient-to-r from-teal-400 to-blue-400 bg-clip-text text-transparent">Firm Flow</span>
+                {!isSidebarCollapsed && (
+                    <span className="ml-3 text-lg font-bold bg-gradient-to-r from-teal-400 to-blue-400 bg-clip-text text-transparent fade-in">Firm Flow</span>
+                )}
             </div>
 
             {/* Nav Items */}
-            <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar">
+            <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 custom-scrollbar">
                 {navItems.map((item) => (
                     <NavLink
                         key={item.to}
@@ -63,59 +71,82 @@ const DashboardLayout: React.FC = () => {
                         onClick={closeMobileMenu}
                         end={item.to === '/dashboard'} // Only exact match for dashboard
                         data-walkthrough={item.to === '/dashboard/calendar' ? 'calendar-view' : item.to === '/dashboard/audits' ? 'audit-section' : item.to === '/dashboard/import' ? 'import-button' : undefined}
+                        title={isSidebarCollapsed ? item.label : undefined}
                         className={({ isActive }) =>
-                            `flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all mb-1 ${isActive
+                            `flex items-center ${isSidebarCollapsed ? 'justify-center px-1' : 'px-3'} py-2 text-sm font-medium rounded-lg transition-all mb-0.5 ${isActive
                                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
                                 : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                             }`
                         }
                     >
-                        <item.icon className="h-5 w-5 mr-3 flex-shrink-0" />
-                        <span className="truncate">{item.label}</span>
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                        {!isSidebarCollapsed && <span className="ml-3 truncate">{item.label}</span>}
                     </NavLink>
                 ))}
             </nav>
 
             {/* User Footer */}
             <div className="p-4 border-t border-slate-800 bg-slate-900">
-                <div className="flex items-center mb-4 px-2">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-teal-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                <div className={`flex items-center mb-4 ${isSidebarCollapsed ? 'justify-center' : 'px-2'}`}>
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-teal-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0">
                         {user?.full_name?.charAt(0) || 'U'}
                     </div>
-                    <div className="ml-3 overflow-hidden">
-                        <p className="text-sm font-medium text-white truncate">{user?.full_name}</p>
-                        <p className="text-xs text-slate-400 capitalize truncate">{user?.role}</p>
+                    {!isSidebarCollapsed && (
+                        <div className="ml-3 overflow-hidden">
+                            <p className="text-sm font-medium text-white truncate">{user?.full_name}</p>
+                            <p className="text-xs text-slate-400 capitalize truncate">{user?.role}</p>
+                        </div>
+                    )}
+                </div>
+                {!isSidebarCollapsed && (
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                restartWalkthrough();
+                            }}
+                            className="flex-1 flex items-center justify-center p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors border border-slate-700"
+                            title="Restart Tutorial"
+                        >
+                            <HelpCircle className="h-4 w-4 mr-2" />
+                            <span className="text-xs">Help</span>
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="flex-1 flex items-center justify-center p-2 rounded-lg bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 transition-colors border border-slate-700"
+                            title="Logout"
+                        >
+                            <LogOut className="h-4 w-4 mr-2" />
+                            <span className="text-xs">Logout</span>
+                        </button>
                     </div>
-                </div>
-                <div className="flex space-x-2">
-                    <button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            restartWalkthrough();
-                        }}
-                        className="flex-1 flex items-center justify-center p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors border border-slate-700"
-                        title="Restart Tutorial"
-                    >
-                        <HelpCircle className="h-4 w-4 mr-2" />
-                        <span className="text-xs">Help</span>
-                    </button>
-                    <button
-                        onClick={handleLogout}
-                        className="flex-1 flex items-center justify-center p-2 rounded-lg bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 transition-colors border border-slate-700"
-                        title="Logout"
-                    >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        <span className="text-xs">Logout</span>
-                    </button>
-                </div>
+                )}
+                {isSidebarCollapsed && (
+                    <div className="flex flex-col space-y-2">
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center justify-center p-2 rounded-lg bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 transition-colors border border-slate-700"
+                            title="Logout"
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
             </div>
+            {/* Collapse Toggle */}
+            <button
+                onClick={toggleSidebar}
+                className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-blue-600 text-white rounded-full p-1 shadow-md border border-white hidden lg:flex hover:bg-blue-700"
+            >
+                {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
         </div>
     );
 
     return (
         <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
             {/* Desktop Sidebar */}
-            <aside className="hidden lg:flex flex-col w-64 fixed inset-y-0 z-50">
+            <aside className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-20' : 'w-64'} fixed inset-y-0 z-50 transition-all duration-300 relative`}>
                 <SidebarContent />
             </aside>
 
@@ -139,7 +170,7 @@ const DashboardLayout: React.FC = () => {
             )}
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col lg:pl-64 min-w-0 transition-all duration-300">
+            <div className={`flex-1 flex flex-col ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} min-w-0 transition-all duration-300`}>
                 {/* Top Header */}
                 <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-40 shadow-sm">
                     <div className="flex items-center">
@@ -167,7 +198,7 @@ const DashboardLayout: React.FC = () => {
                 </header>
 
                 {/* Main Scrollable Content */}
-                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
+                <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5 relative">
                     <div className="max-w-7xl mx-auto h-full">
                         <Outlet />
                     </div>

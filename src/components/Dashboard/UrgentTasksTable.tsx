@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Task, Staff, Client } from '../../types';
-import { ArrowRight, AlertTriangle, Clock, User, CheckCircle } from 'lucide-react';
+import { ArrowRight, User, CheckCircle } from 'lucide-react';
 
 interface UrgentTasksTableProps {
     tasks: Task[];
@@ -14,31 +14,33 @@ const UrgentTasksTable: React.FC<UrgentTasksTableProps> = ({ tasks, clients, sta
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // 1. Filter Tasks
-    const urgentTasks = tasks.filter(task => {
-        // Exclude completed
-        if (task.status === 'filed_completed') return false;
+    // 1. Filter Tasks - Memoized to prevent re-computation on every render
+    const urgentTasks = useMemo(() => {
+        return tasks.filter(task => {
+            // Exclude completed
+            if (task.status === 'filed_completed') return false;
 
-        // Filter by due date: Overdue OR Due within next 7 days
-        const dueDate = new Date(task.due_date);
-        const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+            // Filter by due date: Overdue OR Due within next 7 days
+            const dueDate = new Date(task.due_date);
+            const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
 
-        const diffTime = dueDateOnly.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffTime = dueDateOnly.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        // Include if overdue OR due within next 7 days
-        if (diffDays <= 7) return true;
+            // Include if overdue OR due within next 7 days
+            if (diffDays <= 7) return true;
 
-        return false;
-    }).sort((a, b) => {
-        // Sort logic: 
-        // 1. Overdue first (ascending due date)
-        // 2. Then upcoming (ascending due date)
-        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
-    });
+            return false;
+        }).sort((a, b) => {
+            // Sort logic: 
+            // 1. Overdue first (ascending due date)
+            // 2. Then upcoming (ascending due date)
+            return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+        });
+    }, [tasks, today.getTime()]);
 
     // Limit to 5 tasks
-    const displayTasks = urgentTasks.slice(0, 5);
+    const displayTasks = useMemo(() => urgentTasks.slice(0, 5), [urgentTasks]);
 
     const getClientName = (clientId: string) => {
         return clients.find(c => c.id === clientId)?.name || 'Unknown Client';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Building, Phone, Mail, FileText, CreditCard } from 'lucide-react';
+import { X, Building, Mail, FileText, CreditCard } from 'lucide-react';
 import { Client, Staff } from '../../types';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -24,6 +24,12 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
     address: client?.address || '',
     work_types: client?.work_types || [],
     manager_id: client?.manager_id || '',
+    client_group: client?.client_group || '',
+    instructions: client?.instructions || '',
+    to_remember: client?.to_remember || '',
+    auto_mail_enabled: client?.auto_mail_enabled || false,
+    mail_frequency: client?.mail_frequency || 'none' as 'monthly' | 'quarterly' | 'none',
+    is_active: client?.is_active ?? true,
   });
 
   const getRoleLabel = (role: Staff['role']) => {
@@ -58,10 +64,16 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
       ...formData,
       name: formData.name.trim(),
       pan: formData.pan.trim().toUpperCase(),
-      gstin: formData.gstin.trim() || null,
-      email: formData.email.trim() || null,
-      phone: formData.phone.trim() || null,
-      address: formData.address.trim() || null,
+      gstin: formData.gstin.trim() || undefined,
+      email: formData.email.trim() || undefined,
+      phone: formData.phone.trim() || undefined,
+      address: formData.address.trim() || undefined,
+      client_group: formData.client_group.trim() || undefined,
+      instructions: formData.instructions.trim() || undefined,
+      to_remember: formData.to_remember.trim() || undefined,
+      auto_mail_enabled: formData.auto_mail_enabled,
+      mail_frequency: formData.mail_frequency,
+      is_active: formData.is_active,
     };
 
     setIsSubmitting(true);
@@ -73,7 +85,7 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
       setIsSubmitting(false);
     }
   };
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -178,6 +190,21 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
                 readOnly={isReadOnly}
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Client Group
+              </label>
+              <input
+                type="text"
+                name="client_group"
+                value={formData.client_group}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. Retailers, HNIs"
+                readOnly={isReadOnly}
+              />
+            </div>
           </div>
 
           {currentUser?.role === 'partner' && (
@@ -219,6 +246,79 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
               placeholder="Enter client address"
               readOnly={isReadOnly}
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 font-bold text-blue-600">
+                Special Instructions
+              </label>
+              <textarea
+                name="instructions"
+                value={formData.instructions}
+                onChange={handleChange}
+                rows={4}
+                className="w-full border-2 border-blue-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50/30 font-medium"
+                placeholder="Important client-specific handling instructions..."
+                readOnly={isReadOnly}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 font-bold text-orange-600">
+                Points To Remember
+              </label>
+              <textarea
+                name="to_remember"
+                value={formData.to_remember}
+                onChange={handleChange}
+                rows={4}
+                className="w-full border-2 border-orange-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-orange-50/30 font-medium"
+                placeholder="Key things to keep in mind for this client..."
+                readOnly={isReadOnly}
+              />
+            </div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+              <Mail className="h-4 w-4 mr-2 text-blue-600" />
+              Automated Communication (Resend)
+            </h4>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Auto Task Reminders</p>
+                  <p className="text-xs text-gray-500">Send automatic emails when tasks are created or due</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.auto_mail_enabled}
+                    onChange={(e) => setFormData({ ...formData, auto_mail_enabled: e.target.checked })}
+                    disabled={isReadOnly}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {formData.auto_mail_enabled && (
+                <div className="animate-in fade-in slide-in-from-top-2">
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Internal Update Frequency</label>
+                  <select
+                    name="mail_frequency"
+                    value={formData.mail_frequency}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="none">No Reports</option>
+                    <option value="monthly">Monthly Status Report</option>
+                    <option value="quarterly">Quarterly Compliance Review</option>
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Eye, Trash2, CheckCircle, Send, MoreVertical, X } from 'lucide-react';
+import { Eye, Trash2, CheckCircle, Send } from 'lucide-react';
 import { useBillingStore } from '../../store/billing.store';
 import { useClientsStore } from '../../store/clients.store';
 import { Invoice } from '../../types';

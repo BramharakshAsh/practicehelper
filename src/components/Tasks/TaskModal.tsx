@@ -117,7 +117,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
       // For yearly returns, due date is typically in the following assessment year
       // ITR for FY 2023-24 is due July 31, 2024
       let dueMonth = 6; // July (0-indexed)
-      let dueYear = year + 1;
+      const dueYear = year + 1;
 
       // Special cases for different compliance types
       if (selectedCompliance.code === 'TAX-AUDIT') {
@@ -482,7 +482,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
           <button
             type="submit"
             form="task-form"
-            onClick={(e) => {
+            onClick={(_e) => {
               // Trigger form submission manually since the button is outside the form now
               const form = document.getElementById('task-form') as HTMLFormElement;
               if (form) form.requestSubmit();

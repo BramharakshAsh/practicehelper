@@ -1,5 +1,6 @@
-import { UserRole, User } from '../types';
+import { User } from '../types';
 import { supabase } from './supabase';
+import { handleAsyncError } from './error.service';
 
 export interface LoginCredentials {
   username: string;
@@ -23,36 +24,27 @@ export type AuthUser = User;
 
 class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthUser> {
-    // Supabase Login
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.username.includes('@') ? credentials.username : `${credentials.username}@demo.com`, // Fallback mapping
-      password: credentials.password,
-    });
+    return handleAsyncError(async () => {
+      // Supabase Login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.username.includes('@') ? credentials.username : `${credentials.username}@demo.com`, // Fallback mapping
+        password: credentials.password,
+      });
 
-    if (error) throw error;
-    if (!data.user) throw new Error('Login failed: No user data');
+      if (error) throw error;
+      if (!data.user) throw new Error('Login failed: No user data');
 
-    // Fetch Profile
-    const { data: profile, error: profileError } = await supabase
-      .from('users') // Our profile table is named 'users' in the public schema
-      .select('*')
-      .eq('id', data.user.id)
-      .single();
+      // Fetch Profile
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
 
-    if (profileError) throw profileError;
+      if (profileError) throw profileError;
 
-    return {
-      id: profile.id,
-      firm_id: profile.firm_id,
-      email: profile.email,
-      username: profile.username || '',
-      pan: profile.pan,
-      full_name: profile.full_name,
-      role: profile.role as UserRole,
-      is_active: profile.is_active,
-      created_at: profile.created_at,
-      updated_at: profile.updated_at,
-    };
+      return profile as AuthUser;
+    }, 'User login');
   }
 
   async logout(): Promise<void> {
@@ -60,8 +52,8 @@ class AuthService {
   }
 
   async resetPassword(email: string): Promise<void> {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+    const { error } = await supabase.functions.invoke('request-password-reset', {
+      body: { email }
     });
     if (error) throw error;
   }
@@ -72,99 +64,95 @@ class AuthService {
   }
 
   async registerOrganization(data: RegisterOrganizationData): Promise<void> {
-    // 1. Sign up Partner
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: data.primaryPartner.email,
-      password: data.primaryPartner.password,
-      options: {
-        data: {
-          full_name: data.primaryPartner.fullName,
-          pan: data.primaryPartner.pan,
-        }
-      }
-    });
+    return handleAsyncError(async () => {
+      console.log('[Registration] Starting registration for:', data.primaryPartner.email);
 
-    // If user already exists, we might still want to proceed if it was a partial failure before
-    if (authError && !authError.message.includes('already registered')) {
-      throw authError;
-    }
-
-    let userId = authData.user?.id;
-
-    // If signUp failed because user exists, try to get the user ID via signIn (or assume it's current if session exists)
-    if (authError && authError.message.includes('already registered')) {
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      // 1. Sign up Partner
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.primaryPartner.email,
         password: data.primaryPartner.password,
+        options: {
+          data: {
+            full_name: data.primaryPartner.fullName,
+            pan: data.primaryPartner.pan,
+          }
+        }
       });
-      if (signInError) throw new Error('User already exists but login failed. Please check password.');
-      userId = signInData.user?.id;
-    }
 
-    if (!userId) throw new Error('Sign up failed: User ID missing');
-
-    // 2. Create Firm (Now RLS allows this for anon/auth)
-    const { data: firm, error: firmError } = await supabase
-      .from('firms')
-      .insert({
-        name: data.firmName,
-        pan: data.pan,
-        email: data.email,
-        contact_number: data.contactNumber,
-      })
-      .select()
-      .single();
-
-    if (firmError) {
-      if (firmError.message.includes('duplicate key') && firmError.message.includes('pan')) {
-        throw new Error('A firm with this PAN is already registered.');
+      if (authError && !authError.message.includes('already registered')) {
+        throw authError;
       }
-      throw firmError;
-    }
 
-    // 3. Create User Profile
-    const { error: profileError } = await supabase
-      .from('users')
-      .insert({
-        id: userId,
-        firm_id: firm.id,
-        email: data.primaryPartner.email,
-        pan: data.primaryPartner.pan,
-        full_name: data.primaryPartner.fullName,
-        role: 'partner',
-        is_active: true,
-      });
+      let userId = authData.user?.id;
 
-    // If profile already exists (partial failure before), we might want to update it
-    if (profileError && profileError.message.includes('duplicate key')) {
-      const { error: updateError } = await supabase
+      if (authError && authError.message.includes('already registered')) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.primaryPartner.email,
+          password: data.primaryPartner.password,
+        });
+        if (signInError) throw new Error('User already exists but login failed. Please check password.');
+        userId = signInData.user?.id;
+      }
+
+      if (!userId) throw new Error('Sign up failed: User ID missing');
+
+      // 2. Create Firm
+      const { data: firm, error: firmError } = await supabase
+        .from('firms')
+        .insert({
+          name: data.firmName,
+          pan: data.pan,
+          email: data.email,
+          contact_number: data.contactNumber,
+        })
+        .select()
+        .single();
+
+      if (firmError) {
+        if (firmError.message.includes('duplicate key') && firmError.message.includes('pan')) {
+          throw new Error('A firm with this PAN is already registered.');
+        }
+        throw firmError;
+      }
+
+      // 3. Create User Profile
+      const { error: profileError } = await supabase
         .from('users')
-        .update({ firm_id: firm.id })
-        .eq('id', userId);
-      if (updateError) throw updateError;
-    } else if (profileError) {
-      throw profileError;
-    }
+        .insert({
+          id: userId,
+          firm_id: firm.id,
+          email: data.primaryPartner.email,
+          username: data.primaryPartner.email.split('@')[0],
+          pan: data.primaryPartner.pan,
+          full_name: data.primaryPartner.fullName,
+          role: 'partner',
+          is_active: true,
+        });
 
-    // 4. Create Staff Entry for the Partner
-    // This ensures the partner appears in staff lists and can be assigned tasks
-    const { error: staffError } = await supabase
-      .from('staff')
-      .insert({
-        user_id: userId,
-        firm_id: firm.id,
-        name: data.primaryPartner.fullName,
-        email: data.primaryPartner.email,
-        role: 'partner',
-        is_active: true,
-        date_of_joining: new Date().toISOString().split('T')[0],
-      });
+      if (profileError && profileError.message.includes('duplicate key')) {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ firm_id: firm.id })
+          .eq('id', userId);
+        if (updateError) throw updateError;
+      } else if (profileError) {
+        throw profileError;
+      }
 
-    if (staffError && !staffError.message.includes('duplicate key')) {
-      console.error('Error creating staff entry for partner:', staffError);
-      // We don't throw here to avoid failing registration if just the staff entry fails,
-      // but ideally this should succeed.
-    }
+      // 4. Create Staff Entry for the Partner
+      await supabase
+        .from('staff')
+        .insert({
+          user_id: userId,
+          firm_id: firm.id,
+          name: data.primaryPartner.fullName,
+          email: data.primaryPartner.email,
+          is_active: true,
+          date_of_joining: new Date().toISOString().split('T')[0],
+        });
+
+      console.log('[Registration] ✅ Registration completed successfully!');
+    }, 'Organization registration');
   }
 
   async getCurrentUser(): Promise<AuthUser | null> {

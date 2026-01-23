@@ -1,97 +1,107 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Calendar, AlertCircle, Clock, CheckSquare, Users, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Task, Staff, ComplianceType } from '../../types';
+import { Task, ComplianceType } from '../../types';
 
 interface InsightCardsProps {
     tasks: Task[];
-    staff: Staff[];
     complianceTypes: ComplianceType[];
 }
 
-const InsightCards: React.FC<InsightCardsProps> = ({ tasks, staff, complianceTypes }) => {
+const InsightCards: React.FC<InsightCardsProps> = ({ tasks, complianceTypes }) => {
     const navigate = useNavigate();
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // --- Helper Functions ---
-    const getDateOnly = (dateStr: string) => {
-        const d = new Date(dateStr);
-        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    };
+    // --- Calculations - All Memoized ---
+    const insights = useMemo(() => {
+        const getDateOnly = (dateStr: string) => {
+            const d = new Date(dateStr);
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        };
 
-    const getComplianceCategory = (taskId: string) => {
-        const task = tasks.find(t => t.id === taskId);
-        if (!task) return 'Other';
-        const type = complianceTypes.find(ct => ct.id === task.compliance_type_id);
-        return type?.category || 'Other';
-    };
+        const getComplianceCategory = (taskId: string) => {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return 'Other';
+            const type = complianceTypes.find(ct => ct.id === task.compliance_type_id);
+            return type?.category || 'Other';
+        };
 
-    // --- Calculations ---
+        // 1. Due Today
+        const dueTodayTasks = tasks.filter(t => {
+            if (t.status === 'filed_completed') return false;
+            const d = getDateOnly(t.due_date);
+            return d.getTime() === today.getTime();
+        });
 
-    // 1. Due Today
-    const dueTodayTasks = tasks.filter(t => {
-        if (t.status === 'filed_completed') return false;
-        const d = getDateOnly(t.due_date);
-        return d.getTime() === today.getTime();
-    });
+        const dueTodayBreakdown = dueTodayTasks.reduce((acc, t) => {
+            const cat = getComplianceCategory(t.id);
+            const shortCat = cat === 'Income Tax' ? 'IT' : cat;
+            acc[shortCat] = (acc[shortCat] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
 
-    const dueTodayBreakdown = dueTodayTasks.reduce((acc, t) => {
-        const cat = getComplianceCategory(t.id);
-        // Map full category names to short codes
-        const shortCat = cat === 'Income Tax' ? 'IT' : cat;
-        acc[shortCat] = (acc[shortCat] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
+        // 2. Overdue
+        const overdueTasks = tasks.filter(t => {
+            if (t.status === 'filed_completed') return false;
+            const d = getDateOnly(t.due_date);
+            return d.getTime() < today.getTime();
+        });
 
-    // 2. Overdue
-    const overdueTasks = tasks.filter(t => {
-        if (t.status === 'filed_completed') return false;
-        const d = getDateOnly(t.due_date);
-        return d.getTime() < today.getTime();
-    });
-
-    let oldestOverdueDays = 0;
-    if (overdueTasks.length > 0) {
-        const oldestDate = overdueTasks.reduce((oldest, t) => {
-            const d = new Date(t.due_date);
-            return d < oldest ? d : oldest;
-        }, new Date());
-        const diffTime = Math.abs(today.getTime() - getDateOnly(oldestDate.toISOString()).getTime());
-        oldestOverdueDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    }
-
-    // 3. Awaiting Client Data
-    const awaitingClientTasks = tasks.filter(t => t.status === 'awaiting_client_data');
-
-    // 4. Pending Partner Review
-    const pendingReviewTasks = tasks.filter(t => t.status === 'ready_for_review');
-
-    // 5. Staff Overloaded (> 5 active tasks)
-    const activeTasksByStaff = tasks.reduce((acc, t) => {
-        if (t.status !== 'filed_completed' && t.staff_id) {
-            acc[t.staff_id] = (acc[t.staff_id] || 0) + 1;
+        let oldestOverdueDays = 0;
+        if (overdueTasks.length > 0) {
+            const oldestDate = overdueTasks.reduce((oldest, t) => {
+                const d = new Date(t.due_date);
+                return d < oldest ? d : oldest;
+            }, new Date());
+            const diffTime = Math.abs(today.getTime() - getDateOnly(oldestDate.toISOString()).getTime());
+            oldestOverdueDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         }
-        return acc;
-    }, {} as Record<string, number>);
 
-    const overloadedStaffCount = Object.values(activeTasksByStaff).filter(count => count > 5).length;
+        // 3. Awaiting Client Data
+        const awaitingClientTasks = tasks.filter(t => t.status === 'awaiting_client_data');
 
-    // 6. Upcoming (Next 7 Days)
-    const upcomingTasks = tasks.filter(t => {
-        if (t.status === 'filed_completed') return false;
-        const d = getDateOnly(t.due_date);
-        const diffTime = d.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays > 0 && diffDays <= 7;
-    });
+        // 4. Pending Partner Review
+        const pendingReviewTasks = tasks.filter(t => t.status === 'ready_for_review');
 
-    const upcomingBreakdown = upcomingTasks.reduce((acc, t) => {
-        const cat = getComplianceCategory(t.id);
-        const shortCat = cat === 'Income Tax' ? 'IT' : cat;
-        acc[shortCat] = (acc[shortCat] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
+        // 5. Staff Overloaded (> 5 active tasks)
+        const activeTasksByStaff = tasks.reduce((acc, t) => {
+            if (t.status !== 'filed_completed' && t.staff_id) {
+                acc[t.staff_id] = (acc[t.staff_id] || 0) + 1;
+            }
+            return acc;
+        }, {} as Record<string, number>);
+
+        const overloadedStaffCount = Object.values(activeTasksByStaff).filter(count => count > 5).length;
+
+        // 6. Upcoming (Next 7 Days)
+        const upcomingTasks = tasks.filter(t => {
+            if (t.status === 'filed_completed') return false;
+            const d = getDateOnly(t.due_date);
+            const diffTime = d.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays > 0 && diffDays <= 7;
+        });
+
+        const upcomingBreakdown = upcomingTasks.reduce((acc, t) => {
+            const cat = getComplianceCategory(t.id);
+            const shortCat = cat === 'Income Tax' ? 'IT' : cat;
+            acc[shortCat] = (acc[shortCat] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        return {
+            dueTodayTasks,
+            dueTodayBreakdown,
+            overdueTasks,
+            oldestOverdueDays,
+            awaitingClientTasks,
+            pendingReviewTasks,
+            overloadedStaffCount,
+            upcomingTasks,
+            upcomingBreakdown
+        };
+    }, [tasks, complianceTypes, today.getTime()]);
 
 
     // --- Render ---
@@ -129,6 +139,8 @@ const InsightCards: React.FC<InsightCardsProps> = ({ tasks, staff, complianceTyp
             </div>
         </div>
     );
+
+    const { dueTodayTasks, dueTodayBreakdown, overdueTasks, oldestOverdueDays, awaitingClientTasks, pendingReviewTasks, overloadedStaffCount, upcomingTasks, upcomingBreakdown } = insights;
 
     return (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">

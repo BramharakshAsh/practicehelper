@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Printer, Settings } from 'lucide-react';
+import { X, Printer } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
-import { Invoice, Firm } from '../../types';
+import { Invoice } from '../../types';
 import { useSettingsStore } from '../../store/settings.store';
 import { InvoiceThemeModern, InvoiceThemeClassic, InvoiceThemeMinimal } from './InvoiceThemes';
 
@@ -26,7 +26,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ invoice, onCl
     }, [firm]);
 
     const handlePrint = useReactToPrint({
-        content: () => componentRef.current,
+        contentRef: componentRef,
         documentTitle: `Invoice-${invoice.invoice_number}`,
     });
 

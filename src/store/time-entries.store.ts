@@ -64,7 +64,6 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
                 if (!activeTimer.activeTaskId || !activeTimer.startedAt) return null;
 
                 const endTime = new Date();
-                const startTime = new Date(activeTimer.startedAt);
                 // Adjust duration based on elapsedSeconds which handles pauses implicitly if we implemented pause logic correctly.
                 // For simplified MVP, we'll use elapsedSeconds for duration.
                 const durationMinutes = Math.ceil(activeTimer.elapsedSeconds / 60);

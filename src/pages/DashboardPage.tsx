@@ -52,22 +52,21 @@ const DashboardPage: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 animate-fade-in" data-walkthrough="dashboard-overview">
+        <div className="space-y-5 animate-fade-in" data-walkthrough="dashboard-overview">
             {/* Section A: Critical Alert Strip - Sticky */}
-            <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-8 mb-8 sticky top-0 z-30">
+            <div className="-mx-3 sm:-mx-4 lg:-mx-5 -mt-5 mb-4 sticky top-0 z-30">
                 <CriticalAlertBanner tasks={tasks} complianceTypes={complianceTypes} />
             </div>
 
             {/* Section B: Today's Reality Cards */}
             <InsightCards
                 tasks={tasks}
-                staff={staff}
                 complianceTypes={complianceTypes}
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* Main Column (2/3 width) */}
-                <div className="lg:col-span-2 space-y-8">
+                <div className="lg:col-span-2 space-y-5">
                     {/* Section C: Statutory Heatmap */}
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
                         <StatutoryHeatmap tasks={tasks} complianceTypes={complianceTypes} />
@@ -85,7 +84,7 @@ const DashboardPage: React.FC = () => {
                 </div>
 
                 {/* Side Column (1/3 width) */}
-                <div className="space-y-8">
+                <div className="space-y-5">
                     {/* Section G: Quick Actions */}
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
                         <QuickActions

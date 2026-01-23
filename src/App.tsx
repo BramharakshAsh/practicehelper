@@ -18,6 +18,7 @@ const StaffPage = lazy(() => import('./pages/StaffPage'));
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 const AutoTasksPage = lazy(() => import('./pages/AutoTasksPage'));
+const CommunicationsPage = lazy(() => import('./pages/CommunicationsPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const LoginPage = lazy(() => import('./components/Auth/LoginPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
@@ -27,6 +28,7 @@ const AuditWorkspace = lazy(() => import('./pages/AuditWorkspace'));
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const CompletedTasksPage = lazy(() => import('./pages/CompletedTasksPage'));
 
 import LandingPage from './pages/LandingPage';
 import ErrorBoundary from './components/Common/ErrorBoundary';
@@ -46,29 +48,43 @@ import { WalkthroughProvider } from './components/Walkthrough/WalkthroughProvide
 function App() {
   const { isAuthenticated, setUser } = useAuthStore();
   // Data initialization (prefetching)
-  const { fetchClients } = useClientsStore();
-  const { fetchStaff } = useStaffStore();
-  const { fetchTasks } = useTasksStore();
+  const { fetchClients, hasFetched: hasFetchedClients } = useClientsStore();
+  const { fetchStaff, hasFetched: hasFetchedStaff } = useStaffStore();
+  const { fetchTasks, hasFetched: hasFetchedTasks } = useTasksStore();
 
   const [isInitialized, setIsInitialized] = useState(false);
   const navigate = useNavigate();
 
+  // 1. Initial Auth Check (Run once)
   useEffect(() => {
-    // 1. Initial check
+    let mounted = true;
+
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const user = await authService.getCurrentUser();
-          setUser(user);
+        if (mounted) {
+          if (session) {
+            const user = await authService.getCurrentUser();
+            setUser(user);
+          } else {
+            setUser(null);
+          }
         }
+      } catch (error) {
+        console.error('App: Initial auth check failed:', error);
       } finally {
-        setIsInitialized(true);
+        if (mounted) {
+          setIsInitialized(true);
+        }
       }
     };
-    initAuth();
 
-    // 2. Auth state listener
+    initAuth();
+    return () => { mounted = false; };
+  }, [setUser]);
+
+  // 2. Auth State Change Listener (Run once)
+  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('App: Auth event detected:', event);
 
@@ -80,14 +96,11 @@ function App() {
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         if (session) {
           const fetchedUser = await authService.getCurrentUser();
-          console.log('App: User profile loaded:', fetchedUser?.email);
           setUser(fetchedUser);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
-      } else if (event === 'USER_UPDATED') {
-        console.log('App: User updated, bypassing profile fetch for reset flow.');
-        return;
+        navigate('/login');
       }
     });
 
@@ -96,11 +109,11 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchClients();
-      fetchStaff();
-      fetchTasks();
+      if (!hasFetchedClients) fetchClients();
+      if (!hasFetchedStaff) fetchStaff();
+      if (!hasFetchedTasks) fetchTasks();
     }
-  }, [isAuthenticated, fetchClients, fetchStaff, fetchTasks]);
+  }, [isAuthenticated, fetchClients, fetchStaff, fetchTasks, hasFetchedClients, hasFetchedStaff, hasFetchedTasks]);
 
   if (!isInitialized) {
     return <PageLoader />;
@@ -128,7 +141,11 @@ function App() {
 
             <Route
               path="/dashboard"
-              element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />}
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
             >
               <Route index element={<DashboardPage />} />
               <Route path="tasks" element={<TasksPage />} />
@@ -137,20 +154,19 @@ function App() {
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="import" element={<ImportPage />} />
               <Route path="auto-tasks" element={<AutoTasksPage />} />
+              <Route path="communications" element={<CommunicationsPage />} />
+              <Route path="completed-tasks" element={<CompletedTasksPage />} />
               <Route path="audits" element={<AuditDashboard />} />
-              <Route path="audits/:auditId" element={
-                <ProtectedRoute>
-                  <AuditWorkspace />
-                </ProtectedRoute>
-              } />
-              <Route path="documents" element={
-                <ProtectedRoute>
-                  <DocumentsPage />
-                </ProtectedRoute>
-              } />
+              <Route path="audits/:auditId" element={<AuditWorkspace />} />
+              <Route path="documents" element={<DocumentsPage />} />
               <Route path="billing" element={
-                <ProtectedRoute roles={['partner', 'manager']}>
+                <ProtectedRoute roles={['partner', 'manager', 'paid_staff', 'staff']}>
                   <BillingPage />
+                </ProtectedRoute>
+              } />
+              <Route path="reports" element={
+                <ProtectedRoute roles={['partner', 'manager']}>
+                  <ReportsPage />
                 </ProtectedRoute>
               } />
               <Route path="settings" element={

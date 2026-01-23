@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Clock, Calendar, Save, FileText } from 'lucide-react';
+import { X, Trash2, Clock, Save } from 'lucide-react';
 import { useBillingStore } from '../../store/billing.store';
 import { useClientsStore } from '../../store/clients.store';
-import { TimeEntry, InvoiceTemplate } from '../../types';
+import { TimeEntry } from '../../types';
 
 interface CreateInvoiceModalProps {
     onClose: () => void;
@@ -19,6 +19,7 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ onClose }) => {
     const [terms, setTerms] = useState('Payment due within 15 days.');
     const [isGst, setIsGst] = useState(true);
     const [gstType, setGstType] = useState<'intra' | 'inter'>('intra');
+    const [customInvoiceNumber, setCustomInvoiceNumber] = useState('');
 
     const [items, setItems] = useState<{
         id: string;
@@ -94,7 +95,7 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ onClose }) => {
         if (!template) return;
 
         if (window.confirm('Load template? This will replace current items and settings.')) {
-            setItems(template.items.map((i, idx) => ({ ...i, id: `tmpl-${idx}`, timeEntryId: undefined })));
+            setItems(template.items.map((i, idx) => ({ ...i, quantity: 1, unitPrice: i.unit_price, id: `tmpl-${idx}`, timeEntryId: undefined })));
             setTerms(template.terms || '');
             setNotes(template.notes || '');
             setIsGst(template.is_gst);
@@ -152,7 +153,8 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ onClose }) => {
                 notes,
                 terms,
                 isGst,
-                gstType: isGst ? gstType : undefined
+                gstType: isGst ? gstType : undefined,
+                invoiceNumber: customInvoiceNumber || undefined
             });
             onClose();
         } catch (error) {
@@ -259,6 +261,16 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ onClose }) => {
                                     </label>
                                 </div>
                             )}
+                        </div>
+                        <div className="col-span-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Number <span className="text-xs text-gray-400">(Optional)</span></label>
+                            <input
+                                type="text"
+                                value={customInvoiceNumber}
+                                onChange={(e) => setCustomInvoiceNumber(e.target.value)}
+                                placeholder="Auto-generate"
+                                className="w-full rounded-lg border-gray-300 focus:ring-blue-500"
+                            />
                         </div>
                     </div>
 

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
     Users, CheckSquare, Zap, ClipboardList,
     BarChart3, ShieldCheck, ArrowRight, PlayCircle,
-    Menu, X, Compass, BookOpen, UserCheck, Settings,
+    Menu, X, Compass, UserCheck, Settings,
     HelpCircle, Database
 } from 'lucide-react';
 import Logo from '../assets/Logo.png';

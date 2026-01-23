@@ -5,6 +5,7 @@ import { settingsService } from '../services/settings.service';
 interface SettingsState {
     firm: Firm | null;
     isLoading: boolean;
+    hasFetched: boolean;
     error: string | null;
 
     fetchFirmProfile: () => Promise<void>;
@@ -14,15 +15,16 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>((set) => ({
     firm: null,
     isLoading: false,
+    hasFetched: false,
     error: null,
 
     fetchFirmProfile: async () => {
         set({ isLoading: true, error: null });
         try {
             const firm = await settingsService.getFirmProfile();
-            set({ firm, isLoading: false });
+            set({ firm, isLoading: false, hasFetched: true });
         } catch (error: any) {
-            set({ error: error.message, isLoading: false });
+            set({ error: error.message, isLoading: false, hasFetched: true });
         }
     },
 

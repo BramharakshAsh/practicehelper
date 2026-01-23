@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Eye, EyeOff, CheckCircle, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import { supabase } from '../services/supabase';
 import Logo from '../assets/Logo.png';

@@ -43,6 +43,11 @@ export interface Client {
   is_active: boolean;
   created_by?: string;
   manager_id?: string;
+  client_group?: string;
+  instructions?: string;
+  to_remember?: string;
+  auto_mail_enabled: boolean;
+  mail_frequency: 'monthly' | 'quarterly' | 'none';
   created_at: string;
   updated_at: string;
 }
@@ -111,13 +116,15 @@ export interface Task {
   title: string;
   description?: string;
   due_date: string;
-  status: 'assigned' | 'in_progress' | 'awaiting_client_data' | 'ready_for_review' | 'filed_completed';
+  scheduled_for?: string;
+  status: TaskStatus;
   priority: 'low' | 'medium' | 'high';
   period: string; // e.g., "March 2024", "Q1 2024"
   remarks?: string;
   delay_reason?: string;
   estimated_hours?: number;
   actual_hours?: number;
+  checklist?: ChecklistItem[];
   checklist_progress?: { [itemId: string]: boolean };
   audit_id?: string;
   filing_reference?: string;
@@ -170,6 +177,7 @@ export interface TaskStatusUpdate {
 }
 
 export type UserRole = 'partner' | 'manager' | 'staff' | 'paid_staff' | 'articles';
+export type TaskStatus = 'assigned' | 'in_progress' | 'awaiting_client_data' | 'ready_for_review' | 'filed_completed' | 'scheduled';
 
 export interface DashboardStats {
   total_clients: number;
@@ -277,6 +285,7 @@ export interface Document {
   uploaded_at: string;
   notes?: string;
   tags?: string[];
+  client?: { name: string };
 }
 
 export interface TimeEntry {

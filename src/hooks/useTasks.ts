@@ -2,12 +2,12 @@ import { useEffect } from 'react';
 import { useTasksStore } from '../store/tasks.store';
 import { useAuthStore } from '../store/auth.store';
 import { Task } from '../types';
-import { auditManagementService } from '../services/audit-management.service';
 
 export const useTasks = () => {
   const {
     tasks,
     isLoading,
+    hasFetched,
     error,
     fetchTasks,
     fetchTasksByStaff,
@@ -22,59 +22,20 @@ export const useTasks = () => {
   const { user } = useAuthStore();
 
   useEffect(() => {
-    if (tasks.length === 0 && !isLoading && user) {
+    if (!hasFetched && !isLoading && user) {
       if (user.role === 'staff') {
         fetchTasksByStaff(user.id);
       } else {
         fetchTasks();
       }
     }
-  }, [tasks.length, isLoading, user, fetchTasks, fetchTasksByStaff]);
+  }, [hasFetched, isLoading, user, fetchTasks, fetchTasksByStaff]);
 
-  const handleCreateTask = async (taskData: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => {
-    try {
-      await createTask(taskData);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
-
-  const handleUpdateTask = async (id: string, updates: Partial<Task>) => {
-    try {
-      await updateTask(id, updates);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
-
-  const handleDeleteTask = async (id: string) => {
-    try {
-      await deleteTask(id);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
-
-  const handleCreateBulkTasks = async (tasksData: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => {
-    try {
-      await createBulkTasks(tasksData);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
-
-  const handleImportTasks = async (tasksData: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => {
-    try {
-      await importTasks(tasksData);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
+  const handleCreateTask = (taskData: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => createTask(taskData);
+  const handleUpdateTask = (id: string, updates: Partial<Task>) => updateTask(id, updates);
+  const handleDeleteTask = (id: string) => deleteTask(id);
+  const handleCreateBulkTasks = (tasksData: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => createBulkTasks(tasksData);
+  const handleImportTasks = (tasksData: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => importTasks(tasksData);
 
   const refetch = () => {
     if (user?.role === 'staff') {

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Invoice, InvoiceItem, Payment, TimeEntry, InvoiceTemplate } from '../types';
+import { Invoice, TimeEntry, InvoiceTemplate } from '../types';
 import { useAuthStore } from '../store/auth.store';
 
 export type CreateInvoiceParams = {
@@ -17,6 +17,7 @@ export type CreateInvoiceParams = {
     terms?: string;
     isGst: boolean;
     gstType?: 'intra' | 'inter';
+    invoiceNumber?: string;
 };
 
 class BillingService {
@@ -29,7 +30,7 @@ class BillingService {
             .from('invoices')
             .select(`
                 *,
-                client:clients(name, email),
+                client:clients(name, email, address, gstin, pan),
                 items:invoice_items(*)
             `)
             .eq('firm_id', firmId)
@@ -63,43 +64,7 @@ class BillingService {
         const user = useAuthStore.getState().user;
         if (!user) throw new Error('User not authenticated');
 
-        // 1. Increment and Get Next Sequence (Atomic-ish)
-        const { data: updatedFirm, error: seqError } = await supabase
-            .from('firms')
-            .update({
-                // We use a raw SQL increment if possible, but Supabase JS client doesn't support 'invoice_sequence + 1' easily in update.
-                // So we rely on fetching first or optimistic. OR we fix the previous bug where updates might fail.
-                // Better approach: fetch, increment, update.
-            })
-            // actually, let's fix the logic to be: Fetch -> Calculate -> Insert Invoice -> Update Seq.
-            // If Insert fails (duplicate), we catch, re-fetch seq, retry? 
-            // Simplified: Update seq FIRST to reserve it.
-            .select('invoice_prefix, invoice_sequence')
-            .eq('id', user.firm_id)
-            .single();
-
-        // Let's do the manual read-update for now, but handle the update properly.
-        const { data: firm } = await supabase
-            .from('firms')
-            .select('invoice_prefix, invoice_sequence')
-            .eq('id', user.firm_id)
-            .single();
-
-        const prefix = firm?.invoice_prefix || 'INV-';
-        const currentSeq = firm?.invoice_sequence || 1;
-        const nextSeq = currentSeq + 1;
-
-        // Update sequence IMMEDIATELY to 'reserve' it (or rather, the one we are about to use is currentSeq, so we update to nextSeq)
-        // Wait, usually 'invoice_sequence' stores the NEXT available or the LAST used? 
-        // Let's assume it stores the NEXT available.
-        const invoiceNumber = `${prefix}${currentSeq.toString().padStart(6, '0')}`;
-
-        await supabase
-            .from('firms')
-            .update({ invoice_sequence: nextSeq })
-            .eq('id', user.firm_id);
-
-        // ... Calculations ...
+        // Calculate Totals first
         let subtotal = 0;
         let reimbursementTotal = 0;
 
@@ -115,6 +80,28 @@ class BillingService {
         const taxRate = params.isGst ? 18 : 0;
         const taxAmount = (subtotal * taxRate) / 100;
         const totalAmount = subtotal + taxAmount + reimbursementTotal;
+
+        // Determine Invoice Number
+        let invoiceNumber = params.invoiceNumber;
+
+        if (!invoiceNumber) {
+            // Auto-generate if not provided
+            const { data: firm } = await supabase
+                .from('firms')
+                .select('invoice_prefix, invoice_sequence')
+                .eq('id', user.firm_id)
+                .single();
+
+            const prefix = firm?.invoice_prefix || 'INV-';
+            const currentSeq = firm?.invoice_sequence || 1;
+            invoiceNumber = `${prefix}${currentSeq.toString().padStart(6, '0')}`;
+
+            // Increment sequence only if auto-generated
+            await supabase
+                .from('firms')
+                .update({ invoice_sequence: currentSeq + 1 })
+                .eq('id', user.firm_id);
+        }
 
         const { data: invoice, error: invoiceError } = await supabase
             .from('invoices')

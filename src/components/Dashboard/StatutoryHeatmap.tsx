@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Task, ComplianceType } from '../../types';
 import { AlertCircle, Clock, CheckCircle } from 'lucide-react';
@@ -16,37 +16,44 @@ const StatutoryHeatmap: React.FC<StatutoryHeatmapProps> = ({ tasks, complianceTy
     // Fixed categories as per requirement
     const categories = ['GST', 'TDS', 'Income Tax', 'Audit'];
 
-    // Calculate status for each category
-    const getCategoryStatus = (category: string) => {
-        // Get all compliance types for this category
-        const categoryTypeIds = complianceTypes
-            .filter(ct => ct.category === category)
-            .map(ct => ct.id);
+    // Calculate status for each category - Memoized
+    const categoryStatuses = useMemo(() => {
+        const getCategoryStatus = (category: string) => {
+            // Get all compliance types for this category
+            const categoryTypeIds = complianceTypes
+                .filter(ct => ct.category === category)
+                .map(ct => ct.id);
 
-        // Filter tasks for this category
-        const categoryTasks = tasks.filter(t =>
-            t.status !== 'filed_completed' &&
-            categoryTypeIds.includes(t.compliance_type_id)
-        );
+            // Filter tasks for this category
+            const categoryTasks = tasks.filter(t =>
+                t.status !== 'filed_completed' &&
+                categoryTypeIds.includes(t.compliance_type_id)
+            );
 
-        // Check overdue
-        const overdueCount = categoryTasks.filter(t => {
-            const d = new Date(t.due_date);
-            const dueDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-            return dueDate < today;
-        }).length;
+            // Check overdue
+            const overdueCount = categoryTasks.filter(t => {
+                const d = new Date(t.due_date);
+                const dueDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                return dueDate < today;
+            }).length;
 
-        // Check due this week
-        const dueThisWeekCount = categoryTasks.filter(t => {
-            const d = new Date(t.due_date);
-            const dueDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-            const diffTime = dueDate.getTime() - today.getTime();
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return diffDays >= 0 && diffDays <= 7;
-        }).length;
+            // Check due this week
+            const dueThisWeekCount = categoryTasks.filter(t => {
+                const d = new Date(t.due_date);
+                const dueDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const diffTime = dueDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays >= 0 && diffDays <= 7;
+            }).length;
 
-        return { overdueCount, dueThisWeekCount };
-    };
+            return { overdueCount, dueThisWeekCount };
+        };
+
+        return categories.map(cat => ({
+            category: cat,
+            ...getCategoryStatus(cat)
+        }));
+    }, [tasks, complianceTypes, categories, today.getTime()]);
 
     const handleCategoryClick = (category: string) => {
         // Navigate with filter
@@ -58,9 +65,7 @@ const StatutoryHeatmap: React.FC<StatutoryHeatmapProps> = ({ tasks, complianceTy
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Statutory Deadlines Overview</h3>
 
             <div className="space-y-3">
-                {categories.map(category => {
-                    const { overdueCount, dueThisWeekCount } = getCategoryStatus(category);
-
+                {categoryStatuses.map(({ category, overdueCount, dueThisWeekCount }) => {
                     let statusContent;
                     let bgColor;
                     let borderColor;

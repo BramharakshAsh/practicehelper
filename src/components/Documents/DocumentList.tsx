@@ -63,6 +63,11 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDelete, showCl
                                         <div className="truncate">
                                             <div className="flex text-sm">
                                                 <p className="font-medium text-blue-600 truncate mr-2">{doc.file_name}</p>
+                                                {showClientName && doc.client && (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 mr-2">
+                                                        {doc.client.name}
+                                                    </span>
+                                                )}
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                                     {doc.category}
                                                 </span>
