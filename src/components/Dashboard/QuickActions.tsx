@@ -1,14 +1,16 @@
 import React from 'react';
-import { Plus, Calendar, Mail, Upload } from 'lucide-react';
+import { Plus, User, Users, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface QuickActionsProps {
     onAddTask: () => void;
-    onScheduleFiling: () => void;
-    onSendReminder: () => void;
+    onAddClient: () => void;
+    onAddStaff?: () => void; // Optional, only if user has permission
+    onImportData: () => void;
+    onSendReminder?: () => void; // Kept as optional if we want to preserve it or remove? Plan said remove, but let's see. Plan said REMOVE.
 }
 
-const QuickActions: React.FC<QuickActionsProps> = ({ onAddTask, onScheduleFiling, onSendReminder }) => {
+const QuickActions: React.FC<QuickActionsProps> = ({ onAddTask, onAddClient, onAddStaff, onImportData }) => {
     const navigate = useNavigate();
 
     const actions = [
@@ -21,25 +23,26 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onAddTask, onScheduleFiling
             hover: 'hover:bg-blue-100'
         },
         {
-            label: 'Schedule Filing',
-            icon: Calendar,
-            onClick: onScheduleFiling,
+            label: 'Add Client',
+            icon: User,
+            onClick: onAddClient,
             color: 'text-purple-600',
             bg: 'bg-purple-50',
             hover: 'hover:bg-purple-100'
         },
-        {
-            label: 'Send Client Reminder',
-            icon: Mail,
-            onClick: onSendReminder,
+        // Conditionally add 'Add Staff'
+        ...(onAddStaff ? [{
+            label: 'Add Staff',
+            icon: Users,
+            onClick: onAddStaff,
             color: 'text-orange-600',
             bg: 'bg-orange-50',
             hover: 'hover:bg-orange-100'
-        },
+        }] : []),
         {
             label: 'Import Data',
             icon: Upload,
-            onClick: () => navigate('/dashboard/import'), // Assuming /dashboard/import route exists or will exist
+            onClick: onImportData,
             color: 'text-green-600',
             bg: 'bg-green-50',
             hover: 'hover:bg-green-100'
@@ -54,7 +57,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onAddTask, onScheduleFiling
                     <button
                         key={index}
                         onClick={action.onClick}
-                        data-walkthrough={action.label === 'Add Task' ? 'add-task' : action.label === 'Import Data' ? 'import-button' : undefined}
+                        data-walkthrough={`quick-action-${action.label.toLowerCase().replace(' ', '-')}`}
                         className={`w-full flex items-center p-3 rounded-lg border border-transparent ${action.bg} ${action.color} ${action.hover} transition-all font-medium`}
                     >
                         <action.icon className="h-5 w-5 mr-3" />

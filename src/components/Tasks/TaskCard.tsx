@@ -74,8 +74,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
   const nextStatuses = getNextStatuses(task.status);
 
   return (
-    <div className={`bg-white rounded-lg border transition-all ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 shadow-md' : 'border-gray-200 hover:shadow-md'
-      } p-4`}>
+    <div
+      onDoubleClick={() => setShowDetails(true)}
+      className={`bg-white rounded-lg border transition-all ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 shadow-md' : 'border-gray-200 hover:shadow-md'
+        } p-4 cursor-pointer`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start space-x-3 flex-1">
           {onToggleSelect && (
