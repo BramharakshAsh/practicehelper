@@ -12,6 +12,13 @@ export default {
       animation: {
         'slide-in-left': 'slide-in-left 0.3s ease-out',
       },
+      colors: {
+        brand: {
+          dark: '#0f172a',    // Dark Navy
+          primary: '#f97316', // Orange 500
+          accent: '#10b981',  // Emerald 500
+        }
+      },
     },
   },
   plugins: [],

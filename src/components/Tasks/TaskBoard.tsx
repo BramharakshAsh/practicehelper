@@ -4,6 +4,7 @@ import { Plus, Filter, Search, AlertTriangle } from 'lucide-react';
 import { Task, Staff, Client, ComplianceType, UserRole } from '../../types';
 import TaskCard from './TaskCard';
 import TaskModal from './TaskModal';
+import TaskBulkActions from './TaskBulkActions';
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -38,6 +39,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
   const [filterTimeline, setFilterTimeline] = useState(searchParams.get('timeline') || 'all');
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [showModal, setShowModal] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
 
   // Sync state with search params if they change (e.g., when navigating from dashboard)
   useEffect(() => {
@@ -141,6 +143,23 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
     acc[status.value] = filteredTasks.filter(task => task.status === status.value);
     return acc;
   }, {} as Record<string, Task[]>);
+
+  const toggleTaskSelection = (taskId: string) => {
+    setSelectedTaskIds(prev =>
+      prev.includes(taskId)
+        ? prev.filter(id => id !== taskId)
+        : [...prev, taskId]
+    );
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedTaskIds(filteredTasks.map(t => t.id));
+    } else {
+      setSelectedTaskIds([]);
+    }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -366,6 +385,8 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                       onUpdate={onTaskUpdate}
                       onDelete={onTaskDelete}
                       currentRole={currentRole}
+                      isSelected={selectedTaskIds.includes(task.id)}
+                      onToggleSelect={toggleTaskSelection}
                     />
                   ))}
 
@@ -385,6 +406,14 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-6 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={filteredTasks.length > 0 && selectedTaskIds.length === filteredTasks.length}
+                        onChange={handleSelectAll}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
@@ -405,6 +434,14 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                       )}
                       {groupedTasks[status.value]?.map(task => (
                         <tr key={task.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={selectedTaskIds.includes(task.id)}
+                              onChange={() => toggleTaskSelection(task.id)}
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">{task.title}</div>
                           </td>
@@ -463,6 +500,8 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                           onUpdate={onTaskUpdate}
                           onDelete={onTaskDelete}
                           currentRole={currentRole}
+                          isSelected={selectedTaskIds.includes(task.id)}
+                          onToggleSelect={toggleTaskSelection}
                         />
                       ))}
                     </div>
@@ -508,6 +547,22 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
           />
         )
       }
+      {/* Task Bulk Actions */}
+      <TaskBulkActions
+        selectedTasks={tasks.filter(t => selectedTaskIds.includes(t.id))}
+        staff={staff}
+        onClearSelection={() => setSelectedTaskIds([])}
+        onBulkUpdate={async (taskIds, updates) => {
+          for (const taskId of taskIds) {
+            await onTaskUpdate(taskId, updates);
+          }
+        }}
+        onBulkDelete={async (taskIds) => {
+          for (const taskId of taskIds) {
+            await onTaskDelete(taskId);
+          }
+        }}
+      />
     </div >
   );
 };

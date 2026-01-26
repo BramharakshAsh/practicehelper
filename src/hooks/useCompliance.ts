@@ -6,6 +6,7 @@ export const useCompliance = () => {
   const {
     complianceTypes,
     isLoading,
+    hasFetched,
     error,
     fetchComplianceTypes,
     createComplianceType,
@@ -13,19 +14,12 @@ export const useCompliance = () => {
   } = useComplianceStore();
 
   useEffect(() => {
-    if (complianceTypes.length === 0 && !isLoading) {
+    if (!hasFetched && !isLoading) {
       fetchComplianceTypes();
     }
-  }, [complianceTypes.length, isLoading, fetchComplianceTypes]);
+  }, [hasFetched, isLoading, fetchComplianceTypes]);
 
-  const handleCreateComplianceType = async (complianceTypeData: Omit<ComplianceType, 'id' | 'firm_id' | 'created_at'>) => {
-    try {
-      await createComplianceType(complianceTypeData);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
+  const handleCreateComplianceType = (complianceTypeData: Omit<ComplianceType, 'id' | 'firm_id' | 'created_at'>) => createComplianceType(complianceTypeData);
 
   return {
     complianceTypes,

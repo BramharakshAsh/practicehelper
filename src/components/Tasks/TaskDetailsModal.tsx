@@ -1,9 +1,14 @@
-import { X, Calendar, User, Building, FileText, ExternalLink } from 'lucide-react';
+import React from 'react';
+import { X, Calendar, User, Building, FileText, ExternalLink, CheckSquare, Plus, Paperclip, Clock, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auditManagementService } from '../../services/audit-management.service';
 import { tasksService } from '../../services/tasks.service';
-import { Task } from '../../types';
+import { Task, Document } from '../../types';
 import TaskComments from './TaskComments';
+import { useDocuments } from '../../store/documents.store';
+import { useTimeEntriesStore } from '../../store/time-entries.store';
+import DocumentList from '../Documents/DocumentList';
+import DocumentUploadModal from '../Documents/DocumentUploadModal';
 
 interface TaskDetailsModalProps {
     task: Task;
@@ -12,8 +17,29 @@ interface TaskDetailsModalProps {
     onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
 }
 
+const statusColors: Record<Task['status'], string> = {
+    assigned: 'bg-gray-100 text-gray-800 ring-gray-200',
+    in_progress: 'bg-blue-100 text-blue-800 ring-blue-200',
+    awaiting_client_data: 'bg-orange-100 text-orange-800 ring-orange-200',
+    ready_for_review: 'bg-purple-100 text-purple-800 ring-purple-200',
+    filed_completed: 'bg-green-100 text-green-800 ring-green-200',
+    scheduled: 'bg-indigo-100 text-indigo-800 ring-indigo-200',
+};
+
 const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onStatusChange, onUpdateTask }) => {
     const navigate = useNavigate();
+    const { documents, fetchDocuments, uploadDocument, deleteDocument } = useDocuments();
+    const { startTimer, activeTimer } = useTimeEntriesStore();
+    const [showUploadModal, setShowUploadModal] = React.useState(false);
+    const [taskDocuments, setTaskDocuments] = React.useState<Document[]>([]);
+
+    React.useEffect(() => {
+        fetchDocuments({ taskId: task.id });
+    }, [task.id, fetchDocuments]);
+
+    React.useEffect(() => {
+        setTaskDocuments(documents.filter(d => d.task_id === task.id));
+    }, [documents, task.id]);
 
     const handleOpenAudit = async () => {
         if (task.audit_id) {
@@ -130,21 +156,91 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                 </div>
                             </div>
 
+                            {/* Client Instructions & To Remember */}
+                            {(task.client?.instructions || task.client?.to_remember) && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {task.client?.instructions && (
+                                        <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                                            <h4 className="text-[10px] font-bold text-blue-700 uppercase tracking-widest mb-1">Instructions</h4>
+                                            <p className="text-xs text-blue-900 line-clamp-3 hover:line-clamp-none transition-all cursor-default">
+                                                {task.client.instructions}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {task.client?.to_remember && (
+                                        <div className="bg-orange-50/50 p-3 rounded-lg border border-orange-100">
+                                            <h4 className="text-[10px] font-bold text-orange-700 uppercase tracking-widest mb-1">To Remember</h4>
+                                            <p className="text-xs text-orange-900 line-clamp-3 hover:line-clamp-none transition-all cursor-default">
+                                                {task.client.to_remember}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="space-y-4">
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Status</h4>
-                                    <select
-                                        value={task.status}
-                                        onChange={(e) => onStatusChange(task.id, e.target.value as Task['status'])}
-                                        className="w-full md:w-auto border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    >
-                                        <option value="assigned">Assigned</option>
-                                        <option value="in_progress">In Progress</option>
-                                        <option value="awaiting_client_data">Awaiting Client Data</option>
-                                        <option value="ready_for_review">Ready for Review</option>
-                                        <option value="filed_completed">Filed & Completed</option>
-                                    </select>
+                                    <div className="flex items-center space-x-2">
+                                        <select
+                                            value={task.status}
+                                            onChange={(e) => onStatusChange(task.id, e.target.value as Task['status'])}
+                                            className={`rounded-lg text-sm font-medium px-3 py-1 border-0 ring-1 ring-inset focus:ring-2 focus:ring-blue-600 ${statusColors[task.status]}`}
+                                        >
+                                            <option value="assigned">Assigned</option>
+                                            <option value="in_progress">In Progress</option>
+                                            <option value="awaiting_client_data">Awaiting Data</option>
+                                            <option value="ready_for_review">Ready for Review</option>
+                                            <option value="filed_completed">Filed / Completed</option>
+                                        </select>
+
+                                        <button
+                                            onClick={() => startTimer(task.id)}
+                                            disabled={activeTimer.activeTaskId === task.id}
+                                            className={`p-2 rounded-full transition-colors ${activeTimer.activeTaskId === task.id
+                                                ? 'bg-green-100 text-green-600 cursor-default'
+                                                : 'bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600'
+                                                }`}
+                                            title={activeTimer.activeTaskId === task.id ? 'Timer Running' : 'Start Timer'}
+                                        >
+                                            {activeTimer.activeTaskId === task.id ? <Clock className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                                        </button>
+                                    </div>
                                 </div>
+
+                                {task.status === 'filed_completed' && (
+                                    <div className="bg-green-50 p-4 rounded-lg border border-green-100 animate-fade-in">
+                                        <h4 className="text-sm font-bold text-green-700 uppercase tracking-wider mb-3 flex items-center">
+                                            <CheckSquare className="h-4 w-4 mr-2" />
+                                            Filing Details
+                                        </h4>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-green-800 mb-1">
+                                                    Reference / ARN No.
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={task.filing_reference || ''}
+                                                    onChange={(e) => onUpdateTask?.(task.id, { filing_reference: e.target.value })}
+                                                    placeholder="e.g. AA070224123456"
+                                                    className="w-full text-sm border-green-200 rounded-md shadow-sm focus:border-green-500 focus:ring-green-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-green-800 mb-1">
+                                                    Date of Filing
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={task.filing_date || ''}
+                                                    onChange={(e) => onUpdateTask?.(task.id, { filing_date: e.target.value })}
+                                                    className="w-full text-sm border-green-200 rounded-md shadow-sm focus:border-green-500 focus:ring-green-500"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Details</h4>
@@ -174,6 +270,93 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                     </div>
                                 )}
 
+                                {/* Checklist Section */}
+                                <div className="pt-4 mt-4 border-t border-gray-100">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider flex items-center">
+                                            <CheckSquare className="h-4 w-4 mr-2" />
+                                            Checklist
+                                            <span className="ml-2 text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-bold">
+                                                {task.checklist?.filter(i => i.completed).length || 0}/{task.checklist?.length || 0}
+                                            </span>
+                                        </h4>
+                                        <button
+                                            onClick={() => {
+                                                const text = window.prompt('Enter checklist item:');
+                                                if (text && onUpdateTask) {
+                                                    const newChecklist = [...(task.checklist || []), {
+                                                        id: Math.random().toString(36).substr(2, 9),
+                                                        text,
+                                                        completed: false
+                                                    }];
+                                                    onUpdateTask(task.id, { checklist: newChecklist });
+                                                }
+                                            }}
+                                            className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center bg-blue-50 px-2 py-1 rounded"
+                                        >
+                                            <Plus className="h-3 w-3 mr-1" />
+                                            Add Item
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2 scrollbar-thin">
+                                        {!task.checklist || task.checklist.length === 0 ? (
+                                            <p className="text-xs text-gray-400 italic text-center py-2">No items in checklist yet</p>
+                                        ) : (
+                                            task.checklist.map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    className={`flex items-start p-2 rounded-lg transition-colors group ${item.completed ? 'bg-gray-50/50' : 'bg-white border border-gray-100'
+                                                        }`}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={item.completed}
+                                                        onChange={(e) => {
+                                                            const newChecklist = task.checklist?.map(i =>
+                                                                i.id === item.id ? { ...i, completed: e.target.checked } : i
+                                                            );
+                                                            onUpdateTask?.(task.id, { checklist: newChecklist });
+                                                        }}
+                                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                    <span className={`ml-3 text-sm flex-1 ${item.completed ? 'text-gray-400 line-through' : 'text-gray-700'
+                                                        }`}>
+                                                        {item.text}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => {
+                                                            const newChecklist = task.checklist?.filter(i => i.id !== item.id);
+                                                            onUpdateTask?.(task.id, { checklist: newChecklist });
+                                                        }}
+                                                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 transition-opacity"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </button>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 mt-4 border-t border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider flex items-center">
+                                            <Paperclip className="h-4 w-4 mr-2" />
+                                            Documents
+                                        </h4>
+                                        <button
+                                            onClick={() => setShowUploadModal(true)}
+                                            className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center"
+                                        >
+                                            <Plus className="h-3 w-3 mr-1" />
+                                            Add
+                                        </button>
+                                    </div>
+                                    <div className="max-h-40 overflow-y-auto">
+                                        <DocumentList documents={taskDocuments} onDelete={deleteDocument} />
+                                    </div>
+                                </div>
+
                                 <div className="pt-4 mt-4 border-t border-gray-100">
                                     <button
                                         onClick={handleOpenAudit}
@@ -195,10 +378,19 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                         </div>
 
                     </div>
-                </div>
+                </div >
 
-            </div>
-        </div>
+                {showUploadModal && (
+                    <DocumentUploadModal
+                        onClose={() => setShowUploadModal(false)}
+                        onUpload={uploadDocument}
+                        preselectedClientId={task.client_id}
+                        preselectedTaskId={task.id}
+                    />
+                )}
+
+            </div >
+        </div >
     );
 };
 

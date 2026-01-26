@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, FileText, Clock, CheckCircle, AlertTriangle, Calendar } from 'lucide-react';
+import { Users, Clock, CheckCircle, AlertTriangle, Calendar } from 'lucide-react';
 import { DashboardStats as StatsType } from '../../types';
 
 interface DashboardStatsProps {

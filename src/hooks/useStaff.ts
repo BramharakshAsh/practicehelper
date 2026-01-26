@@ -6,6 +6,7 @@ export const useStaff = () => {
   const {
     staff,
     isLoading,
+    hasFetched,
     error,
     fetchStaff,
     createStaff,
@@ -16,46 +17,15 @@ export const useStaff = () => {
   } = useStaffStore();
 
   useEffect(() => {
-    if (staff.length === 0 && !isLoading) {
+    if (!hasFetched && !isLoading) {
       fetchStaff();
     }
-  }, [staff.length, isLoading, fetchStaff]);
+  }, [hasFetched, isLoading, fetchStaff]);
 
-  const handleCreateStaff = async (staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'> & { password?: string }) => {
-    try {
-      await createStaff(staffData);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
-
-  const handleUpdateStaff = async (id: string, updates: Partial<Staff>) => {
-    try {
-      await updateStaff(id, updates);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
-
-  const handleDeleteStaff = async (id: string) => {
-    try {
-      await deleteStaff(id);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
-
-  const handleImportStaff = async (staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => {
-    try {
-      await importStaff(staffData);
-    } catch (error) {
-      // Error is handled in the store
-      throw error;
-    }
-  };
+  const handleCreateStaff = (staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'> & { password?: string }) => createStaff(staffData);
+  const handleUpdateStaff = (id: string, updates: Partial<Staff>) => updateStaff(id, updates);
+  const handleDeleteStaff = (id: string) => deleteStaff(id);
+  const handleImportStaff = (staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => importStaff(staffData);
 
   return {
     staff,

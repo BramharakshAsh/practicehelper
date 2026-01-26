@@ -6,6 +6,7 @@ import { ErrorService, handleAsyncError } from '../services/error.service';
 interface MeetingsState {
     meetings: Meeting[];
     isLoading: boolean;
+    hasFetched: boolean;
     error: string | null;
 
     // Actions
@@ -19,6 +20,7 @@ interface MeetingsState {
 export const useMeetingsStore = create<MeetingsState>((set) => ({
     meetings: [],
     isLoading: false,
+    hasFetched: false,
     error: null,
 
     fetchMeetings: async (startDate, endDate) => {
@@ -26,11 +28,12 @@ export const useMeetingsStore = create<MeetingsState>((set) => ({
 
         await handleAsyncError(async () => {
             const meetings = await meetingsService.getMeetings(startDate, endDate);
-            set({ meetings, isLoading: false });
+            set({ meetings, isLoading: false, hasFetched: true });
         }, 'Fetch meetings').catch((error) => {
             set({
                 error: ErrorService.getErrorMessage(error),
-                isLoading: false
+                isLoading: false,
+                hasFetched: true
             });
         });
     },

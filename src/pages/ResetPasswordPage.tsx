@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Eye, EyeOff, CheckCircle, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import { supabase } from '../services/supabase';
-import Logo from '../assets/Logo.png';
+import { CAControlLogo } from '../components/Common/CAControlLogo';
 
 const ResetPasswordPage: React.FC = () => {
     const [password, setPassword] = useState('');
@@ -89,7 +89,7 @@ const ResetPasswordPage: React.FC = () => {
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="flex justify-center mb-6">
-                    <img src={Logo} alt="Firm Flow Logo" className="w-48 h-auto object-contain" />
+                    <CAControlLogo size="lg" />
                 </div>
                 <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
                     Set a new password
@@ -112,7 +112,7 @@ const ResetPasswordPage: React.FC = () => {
                             </p>
                             <button
                                 onClick={handleGoToLogin}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
                             >
                                 Go to Login
                             </button>
@@ -134,7 +134,7 @@ const ResetPasswordPage: React.FC = () => {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-10 sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                                        className="focus:ring-brand-primary focus:border-brand-primary block w-full pl-10 pr-10 sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
                                         placeholder="••••••••"
                                     />
                                     <button
@@ -166,7 +166,7 @@ const ResetPasswordPage: React.FC = () => {
                                         required
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                                        className="focus:ring-brand-primary focus:border-brand-primary block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -190,7 +190,7 @@ const ResetPasswordPage: React.FC = () => {
                                     id="resetPasswordBtn"
                                     type="submit"
                                     disabled={isLoading}
-                                    className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${isLoading ? 'opacity-75 cursor-not-allowed' : ''
+                                    className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary ${isLoading ? 'opacity-75 cursor-not-allowed' : ''
                                         }`}
                                 >
                                     {isLoading ? 'Updating...' : 'Update Password'}

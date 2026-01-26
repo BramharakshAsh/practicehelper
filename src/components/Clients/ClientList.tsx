@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
-import { Plus, Search, Building, Phone, Mail, FileText, CreditCard as Edit, Eye, Filter, Trash2 } from 'lucide-react';
+import { Plus, Search, Building, Phone, Mail, CreditCard as Edit, Eye, Filter, Trash2, Lock } from 'lucide-react';
 import { Client, ComplianceType, Staff } from '../../types';
 import ClientModal from './ClientModal';
+import { useAuthStore } from '../../store/auth.store';
+import { SubscriptionService } from '../../services/subscription.service';
 
 interface ClientListProps {
   clients: Client[];
   staff: Staff[];
   complianceTypes: ComplianceType[];
   onClientUpdate: (clientId: string, updates: Partial<Client>) => Promise<void>;
-  onClientCreate: (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  onClientCreate: (client: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   onClientDelete: (clientId: string) => Promise<void>;
 }
 
 const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes, onClientUpdate, onClientCreate, onClientDelete }) => {
+  const { firm } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterWorkType, setFilterWorkType] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [viewMode, setViewMode] = useState<'create' | 'edit' | 'view'>('create');
+
+  const canAdd = SubscriptionService.canAddClient(firm, clients.length);
+  const limits = SubscriptionService.getLimits(firm);
 
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,9 +46,6 @@ const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes
     setSelectedClient(null);
   };
 
-  const formatWorkTypes = (workTypes: string[]) => {
-    return workTypes.join(', ');
-  };
 
   return (
     <div className="space-y-6">
@@ -51,13 +54,23 @@ const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Client Management</h2>
           <p className="text-gray-600 mt-1">Manage your client information and work assignments</p>
+          {!canAdd && (
+            <p className="text-xs text-red-500 font-medium mt-1">
+              Client limit reached ({limits.maxClients}). Please upgrade usage.
+            </p>
+          )}
         </div>
         <button
-          onClick={() => openModal('create')}
+          onClick={() => canAdd ? openModal('create') : null}
+          disabled={!canAdd}
           data-walkthrough="add-client"
-          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${canAdd
+            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          title={!canAdd ? `Limit reached: ${limits.maxClients}` : 'Add New Client'}
         >
-          <Plus className="h-4 w-4" />
+          {canAdd ? <Plus className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
           <span>Add Client</span>
         </button>
       </div>
@@ -114,7 +127,14 @@ const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes
             </div>
 
             <div className="mb-4 flex-1">
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">{client.name}</h3>
+              <div className="flex items-start justify-between">
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">{client.name}</h3>
+                {client.client_group && (
+                  <span className="ml-2 flex-shrink-0 text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider border border-blue-200">
+                    {client.client_group}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-500 mt-1">PAN: {client.pan}</p>
               <div className="flex flex-wrap gap-1 mt-3">
                 {client.work_types.map((type) => (

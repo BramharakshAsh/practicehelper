@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Save, RotateCcw } from 'lucide-react';
+import { X, User, Save } from 'lucide-react';
 import { Client, Staff, ClientStaffRelation } from '../../types';
 import { clientsService } from '../../services/clients.service';
 

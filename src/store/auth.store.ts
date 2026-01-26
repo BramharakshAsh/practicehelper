@@ -1,10 +1,12 @@
 import { create } from 'zustand';
-import { UserRole, User } from '../types';
+import { persist } from 'zustand/middleware';
+import { User, Firm } from '../types';
 import { authService, LoginCredentials } from '../services/auth.service';
 import { ErrorService, handleAsyncError } from '../services/error.service';
 
 interface AuthState {
   user: User | null;
+  firm: Firm | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -13,57 +15,95 @@ interface AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
+  setFirm: (firm: Firm | null) => void;
+  setSession: (user: User | null, firm: Firm | null) => void;
   clearError: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
-  (set) => ({
-    user: null,
-    isAuthenticated: false,
-    isLoading: false,
-    error: null,
+  persist(
+    (set) => ({
+      user: null,
+      firm: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
 
-    login: async (credentials: LoginCredentials) => {
-      set({ isLoading: true, error: null });
+      login: async (credentials: LoginCredentials) => {
+        set({ isLoading: true, error: null });
 
-      await handleAsyncError(async () => {
-        const user = await authService.login(credentials);
+        await handleAsyncError(async () => {
+          const user = await authService.login(credentials);
+          let firm = null;
+          if (user.firm_id) {
+            firm = await authService.getFirm(user.firm_id);
+          }
+
+          set({
+            user,
+            firm,
+            isAuthenticated: true,
+            isLoading: false
+          });
+        }, 'User login').catch((error) => {
+          set({
+            error: ErrorService.getErrorMessage(error),
+            isLoading: false
+          });
+          throw error;
+        });
+      },
+
+      logout: async () => {
+        set({ isLoading: true });
+
+        try {
+          await handleAsyncError(async () => {
+            const logoutPromise = authService.logout();
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Logout timeout after 5s')), 5000)
+            );
+            await Promise.race([logoutPromise, timeoutPromise]);
+          }, 'User logout');
+        } catch (error) {
+          console.warn('[AuthStore] Logout error (continuing with local logout):', error);
+        } finally {
+          set({
+            user: null,
+            firm: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null
+          });
+        }
+      },
+
+      setUser: (user: User | null) => {
+        set({ user });
+      },
+
+      setFirm: (firm: Firm | null) => {
+        set({ firm });
+      },
+
+      setSession: (user: User | null, firm: Firm | null) => {
         set({
           user,
-          isAuthenticated: true,
+          firm,
+          isAuthenticated: !!user,
           isLoading: false
         });
-      }, 'User login').catch((error) => {
-        set({
-          error: ErrorService.getErrorMessage(error),
-          isLoading: false
-        });
-        throw error;
-      });
-    },
+      },
 
-    logout: async () => {
-      set({ isLoading: true });
-
-      try {
-        await handleAsyncError(async () => {
-          await authService.logout();
-        }, 'User logout');
-      } finally {
-        // Always clear local auth state regardless of whether server-side logout succeeded
-        set({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: null
-        });
-      }
-    },
-
-    setUser: (user: User | null) => {
-      set({ user, isAuthenticated: !!user, isLoading: false });
-    },
-
-    clearError: () => set({ error: null }),
-  })
+      clearError: () => set({ error: null }),
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        firm: state.firm,
+        isAuthenticated: state.isAuthenticated
+      }),
+    }
+  )
 );

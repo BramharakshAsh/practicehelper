@@ -7,7 +7,7 @@ import { useStaffStore } from '../../store/staff.store';
 import { useComplianceStore } from '../../store/compliance.store';
 
 interface ImportModalProps {
-  type: 'clients' | 'tasks';
+  type: 'clients' | 'staff' | 'tasks';
   onClose: () => void;
   onImport: (data: any[]) => void;
 }
@@ -23,7 +23,9 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
 
   const downloadTemplate = async () => {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet(type === 'clients' ? 'Clients' : 'Tasks');
+    const worksheet = workbook.addWorksheet(
+      type === 'clients' ? 'Clients' : type === 'staff' ? 'Staff' : 'Tasks'
+    );
 
     if (type === 'clients') {
       worksheet.columns = [
@@ -68,6 +70,35 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
         roc_work: 'No',
         audit_work: 'No',
         accounting_work: 'Yes',
+      });
+    } else if (type === 'staff') {
+      worksheet.columns = [
+        { header: 'Full Name', key: 'name', width: 30 },
+        { header: 'Email', key: 'email', width: 30 },
+        { header: 'Role', key: 'role', width: 15 },
+        { header: 'Phone', key: 'phone', width: 15 },
+        { header: 'Manager Name', key: 'manager_name', width: 25 },
+        { header: 'Joining Date', key: 'joining_date', width: 20 },
+      ];
+
+      // Add Data Validation for Role
+      const roles = 'Partner,Manager,paid_staff,article';
+      for (let i = 2; i <= 101; i++) {
+        worksheet.getRow(i).getCell(3).dataValidation = {
+          type: 'list',
+          allowBlank: false,
+          formulae: [`"${roles}"`],
+        };
+      }
+
+      // Add sample data
+      worksheet.addRow({
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        role: 'paid_staff',
+        phone: '+91 98765 43210',
+        manager_name: staff[0]?.name || '',
+        joining_date: '2024-01-15',
       });
     } else {
       worksheet.columns = [
@@ -142,13 +173,22 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
 
     const headers: string[] = [];
     worksheet.getRow(1).eachCell((cell) => {
-      headers.push(cell.text.trim().toLowerCase().replace(/\s+/g, '_').split('(')[0].replace(/_$/, ''));
+      const headerText = cell.text.trim().toLowerCase();
+      const sanitizedHeader = headerText
+        .replace(/\s+/g, '_')
+        .split('(')[0]
+        .replace(/_$/, '');
+      headers.push(sanitizedHeader);
     });
+
+    console.log('[Import] Found headers:', headers);
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return;
 
       const rowData: any = {};
+      let hasData = false;
+
       row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
         const header = headers[colNumber - 1];
         if (!header) return;
@@ -158,10 +198,22 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
         if (value && typeof value === 'object') {
           if ('result' in value) value = value.result;
           else if ('text' in value) value = (value as any).text;
+          else if ('richText' in value) {
+            value = (value as any).richText.map((rt: any) => rt.text).join('');
+          }
+        }
+
+        // Clean values
+        if (typeof value === 'string') {
+          value = value.trim();
+        }
+
+        if (value !== null && value !== undefined && value !== '') {
+          hasData = true;
         }
 
         if (type === 'clients' && header.endsWith('_work')) {
-          const isYes = String(value).toLowerCase() === 'yes';
+          const isYes = String(value).toLowerCase().startsWith('y'); // Match "Yes", "Y", "yes"
           if (!rowData.work_types) rowData.work_types = [];
           if (isYes) {
             const workType = header.replace('_work', '').toUpperCase();
@@ -172,7 +224,13 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
         }
       });
 
-      if (Object.keys(rowData).length > 0) {
+      if (hasData) {
+        // Skip sample data rows
+        const email = String(rowData.email || '').toLowerCase();
+        if (email === 'john.doe@example.com' || email === 'contact@abc.com') {
+          console.log(`[Import] Skipping sample data row ${rowNumber}:`, email);
+          return;
+        }
         data.push(rowData);
       }
     });

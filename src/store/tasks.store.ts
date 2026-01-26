@@ -6,6 +6,7 @@ import { ErrorService, handleAsyncError } from '../services/error.service';
 interface TasksState {
   tasks: Task[];
   isLoading: boolean;
+  hasFetched: boolean;
   error: string | null;
 
   // Actions
@@ -14,6 +15,8 @@ interface TasksState {
   createTask: (task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
+  bulkDeleteTasks: (ids: string[]) => Promise<void>;
+  getTask: (id: string) => Task | undefined;
   createBulkTasks: (tasks: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
   importTasks: (tasks: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
   clearError: () => void;
@@ -22,6 +25,7 @@ interface TasksState {
 export const useTasksStore = create<TasksState>((set) => ({
   tasks: [],
   isLoading: false,
+  hasFetched: false,
   error: null,
 
   fetchTasks: async () => {
@@ -29,11 +33,12 @@ export const useTasksStore = create<TasksState>((set) => ({
 
     await handleAsyncError(async () => {
       const tasks = await tasksService.getTasks();
-      set({ tasks, isLoading: false });
+      set({ tasks, isLoading: false, hasFetched: true });
     }, 'Fetch tasks').catch((error) => {
       set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false
+        isLoading: false,
+        hasFetched: true
       });
     });
   },
@@ -43,11 +48,12 @@ export const useTasksStore = create<TasksState>((set) => ({
 
     await handleAsyncError(async () => {
       const tasks = await tasksService.getTasksByStaff(staffId);
-      set({ tasks, isLoading: false });
+      set({ tasks, isLoading: false, hasFetched: true });
     }, 'Fetch tasks by staff').catch((error) => {
       set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false
+        isLoading: false,
+        hasFetched: true
       });
     });
   },
@@ -118,6 +124,26 @@ export const useTasksStore = create<TasksState>((set) => ({
     });
   },
 
+  bulkDeleteTasks: async (ids) => {
+    if (ids.length === 0) return;
+
+    set({ isLoading: true, error: null });
+
+    await handleAsyncError(async () => {
+      await tasksService.bulkDeleteTasks(ids);
+      set(state => ({
+        tasks: state.tasks.filter(task => !ids.includes(task.id)),
+        isLoading: false
+      }));
+    }, 'Bulk delete tasks').catch((error) => {
+      set({
+        error: ErrorService.getErrorMessage(error),
+        isLoading: false
+      });
+      throw error;
+    });
+  },
+
   createBulkTasks: async (tasksData) => {
     set({ isLoading: true, error: null });
 
@@ -154,5 +180,8 @@ export const useTasksStore = create<TasksState>((set) => ({
     });
   },
 
+  getTask: (id: string): Task | undefined => {
+    return useTasksStore.getState().tasks.find((t: Task) => t.id === id);
+  },
   clearError: () => set({ error: null }),
 }));

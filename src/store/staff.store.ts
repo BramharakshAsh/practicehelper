@@ -6,6 +6,7 @@ import { ErrorService, handleAsyncError } from '../services/error.service';
 interface StaffState {
   staff: Staff[];
   isLoading: boolean;
+  hasFetched: boolean;
   error: string | null;
   pendingDeletions: Record<string, { timer: any; staff: Staff }>;
 
@@ -22,6 +23,7 @@ interface StaffState {
 export const useStaffStore = create<StaffState>((set, get) => ({
   staff: [],
   isLoading: false,
+  hasFetched: false,
   error: null,
   pendingDeletions: {},
 
@@ -32,12 +34,13 @@ export const useStaffStore = create<StaffState>((set, get) => ({
     await handleAsyncError(async () => {
       const staff = await staffService.getStaff();
       console.log('[StaffStore] fetchStaff success, records:', staff.length);
-      set({ staff, isLoading: false });
+      set({ staff, isLoading: false, hasFetched: true });
     }, 'Fetch staff').catch((error) => {
       console.error('[StaffStore] fetchStaff error:', error);
       set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false
+        isLoading: false,
+        hasFetched: true
       });
     });
   },
@@ -92,7 +95,7 @@ export const useStaffStore = create<StaffState>((set, get) => ({
       staff: state.staff.filter(member => member.id !== id),
     }));
 
-    // Start 2 minute timer (120000 ms)
+    // Start 15 second timer (15000 ms)
     const timeoutId = setTimeout(async () => {
       const { pendingDeletions } = get();
       if (pendingDeletions[id]) {
@@ -109,7 +112,7 @@ export const useStaffStore = create<StaffState>((set, get) => ({
           console.error('[StaffStore] Final deletion failed:', error);
         }
       }
-    }, 120000);
+    }, 15000);
 
     set(state => ({
       pendingDeletions: {
@@ -138,12 +141,18 @@ export const useStaffStore = create<StaffState>((set, get) => ({
   importStaff: async (staffData) => {
     set({ isLoading: true, error: null });
 
-    await handleAsyncError(async () => {
-      const newStaff = await staffService.importStaff(staffData);
-      set(state => ({
-        staff: [...newStaff, ...state.staff],
+    return await handleAsyncError(async () => {
+      const result = await staffService.importStaff(staffData);
+
+      // Refetch staff to get updated state
+      const staff = await staffService.getStaff();
+
+      set({
+        staff,
         isLoading: false
-      }));
+      });
+
+      return result; // Pass result back to UI
     }, 'Import staff').catch((error) => {
       set({
         error: ErrorService.getErrorMessage(error),

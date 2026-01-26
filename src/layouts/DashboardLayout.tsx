@@ -1,204 +1,214 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import {
     LayoutDashboard, Users, UserSquare2, CheckSquare,
-    Calendar, PieChart, LogOut, Upload, Zap,
-    ClipboardList, Menu, X, HelpCircle
+    Calendar, LogOut, Upload, Zap,
+    Menu, X, HelpCircle,
+    UserCircle, FileCheck,
+    ChevronLeft, ChevronRight, CheckCircle
 } from 'lucide-react';
-import Logo from '../assets/Logo.png';
+import { CAControlLogo } from '../components/Common/CAControlLogo';
 import { useWalkthrough } from '../components/Walkthrough/WalkthroughProvider';
+import NotificationBell from '../components/Layout/NotificationBell';
+import TimerWidget from '../components/TimeTracking/TimerWidget';
 
 const DashboardLayout: React.FC = () => {
     const { user, logout } = useAuthStore();
     const { restartWalkthrough } = useWalkthrough();
     const navigate = useNavigate();
+    const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isSidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        const saved = localStorage.getItem('sidebar-collapsed');
+        return saved ? JSON.parse(saved) : false;
+    });
 
     const handleLogout = async () => {
         await logout();
         navigate('/login');
     };
 
-    const navItems = [
+    React.useEffect(() => {
+        localStorage.setItem('sidebar-collapsed', JSON.stringify(isSidebarCollapsed));
+    }, [isSidebarCollapsed]);
+
+    const navItems = React.useMemo(() => [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/dashboard/tasks', label: 'Tasks', icon: CheckSquare },
+        { to: '/dashboard/completed-tasks', label: 'Completed Tasks', icon: CheckCircle },
         { to: '/dashboard/clients', label: 'Clients', icon: Users },
-        { to: '/dashboard/audits', label: 'Audits', icon: ClipboardList },
-        { to: '/dashboard/auto-tasks', label: 'Auto Tasks', icon: Zap },
-        // Partner/Manager only items
-        ...(['partner', 'manager'].includes(user?.role || '') ? [
-            { to: '/dashboard/staff', label: 'Staff', icon: UserSquare2 },
-            { to: '/dashboard/reports', label: 'Reports', icon: PieChart },
-            { to: '/dashboard/import', label: 'Import', icon: Upload },
-        ] : []),
+        { to: '/dashboard/staff', label: 'Staff', icon: UserCircle, roles: ['partner', 'manager'] },
         { to: '/dashboard/calendar', label: 'Calendar', icon: Calendar },
-    ];
+        { to: '/dashboard/audits', label: 'Audits', icon: FileCheck },
+        { to: '/dashboard/auto-tasks', label: 'Auto Tasks', icon: Zap },
+        { to: '/dashboard/import', label: 'Import', icon: Upload, roles: ['partner', 'manager'] },
+        { to: '/dashboard/settings', label: 'Settings', icon: UserSquare2, roles: ['partner', 'manager'] },
+    ].filter(item => !item.roles || item.roles.includes(user?.role || '')), [user?.role]);
 
     const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
     const closeMobileMenu = () => setIsMobileMenuOpen(false);
+    const toggleSidebar = () => setSidebarCollapsed(!isSidebarCollapsed);
+
+    // Sidebar Component
+    const SidebarContent = () => (
+        <div className="flex flex-col h-full bg-slate-900 text-white">
+            {/* Logo Area */}
+            <div className={`h-16 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'px-6'} border-b border-slate-800 bg-slate-900 z-10 transition-all duration-300`}>
+                <CAControlLogo size="sm" showText={false} className="flex-shrink-0" />
+                {!isSidebarCollapsed && (
+                    <span className="ml-3 text-lg font-bold text-brand-primary fade-in">CAControl</span>
+                )}
+            </div>
+
+            {/* Nav Items */}
+            <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 custom-scrollbar">
+                {navItems.map((item) => (
+                    <NavLink
+                        key={item.to}
+                        to={item.to}
+                        onClick={closeMobileMenu}
+                        end={item.to === '/dashboard'} // Only exact match for dashboard
+                        data-walkthrough={item.to === '/dashboard/calendar' ? 'calendar-view' : item.to === '/dashboard/audits' ? 'audit-section' : item.to === '/dashboard/import' ? 'import-button' : undefined}
+                        title={isSidebarCollapsed ? item.label : undefined}
+                        className={({ isActive }) =>
+                            `flex items-center ${isSidebarCollapsed ? 'justify-center px-1' : 'px-3'} py-2 text-sm font-medium rounded-lg transition-all mb-0.5 ${isActive
+                                ? 'bg-brand-primary text-white shadow-lg shadow-orange-900/50'
+                                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                            }`
+                        }
+                    >
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                        {!isSidebarCollapsed && <span className="ml-3 truncate">{item.label}</span>}
+                    </NavLink>
+                ))}
+            </nav>
+
+            {/* User Footer */}
+            <div className="p-4 border-t border-slate-800 bg-slate-900">
+                <div className={`flex items-center mb-4 ${isSidebarCollapsed ? 'justify-center' : 'px-2'}`}>
+                    <div className="h-10 w-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0">
+                        {user?.full_name?.charAt(0) || 'U'}
+                    </div>
+                    {!isSidebarCollapsed && (
+                        <div className="ml-3 overflow-hidden">
+                            <p className="text-sm font-medium text-white truncate">{user?.full_name}</p>
+                            <p className="text-xs text-slate-400 capitalize truncate">{user?.role}</p>
+                        </div>
+                    )}
+                </div>
+                {!isSidebarCollapsed && (
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                restartWalkthrough();
+                            }}
+                            className="flex-1 flex items-center justify-center p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors border border-slate-700"
+                            title="Restart Tutorial"
+                        >
+                            <HelpCircle className="h-4 w-4 mr-2" />
+                            <span className="text-xs">Help</span>
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="flex-1 flex items-center justify-center p-2 rounded-lg bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 transition-colors border border-slate-700"
+                            title="Logout"
+                        >
+                            <LogOut className="h-4 w-4 mr-2" />
+                            <span className="text-xs">Logout</span>
+                        </button>
+                    </div>
+                )}
+                {isSidebarCollapsed && (
+                    <div className="flex flex-col space-y-2">
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center justify-center p-2 rounded-lg bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 transition-colors border border-slate-700"
+                            title="Logout"
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
+            </div>
+            {/* Collapse Toggle */}
+            <button
+                onClick={toggleSidebar}
+                className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-brand-primary text-white rounded-full p-1 shadow-md border border-white hidden lg:flex hover:bg-orange-600"
+            >
+                {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] flex flex-col">
-            {/* Premium Top Header */}
-            <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-[100]">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-20">
-                        <div className="flex items-center">
-                            {/* Mobile menu button */}
-                            <button
-                                onClick={toggleMobileMenu}
-                                className="lg:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100 focus:outline-none transition-colors"
-                            >
-                                {isMobileMenuOpen ? (
-                                    <X className="h-6 w-6" />
-                                ) : (
-                                    <Menu className="h-6 w-6" />
-                                )}
-                            </button>
-                            <div className="flex items-center ml-2 lg:ml-0 overflow-hidden group">
-                                <img src={Logo} alt="Firm Flow Logo" className="h-10 w-auto object-contain flex-shrink-0 group-hover:scale-110 transition-transform" />
-                                <span className="ml-3 text-xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent hidden sm:inline-block">Firm Flow</span>
-                            </div>
-                        </div>
+        <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
+            {/* Desktop Sidebar */}
+            <aside className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-20' : 'w-64'} transition-all duration-300 relative`}>
+                <SidebarContent />
+            </aside>
 
-                        <div className="flex items-center space-x-3 sm:space-x-4">
-                            <div className="hidden sm:flex flex-col items-end">
-                                <span className="text-sm font-bold text-gray-900 leading-tight">{user?.full_name}</span>
-                                <span className="text-xs font-semibold text-teal-600 capitalize leading-tight">{user?.role}</span>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        restartWalkthrough();
-                                    }}
-                                    className="p-2.5 rounded-xl bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-all border border-gray-100"
-                                    title="Restart Tutorial"
-                                >
-                                    <HelpCircle className="h-5 w-5" />
-                                </button>
-
-                                <button
-                                    onClick={handleLogout}
-                                    className="p-2.5 rounded-xl bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-600 transition-all border border-gray-100"
-                                    title="Logout"
-                                >
-                                    <LogOut className="h-5 w-5" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Desktop Navigation Tabs */}
-                <div className="hidden lg:block border-t border-gray-50">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <nav className="flex space-x-1" aria-label="Tabs">
-                            {navItems.map((item) => (
-                                <NavLink
-                                    key={item.to}
-                                    to={item.to}
-                                    data-walkthrough={item.to === '/dashboard/calendar' ? 'calendar-view' : item.to === '/dashboard/audits' ? 'audit-section' : item.to === '/dashboard/import' ? 'import-button' : undefined}
-                                    className={({ isActive }) =>
-                                        `flex items-center px-5 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition-all ${isActive
-                                            ? 'border-teal-500 text-teal-600 bg-teal-50/30'
-                                            : 'border-transparent text-gray-500 hover:text-teal-600 hover:bg-gray-50/50'
-                                        }`
-                                    }
-                                >
-                                    <item.icon className={`h-4.5 w-4.5 mr-2.5 transition-colors`} />
-                                    {item.label}
-                                </NavLink>
-                            ))}
-                        </nav>
-                    </div>
-                </div>
-            </header>
-
-            {/* Mobile Navigation Drawer */}
+            {/* Mobile Sidebar (Drawer) */}
             {isMobileMenuOpen && (
                 <div className="lg:hidden fixed inset-0 z-[200]">
                     <div
-                        className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300 pointer-events-auto"
+                        className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300"
                         onClick={closeMobileMenu}
-                        aria-hidden="true"
                     ></div>
-
-                    <div className="relative flex flex-col max-w-xs w-[85%] h-full bg-white shadow-2xl animate-slide-in-left">
-                        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                            <div className="flex items-center">
-                                <img src={Logo} alt="Firm Flow Logo" className="h-10 w-auto" />
-                                <span className="text-xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent ml-3">Firm Flow</span>
-                            </div>
-                            <button
-                                onClick={closeMobileMenu}
-                                className="p-2 -mr-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                            >
-                                <X className="h-6 w-6" />
-                            </button>
-                        </div>
-                        <div className="flex-1 h-0 pt-4 pb-4 overflow-y-auto">
-                            <nav className="px-3 space-y-1">
-                                {navItems.map((item) => (
-                                    <NavLink
-                                        key={item.to}
-                                        to={item.to}
-                                        onClick={closeMobileMenu}
-                                        className={({ isActive }) =>
-                                            `group flex items-center px-4 py-3.5 text-base font-bold rounded-xl transition-all ${isActive
-                                                ? 'bg-teal-50 text-teal-700 shadow-sm shadow-teal-500/10'
-                                                : 'text-gray-600 hover:bg-gray-50 hover:text-teal-600'
-                                            }`
-                                        }
-                                    >
-                                        {({ isActive }) => (
-                                            <>
-                                                <item.icon className={`mr-4 h-5.5 w-5.5 ${isActive ? 'text-teal-600' : 'text-gray-400 group-hover:text-teal-500'}`} />
-                                                {item.label}
-                                            </>
-                                        )}
-                                    </NavLink>
-                                ))}
-                            </nav>
-                        </div>
-                        <div className="flex-shrink-0 flex border-t border-gray-100 p-6 bg-gray-50/50">
-                            <div className="flex items-center w-full">
-                                <div className="h-12 w-12 rounded-2xl bg-teal-100 flex items-center justify-center border border-teal-200 shadow-sm">
-                                    <UserSquare2 className="h-7 w-7 text-teal-600" />
-                                </div>
-                                <div className="ml-4 flex-1">
-                                    <p className="text-base font-bold text-gray-900 leading-tight">{user?.full_name}</p>
-                                    <p className="text-xs font-semibold text-teal-600 uppercase tracking-wider mt-0.5">{user?.role}</p>
-                                </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        restartWalkthrough();
-                                    }}
-                                    className="p-2.5 rounded-xl bg-gray-100 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-200 mr-2"
-                                    title="Restart Tutorial"
-                                >
-                                    <HelpCircle className="h-5 w-5" />
-                                </button>
-                                <button
-                                    onClick={handleLogout}
-                                    className="p-2.5 rounded-xl bg-gray-100 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all border border-gray-200"
-                                >
-                                    <LogOut className="h-5 w-5" />
-                                </button>
-                            </div>
-                        </div>
+                    <div className="relative flex flex-col w-64 h-full bg-slate-900 shadow-2xl animate-slide-in-left">
+                        <SidebarContent />
+                        <button
+                            onClick={closeMobileMenu}
+                            className="absolute top-4 right-[-40px] p-2 bg-white rounded-r-lg text-gray-900 shadow-lg"
+                        >
+                            <X className="h-6 w-6" />
+                        </button>
                     </div>
                 </div>
             )}
 
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
-                <Outlet />
-            </main>
+            {/* Main Content Area */}
+            <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300`}>
+                {/* Top Header */}
+                <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-40 shadow-sm">
+                    <div className="flex items-center">
+                        <button
+                            onClick={toggleMobileMenu}
+                            className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 mr-3"
+                        >
+                            <Menu className="h-6 w-6" />
+                        </button>
+
+                        {/* Page Title Logic (Optional) */}
+                        <h1 className="text-xl font-bold text-gray-800 hidden sm:block">
+                            {navItems.find(item => item.to === location.pathname)?.label || 'Dashboard'}
+                        </h1>
+                        <span className="lg:hidden text-lg font-bold text-brand-primary">CAControl</span>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                        {/* Timer Widget is positioned fixed usually, but we can put a compact version here if needed. 
+                           For now, the TimerWidget component is typically fixed bottom right. 
+                           I'll leave the TimerWidget component outside, but we can add more header items here. 
+                        */}
+                        <NotificationBell />
+                    </div>
+                </header>
+
+                {/* Main Scrollable Content */}
+                <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5 relative">
+                    <div className="max-w-7xl mx-auto h-full">
+                        <Outlet />
+                    </div>
+                </main>
+            </div>
+
+            {/* Fixed Timer Widget */}
+            <div className="z-[100]">
+                <TimerWidget />
+            </div>
         </div>
     );
 };

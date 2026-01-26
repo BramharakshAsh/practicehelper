@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import RegisterOrganizationModal from './RegisterOrganizationModal';
-import Logo from '../../assets/Logo.png';
+import { CAControlLogo } from '../../components/Common/CAControlLogo';
 
 const LoginPage: React.FC = () => {
   const { login, isLoading, error, clearError } = useAuthStore();
@@ -30,15 +30,15 @@ const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#fcfcfd] flex items-center justify-center px-4 py-8 relative overflow-hidden">
       {/* Background blobs for premium feel */}
-      <div className="absolute top-0 -left-20 w-96 h-96 bg-teal-50 rounded-full blur-3xl opacity-50"></div>
-      <div className="absolute bottom-0 -right-20 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50"></div>
+      <div className="absolute top-0 -left-20 w-96 h-96 bg-orange-50 rounded-full blur-3xl opacity-50"></div>
+      <div className="absolute bottom-0 -right-20 w-96 h-96 bg-emerald-50 rounded-full blur-3xl opacity-50"></div>
 
       <div className="max-w-md w-full relative z-10">
         {/* Header */}
         <div className="text-center mb-10">
           <Link to="/" className="inline-flex flex-col items-center justify-center mb-6 hover:scale-105 transition-transform">
-            <img src={Logo} alt="Firm Flow Logo" className="w-20 h-auto object-contain mb-3" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">Firm Flow</h1>
+            <CAControlLogo size="xl" showText={false} className="mb-3" />
+            <h1 className="text-3xl font-bold text-brand-dark">CAControl</h1>
           </Link>
           <p className="text-gray-500 font-medium">Streamline your firm's workflow</p>
         </div>
@@ -58,7 +58,7 @@ const LoginPage: React.FC = () => {
                   name="username"
                   value={credentials.username}
                   onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium"
+                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-medium"
                   placeholder="name@firm.com"
                   required
                 />
@@ -74,14 +74,14 @@ const LoginPage: React.FC = () => {
                   name="password"
                   value={credentials.password}
                   onChange={handleChange}
-                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium"
+                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-medium"
                   placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-teal-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-primary"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -89,7 +89,7 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-end">
-              <Link to="/forgot-password" university-link="true" className="text-sm font-bold text-teal-600 hover:underline">
+              <Link to="/forgot-password" university-link="true" className="text-sm font-bold text-brand-primary hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -97,7 +97,7 @@ const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-teal-500 to-blue-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-brand-primary text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center hover:bg-orange-600"
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
@@ -116,10 +116,10 @@ const LoginPage: React.FC = () => {
 
           {/* Registration Section */}
           <div className="mt-10 pt-8 border-t border-gray-100 text-center">
-            <p className="text-gray-500 font-medium mb-4">New to Firm Flow?</p>
+            <p className="text-gray-500 font-medium mb-4">New to CAControl?</p>
             <button
               onClick={() => setIsRegisterModalOpen(true)}
-              className="text-teal-600 font-bold hover:underline"
+              className="text-brand-primary font-bold hover:underline"
             >
               Register your organization today
             </button>

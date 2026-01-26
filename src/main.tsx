@@ -2,19 +2,11 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { seedInitialData } from './services/seed.service';
-import { DataMigrationService } from './services/data-migration.service';
-
 import { BrowserRouter } from 'react-router-dom';
 
-// Check and migrate data if needed
-const dataMigrated = DataMigrationService.checkAndMigrateData();
-
-// Initialize local data for demo
-seedInitialData();
-
-if (dataMigrated) {
-  console.log('✅ Data migration complete! Loaded fresh compliance types with hierarchical structure.');
+if (import.meta.env.DEV) {
+  console.log('🚀 Developer Mode Active');
+  console.log('💡 Type "enableLogs()" in the console to persist verbose debugging.');
 }
 
 createRoot(document.getElementById('root')!).render(

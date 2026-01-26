@@ -6,6 +6,7 @@ import { ErrorService, handleAsyncError } from '../services/error.service';
 interface ClientsState {
   clients: Client[];
   isLoading: boolean;
+  hasFetched: boolean;
   error: string | null;
 
   // Actions
@@ -20,6 +21,7 @@ interface ClientsState {
 export const useClientsStore = create<ClientsState>((set) => ({
   clients: [],
   isLoading: false,
+  hasFetched: false,
   error: null,
 
   fetchClients: async () => {
@@ -27,11 +29,12 @@ export const useClientsStore = create<ClientsState>((set) => ({
 
     await handleAsyncError(async () => {
       const clients = await clientsService.getClients();
-      set({ clients, isLoading: false });
+      set({ clients, isLoading: false, hasFetched: true });
     }, 'Fetch clients').catch((error) => {
       set({
         error: ErrorService.getErrorMessage(error),
-        isLoading: false
+        isLoading: false,
+        hasFetched: true
       });
     });
   },
@@ -95,12 +98,18 @@ export const useClientsStore = create<ClientsState>((set) => ({
   importClients: async (clientsData) => {
     set({ isLoading: true, error: null });
 
-    await handleAsyncError(async () => {
-      const newClients = await clientsService.importClients(clientsData);
-      set(state => ({
-        clients: [...newClients, ...state.clients],
+    return await handleAsyncError(async () => {
+      const result = await clientsService.importClients(clientsData);
+
+      // Refetch clients to get latest state including new ones
+      const clients = await clientsService.getClients();
+
+      set({
+        clients,
         isLoading: false
-      }));
+      });
+
+      return result; // Pass result back to UI
     }, 'Import clients').catch((error) => {
       set({
         error: ErrorService.getErrorMessage(error),

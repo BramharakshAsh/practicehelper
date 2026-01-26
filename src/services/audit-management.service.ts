@@ -6,6 +6,7 @@ class AuditManagementService {
     async getAuditPlans(): Promise<AuditPlan[]> {
         const firmId = useAuthStore.getState().user?.firm_id;
         if (!firmId) return [];
+        console.log('AuditService: getAuditPlans started for firm', firmId);
 
         const { data, error } = await supabase
             .from('audit_plans')
@@ -17,7 +18,10 @@ class AuditManagementService {
             .eq('firm_id', firmId)
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('AuditService: getAuditPlans error', error);
+            throw error;
+        }
         return data || [];
     }
 
@@ -188,6 +192,7 @@ class AuditManagementService {
     async getPotentialAuditTasks() {
         const firmId = useAuthStore.getState().user?.firm_id;
         if (!firmId) return [];
+        console.log('AuditService: getPotentialAuditTasks started', firmId);
 
         const { data, error } = await supabase
             .from('tasks')
@@ -200,7 +205,10 @@ class AuditManagementService {
             .is('audit_id', null)
             .order('due_date', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+            console.error('AuditService: getPotentialAuditTasks error', error);
+            throw error;
+        }
 
         // Filter in JS for robustness
         return (data || []).filter((task: any) =>

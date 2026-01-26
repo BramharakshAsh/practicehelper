@@ -1,36 +1,51 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auditManagementService } from '../services/audit-management.service';
-import { tasksService } from '../services/tasks.service';
 import { useTasksStore } from '../store/tasks.store';
+import { useAuthStore } from '../store/auth.store';
+import { SubscriptionService } from '../services/subscription.service';
 import { AuditPlan, Task } from '../types';
-import { ClipboardList, User, Calendar, ExternalLink, Plus, AlertCircle, CheckCircle2, ListTodo, Trash2 } from 'lucide-react';
+import { ClipboardList, User, Calendar, ExternalLink, Plus, AlertCircle, CheckCircle2, ListTodo, Trash2, Lock } from 'lucide-react';
 
 const AuditDashboard: React.FC = () => {
     const [audits, setAudits] = useState<AuditPlan[]>([]);
     const [potentialTasks, setPotentialTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
+    const [monthlyAuditCount, setMonthlyAuditCount] = useState(0);
     const navigate = useNavigate();
+    const { firm } = useAuthStore();
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [firm]); // Reload if firm changes (e.g. upgrade)
 
     const loadData = async () => {
+        console.log('AuditDashboard: loadData started');
         setLoading(true);
         try {
+            console.log('AuditDashboard: Fetching audits and tasks...');
             const [activeAudits, pendingTasks] = await Promise.all([
                 auditManagementService.getAuditPlans(),
                 auditManagementService.getPotentialAuditTasks()
             ]);
+
+            if (firm) {
+                const count = await SubscriptionService.getMonthlyAuditCount(firm.id);
+                setMonthlyAuditCount(count);
+            }
+
+            console.log('AuditDashboard: Fetch success', { audits: activeAudits.length, tasks: pendingTasks.length });
             setAudits(activeAudits);
             setPotentialTasks(pendingTasks);
         } catch (error) {
             console.error('Failed to load audits', error);
         } finally {
+            console.log('AuditDashboard: loadData finished');
             setLoading(false);
         }
     };
+
+    const canCreate = SubscriptionService.canCreateAudit(firm, monthlyAuditCount);
 
     const handleDeleteAudit = async (e: React.MouseEvent, auditId: string) => {
         e.stopPropagation();
@@ -46,6 +61,11 @@ const AuditDashboard: React.FC = () => {
     };
 
     const handleInitialize = async (task: Task) => {
+        if (!canCreate) {
+            alert('Monthly audit creation limit reached. Please upgrade to Growth.');
+            return;
+        }
+
         try {
             // Fetch templates first
             const templates = await auditManagementService.getTemplates();
@@ -89,12 +109,21 @@ const AuditDashboard: React.FC = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Audit Management</h1>
                     <p className="text-gray-500">Track and manage active audit plans and checklists</p>
+                    {!canCreate && (
+                        <p className="text-xs text-red-500 font-bold mt-1">
+                            Monthly limit reached ({monthlyAuditCount}/{SubscriptionService.getLimits(firm).maxAuditsPerMonth}). Resets next month.
+                        </p>
+                    )}
                 </div>
                 <button
-                    onClick={() => navigate('/dashboard/tasks')}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-bold shadow-md"
+                    onClick={() => canCreate ? navigate('/dashboard/tasks') : null}
+                    disabled={!canCreate}
+                    className={`flex items-center px-4 py-2 rounded-lg transition-all text-sm font-bold shadow-md ${canCreate
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
                 >
-                    <Plus className="h-4 w-4 mr-2" />
+                    {canCreate ? <Plus className="h-4 w-4 mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
                     New Audit Plan
                 </button>
             </div>
