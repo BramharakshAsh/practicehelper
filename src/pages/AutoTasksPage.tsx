@@ -11,6 +11,7 @@ import DefineClientStaffRelation from '../components/Tasks/DefineClientStaffRela
 import RecurringRuleModal from '../components/Tasks/RecurringRuleModal';
 import { Zap, Users, FileText, CheckSquare, Calculator, PieChart, Repeat, Plus, Trash2, Power, PowerOff } from 'lucide-react';
 import { recurringTasksService, RecurringTaskRule } from '../services/recurring-tasks.service';
+import { SubscriptionService } from '../services/subscription.service';
 
 const AutoTasksPage: React.FC = () => {
     const [showAutoTaskModal, setShowAutoTaskModal] = useState(false);
@@ -25,11 +26,15 @@ const AutoTasksPage: React.FC = () => {
     const { staff } = useStaff();
     const { complianceTypes } = useCompliance();
     const { createBulkTasks } = useTasks();
-    const { user } = useAuthStore();
+    const { user, firm } = useAuthStore();
 
+    const { allowed: canRunAuto, nextRunDate } = SubscriptionService.canRunAutoTasks(firm);
+
+    /* Commented out as per request to hide recurring tasks
     useEffect(() => {
         loadRecurringRules();
     }, []);
+    */
 
     const loadRecurringRules = async () => {
         setIsLoadingRules(true);
@@ -50,10 +55,24 @@ const AutoTasksPage: React.FC = () => {
                 assigned_by: user?.id || '',
             }));
             await createBulkTasks(tasksWithAssignment);
+
+            // Update last run time if firm exists
+            if (firm?.id) {
+                await SubscriptionService.updateLastAutoTaskRun(firm.id);
+                // Force a reload or just let next render handle it?
+                // Ideally reload firm to update 'canRunAuto' derived state which depends on firm object
+                // But for now, a page reload or refetch logic might be needed.
+                // Or better: update the firm in store.
+                // We don't have a direct 'refetchFirm' exposed easily here from store hooks often, 
+                // but checking auth store... 
+                // Actually, we can reload window or just alert success.
+            }
         } catch (error) {
             console.error('Auto task generation failed:', error);
         }
     };
+
+    // ... existing handlers ...
 
     const handleSaveRecurringRule = async (rule: Omit<RecurringTaskRule, 'id' | 'firm_id' | 'created_at' | 'updated_at' | 'last_generated_at'>) => {
         try {
@@ -93,6 +112,10 @@ const AutoTasksPage: React.FC = () => {
     };
 
     const handleTileClick = (code: string) => {
+        if (!canRunAuto) {
+            alert(`Auto task generation is limited. Next run available on ${nextRunDate?.toLocaleDateString()}.\n\nUpgrade to Growth for unlimited runs.`);
+            return;
+        }
         setSelectedComplianceCode(code);
         setShowAutoTaskModal(true);
     };
@@ -118,6 +141,8 @@ const AutoTasksPage: React.FC = () => {
         { code: '27Q', label: 'TDS (27Q)', icon: PieChart, color: 'bg-blue-50 text-blue-600' },
         { code: 'PAYROLL', label: 'Payroll', icon: Users, color: 'bg-purple-50 text-purple-600' },
         { code: 'AUDIT', label: 'Audit', icon: CheckSquare, color: 'bg-red-50 text-red-600' },
+        { code: 'ITR', label: 'ITR', icon: FileText, color: 'bg-indigo-50 text-indigo-600' },
+        { code: 'GSTR-9', label: 'GSTR-9', icon: FileText, color: 'bg-orange-50 text-orange-600' },
     ];
 
     const getClientName = (id: string) => clients.find(c => c.id === id)?.name || 'Unknown';
@@ -128,6 +153,11 @@ const AutoTasksPage: React.FC = () => {
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900">Auto Task Generation</h2>
                     <p className="text-gray-600 mt-1">Select a category to generating compliance tasks</p>
+                    {!canRunAuto && (
+                        <p className="text-xs text-red-500 font-bold mt-1">
+                            Run limit reached. Next run available: {nextRunDate?.toLocaleDateString()}
+                        </p>
+                    )}
                 </div>
                 <button
                     onClick={() => setShowRelationsModal(true)}
@@ -144,12 +174,16 @@ const AutoTasksPage: React.FC = () => {
                     <button
                         key={tile.code}
                         onClick={() => handleTileClick(tile.code)}
-                        className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] text-left group"
+                        disabled={!canRunAuto}
+                        className={`p-6 rounded-xl border border-gray-200 shadow-sm text-left group transition-all ${canRunAuto
+                            ? 'bg-white hover:shadow-md hover:scale-[1.02] cursor-pointer'
+                            : 'bg-gray-50 opacity-60 cursor-not-allowed'
+                            }`}
                     >
-                        <div className={`p-3 rounded-lg w-fit mb-4 ${tile.color} group-hover:bg-opacity-80`}>
+                        <div className={`p-3 rounded-lg w-fit mb-4 ${canRunAuto ? tile.color : 'bg-gray-200 text-gray-400'} group-hover:bg-opacity-80`}>
                             <tile.icon className="h-6 w-6" />
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900">{tile.label}</h3>
+                        <h3 className={`text-lg font-semibold ${canRunAuto ? 'text-gray-900' : 'text-gray-500'}`}>{tile.label}</h3>
                         <p className="text-sm text-gray-500 mt-1">Generate tasks</p>
                     </button>
                 ))}
@@ -157,17 +191,21 @@ const AutoTasksPage: React.FC = () => {
                 {/* Fallback/Generic Tile */}
                 <button
                     onClick={() => handleTileClick('ALL')}
-                    className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] text-left group"
+                    disabled={!canRunAuto}
+                    className={`p-6 rounded-xl border border-gray-200 shadow-sm text-left group transition-all ${canRunAuto
+                        ? 'bg-white hover:shadow-md hover:scale-[1.02] cursor-pointer'
+                        : 'bg-gray-50 opacity-60 cursor-not-allowed'
+                        }`}
                 >
-                    <div className="p-3 rounded-lg w-fit mb-4 bg-gray-50 text-gray-600">
+                    <div className={`p-3 rounded-lg w-fit mb-4 ${canRunAuto ? 'bg-gray-50 text-gray-600' : 'bg-gray-200 text-gray-400'}`}>
                         <Zap className="h-6 w-6" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">Custom / All</h3>
+                    <h3 className={`text-lg font-semibold ${canRunAuto ? 'text-gray-900' : 'text-gray-500'}`}>Custom / All</h3>
                     <p className="text-sm text-gray-500 mt-1">Select manually</p>
                 </button>
             </div>
 
-            {/* Recurring Rules Section */}
+            {/* Recurring Rules Section - Hidden for now
             <div>
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center space-x-3">
@@ -263,6 +301,7 @@ const AutoTasksPage: React.FC = () => {
                     </div>
                 )}
             </div>
+            */}
 
             {/* Modals */}
             {showAutoTaskModal && (
@@ -284,6 +323,7 @@ const AutoTasksPage: React.FC = () => {
                 />
             )}
 
+            {/* Recurring Modal - Hidden for now
             {showRecurringModal && (
                 <RecurringRuleModal
                     rule={editingRule}
@@ -294,6 +334,7 @@ const AutoTasksPage: React.FC = () => {
                     onSave={handleSaveRecurringRule}
                 />
             )}
+            */}
         </div>
     );
 };

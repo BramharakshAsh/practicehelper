@@ -1,9 +1,29 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSettingsStore } from '../store/settings.store';
-import { Save, Building2, FileText, Check } from 'lucide-react';
+import { Save, Building2, FileText, Check, CreditCard, Zap } from 'lucide-react';
+import { useAuthStore } from '../store/auth.store';
+import { SubscriptionService } from '../services/subscription.service';
+import { authService } from '../services/auth.service';
+
+const LimitCard = ({ label, limit, icon }: { label: string, limit: number, icon: React.ReactNode }) => (
+    <div className="bg-white p-3 rounded-lg border border-gray-100 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+            <div className="p-1.5 bg-gray-50 rounded text-gray-400">
+                {icon}
+            </div>
+            <span className="text-sm font-medium text-gray-700">{label}</span>
+        </div>
+        <span className="text-sm font-bold text-gray-900">
+            {limit === Infinity ? 'Unlimited' : limit}
+        </span>
+    </div>
+);
 
 const SettingsPage: React.FC = () => {
-    const { firm, fetchFirmProfile, updateFirmProfile, isLoading } = useSettingsStore();
+    const { firm: settingsFirm, fetchFirmProfile, updateFirmProfile, isLoading } = useSettingsStore();
+    const { firm: authFirm, setFirm } = useAuthStore();
+    const navigate = useNavigate();
 
     // Form States
     const [name, setName] = useState('');
@@ -24,19 +44,19 @@ const SettingsPage: React.FC = () => {
     }, [fetchFirmProfile]);
 
     useEffect(() => {
-        if (firm) {
-            setName(firm.name || '');
-            setEmail(firm.email || '');
-            setPhone(firm.contact_number || '');
-            setWebsite(firm.website || '');
-            setAddress(firm.address || '');
-            setGstin(firm.gstin || '');
-            setPan(firm.pan || '');
-            setPrefix(firm.invoice_prefix || 'INV-');
-            setSequence(firm.invoice_sequence || 1);
-            setTheme(firm.invoice_theme || 'modern');
+        if (settingsFirm) {
+            setName(settingsFirm.name || '');
+            setEmail(settingsFirm.email || '');
+            setPhone(settingsFirm.contact_number || '');
+            setWebsite(settingsFirm.website || '');
+            setAddress(settingsFirm.address || '');
+            setGstin(settingsFirm.gstin || '');
+            setPan(settingsFirm.pan || '');
+            setPrefix(settingsFirm.invoice_prefix || 'INV-');
+            setSequence(settingsFirm.invoice_sequence || 1);
+            setTheme(settingsFirm.invoice_theme || 'modern');
         }
-    }, [firm]);
+    }, [settingsFirm]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -235,6 +255,138 @@ const SettingsPage: React.FC = () => {
                                 <h3 className="font-bold text-gray-900 text-center">Minimal</h3>
                                 <p className="text-xs text-gray-500 text-center">Simple, lots of whitespace.</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Subscription Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div className="flex items-center space-x-2 mb-6">
+                        <CreditCard className="h-5 w-5 text-purple-600" />
+                        <h2 className="text-lg font-bold text-gray-900">Subscription & Limits</h2>
+                    </div>
+
+                    <div className={`${authFirm?.subscription_tier === 'growth' ? 'bg-indigo-50 border-indigo-100' : 'bg-gray-50 border-gray-100'} border rounded-xl p-6`}>
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div>
+                                <div className="flex items-center space-x-3">
+                                    <h3 className="text-xl font-bold text-gray-900 capitalize">
+                                        {authFirm?.subscription_tier || 'Free'} Tier
+                                    </h3>
+                                    {authFirm?.subscription_tier === 'growth' && (
+                                        <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-bold uppercase">
+                                            Active
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    {authFirm?.subscription_tier === 'growth'
+                                        ? 'Enjoy expanded limits and premium features.'
+                                        : 'Basic features for small firms. Upgrade to remove limits.'}
+                                </p>
+                            </div>
+
+
+                            {authFirm?.subscription_tier !== 'growth' ? (
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/dashboard/upgrade')}
+                                    className="px-6 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center"
+                                >
+                                    <Zap className="h-4 w-4 mr-2" />
+                                    Upgrade to Growth (₹999/mo)
+                                </button>
+                            ) : (
+                                <div className="text-right flex flex-col items-end gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${authFirm?.subscription_status === 'cancelled'
+                                            ? 'bg-red-100 text-red-700'
+                                            : 'bg-green-100 text-green-700'
+                                            }`}>
+                                            {authFirm?.subscription_status === 'cancelled' ? 'Cancelling' : 'Active'}
+                                        </span>
+                                    </div>
+
+                                    {authFirm?.subscription_status === 'active' && (
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                if (confirm('Are you sure you want to cancel? You will retain access until the end of your billing period.')) {
+                                                    try {
+                                                        if (authFirm?.id) {
+                                                            await SubscriptionService.cancelSubscription(authFirm.id);
+                                                            const updatedFirm = await authService.getFirm(authFirm.id);
+                                                            setFirm(updatedFirm);
+                                                        }
+                                                    } catch (e) {
+                                                        console.error(e);
+                                                        alert('Cancellation failed.');
+                                                    }
+                                                }
+                                            }}
+                                            className="text-xs text-red-600 hover:text-red-700 underline"
+                                        >
+                                            Cancel Subscription
+                                        </button>
+                                    )}
+
+                                    {authFirm?.subscription_status === 'cancelled' && (
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                if (confirm('Resume your Growth subscription?')) {
+                                                    try {
+                                                        if (authFirm?.id) {
+                                                            await SubscriptionService.resumeSubscription(authFirm.id);
+                                                            const updatedFirm = await authService.getFirm(authFirm.id);
+                                                            setFirm(updatedFirm);
+                                                        }
+                                                    } catch (e) {
+                                                        console.error(e);
+                                                        alert('Resuming failed.');
+                                                    }
+                                                }
+                                            }}
+                                            className="text-xs text-green-600 hover:text-green-700 font-bold underline"
+                                        >
+                                            Resume Subscription
+                                        </button>
+                                    )}
+
+                                    {authFirm?.subscription_end_date && (
+                                        <p className="text-xs text-gray-500">
+                                            Access until: {new Date(authFirm.subscription_end_date).toLocaleDateString()}
+                                        </p>
+                                    )}
+
+                                    {!authFirm?.subscription_end_date && (
+                                        <p className="text-xs text-indigo-600 font-medium">Next billing date:
+                                            {authFirm?.subscription_updated_at
+                                                ? new Date(new Date(authFirm.subscription_updated_at).setMonth(new Date(authFirm.subscription_updated_at).getMonth() + 1)).toLocaleDateString()
+                                                : new Date().toLocaleDateString()
+                                            }
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <LimitCard
+                                label="Users"
+                                limit={SubscriptionService.getLimits(authFirm).maxUsers}
+                                icon={<Building2 className="h-4 w-4" />}
+                            />
+                            <LimitCard
+                                label="Clients"
+                                limit={SubscriptionService.getLimits(authFirm).maxClients}
+                                icon={<Building2 className="h-4 w-4" />}
+                            />
+                            <LimitCard
+                                label="Audits / Month"
+                                limit={SubscriptionService.getLimits(authFirm).maxAuditsPerMonth}
+                                icon={<Check className="h-4 w-4" />}
+                            />
                         </div>
                     </div>
                 </div>

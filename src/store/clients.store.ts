@@ -98,7 +98,7 @@ export const useClientsStore = create<ClientsState>((set) => ({
   importClients: async (clientsData) => {
     set({ isLoading: true, error: null });
 
-    await handleAsyncError(async () => {
+    return await handleAsyncError(async () => {
       const result = await clientsService.importClients(clientsData);
 
       // Refetch clients to get latest state including new ones

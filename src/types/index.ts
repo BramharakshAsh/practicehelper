@@ -11,6 +11,14 @@ export interface Firm {
   invoice_prefix: string;
   invoice_sequence: number;
   invoice_theme: 'classic' | 'modern' | 'minimal';
+  subscription_tier: 'free' | 'growth';
+  subscription_status: 'active' | 'inactive' | 'past_due';
+  custom_user_limit?: number;
+  custom_client_limit?: number;
+  excel_imports_count: number;
+  last_auto_task_run_at?: string;
+  subscription_updated_at?: string;
+  subscription_end_date?: string;
   created_at: string;
   updated_at: string;
 }

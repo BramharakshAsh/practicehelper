@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard as Edit, Eye, Calendar, Trash2 } from 'lucide-react';
+import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard as Edit, Eye, Calendar, Trash2, Lock } from 'lucide-react';
 import { Staff, Task } from '../../types';
 import StaffModal from './StaffModal';
 import { useStaffStore } from '../../store/staff.store';
 import { RotateCcw as Undo } from 'lucide-react';
+import { useAuthStore } from '../../store/auth.store';
+import { SubscriptionService } from '../../services/subscription.service';
 
 interface StaffListProps {
   staff: Staff[];
@@ -15,6 +17,7 @@ interface StaffListProps {
 }
 
 const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onStaffCreate, onStaffDelete }) => {
+  const { firm } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [filterRole, setFilterRole] = useState(searchParams.get('role') || 'all');
@@ -23,6 +26,9 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [viewMode, setViewMode] = useState<'create' | 'edit' | 'view'>('create');
   const { pendingDeletions, undoStaffDeletion } = useStaffStore();
+
+  const canAdd = SubscriptionService.canAddUser(firm, staff.length);
+  const limits = SubscriptionService.getLimits(firm);
 
   useEffect(() => {
     setFilterOverloaded(searchParams.get('filter') === 'overloaded');
@@ -116,13 +122,23 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Staff Management</h2>
           <p className="text-gray-600 mt-1" data-walkthrough="manager-info">Manage your team members and their roles</p>
+          {!canAdd && (
+            <p className="text-xs text-red-500 font-medium mt-1">
+              Staff limit reached ({limits.maxUsers}). Please upgrade usage.
+            </p>
+          )}
         </div>
         <button
-          onClick={() => openModal('create')}
+          onClick={() => canAdd ? openModal('create') : null}
+          disabled={!canAdd}
           data-walkthrough="add-staff"
-          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${canAdd
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          title={!canAdd ? `Limit reached: ${limits.maxUsers}` : 'Add New Staff'}
         >
-          <Plus className="h-4 w-4" />
+          {canAdd ? <Plus className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
           <span>Add Staff Member</span>
         </button>
       </div>

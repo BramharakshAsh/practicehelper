@@ -29,6 +29,7 @@ const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const CompletedTasksPage = lazy(() => import('./pages/CompletedTasksPage'));
+const UpgradePage = lazy(() => import('./pages/UpgradePage'));
 
 import LandingPage from './pages/LandingPage';
 import ErrorBoundary from './components/Common/ErrorBoundary';
@@ -46,7 +47,7 @@ const PageLoader = () => (
 import { WalkthroughProvider } from './components/Walkthrough/WalkthroughProvider';
 
 function App() {
-  const { isAuthenticated, setUser } = useAuthStore();
+  const { isAuthenticated, setSession, setUser } = useAuthStore();
   // Data initialization (prefetching)
   const { fetchClients, hasFetched: hasFetchedClients } = useClientsStore();
   const { fetchStaff, hasFetched: hasFetchedStaff } = useStaffStore();
@@ -65,13 +66,22 @@ function App() {
         if (mounted) {
           if (session) {
             const user = await authService.getCurrentUser();
-            setUser(user);
+            let firm = null;
+            if (user?.firm_id) {
+              try {
+                firm = await authService.getFirm(user.firm_id);
+              } catch (e) {
+                console.error('Failed to fetch firm', e);
+              }
+            }
+            setSession(user, firm);
           } else {
-            setUser(null);
+            setSession(null, null);
           }
         }
       } catch (error) {
         console.error('App: Initial auth check failed:', error);
+        setSession(null, null);
       } finally {
         if (mounted) {
           setIsInitialized(true);
@@ -81,7 +91,7 @@ function App() {
 
     initAuth();
     return () => { mounted = false; };
-  }, [setUser]);
+  }, [setSession]);
 
   // 2. Auth State Change Listener (Run once)
   useEffect(() => {
@@ -95,17 +105,25 @@ function App() {
 
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         if (session) {
-          const fetchedUser = await authService.getCurrentUser();
-          setUser(fetchedUser);
+          const user = await authService.getCurrentUser();
+          let firm = null;
+          if (user?.firm_id) {
+            try {
+              firm = await authService.getFirm(user.firm_id);
+            } catch (e) {
+              console.error('Failed to fetch firm', e);
+            }
+          }
+          setSession(user, firm);
         }
       } else if (event === 'SIGNED_OUT') {
-        setUser(null);
+        setSession(null, null);
         navigate('/login');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, setUser]);
+  }, [navigate, setSession]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -174,6 +192,7 @@ function App() {
                   <SettingsPage />
                 </ProtectedRoute>
               } />
+              <Route path="upgrade" element={<UpgradePage />} />
             </Route>
 
             {/* Catch all redirect to landing page */}

@@ -9,7 +9,7 @@ import {
     UserCircle, FileCheck,
     ChevronLeft, ChevronRight, CheckCircle
 } from 'lucide-react';
-import Logo from '../assets/Logo.png';
+import { CAControlLogo } from '../components/Common/CAControlLogo';
 import { useWalkthrough } from '../components/Walkthrough/WalkthroughProvider';
 import NotificationBell from '../components/Layout/NotificationBell';
 import TimerWidget from '../components/TimeTracking/TimerWidget';
@@ -56,9 +56,9 @@ const DashboardLayout: React.FC = () => {
         <div className="flex flex-col h-full bg-slate-900 text-white">
             {/* Logo Area */}
             <div className={`h-16 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'px-6'} border-b border-slate-800 bg-slate-900 z-10 transition-all duration-300`}>
-                <img src={Logo} alt="Firm Flow Logo" className="h-8 w-auto object-contain flex-shrink-0" />
+                <CAControlLogo size="sm" showText={false} className="flex-shrink-0" />
                 {!isSidebarCollapsed && (
-                    <span className="ml-3 text-lg font-bold bg-gradient-to-r from-teal-400 to-blue-400 bg-clip-text text-transparent fade-in">Firm Flow</span>
+                    <span className="ml-3 text-lg font-bold text-brand-primary fade-in">CAControl</span>
                 )}
             </div>
 
@@ -74,7 +74,7 @@ const DashboardLayout: React.FC = () => {
                         title={isSidebarCollapsed ? item.label : undefined}
                         className={({ isActive }) =>
                             `flex items-center ${isSidebarCollapsed ? 'justify-center px-1' : 'px-3'} py-2 text-sm font-medium rounded-lg transition-all mb-0.5 ${isActive
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
+                                ? 'bg-brand-primary text-white shadow-lg shadow-orange-900/50'
                                 : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                             }`
                         }
@@ -88,7 +88,7 @@ const DashboardLayout: React.FC = () => {
             {/* User Footer */}
             <div className="p-4 border-t border-slate-800 bg-slate-900">
                 <div className={`flex items-center mb-4 ${isSidebarCollapsed ? 'justify-center' : 'px-2'}`}>
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-teal-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0">
                         {user?.full_name?.charAt(0) || 'U'}
                     </div>
                     {!isSidebarCollapsed && (
@@ -136,7 +136,7 @@ const DashboardLayout: React.FC = () => {
             {/* Collapse Toggle */}
             <button
                 onClick={toggleSidebar}
-                className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-blue-600 text-white rounded-full p-1 shadow-md border border-white hidden lg:flex hover:bg-blue-700"
+                className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-brand-primary text-white rounded-full p-1 shadow-md border border-white hidden lg:flex hover:bg-orange-600"
             >
                 {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </button>
@@ -146,7 +146,7 @@ const DashboardLayout: React.FC = () => {
     return (
         <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
             {/* Desktop Sidebar */}
-            <aside className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-20' : 'w-64'} fixed inset-y-0 z-50 transition-all duration-300 relative`}>
+            <aside className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-20' : 'w-64'} transition-all duration-300 relative`}>
                 <SidebarContent />
             </aside>
 
@@ -170,7 +170,7 @@ const DashboardLayout: React.FC = () => {
             )}
 
             {/* Main Content Area */}
-            <div className={`flex-1 flex flex-col ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} min-w-0 transition-all duration-300`}>
+            <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300`}>
                 {/* Top Header */}
                 <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-40 shadow-sm">
                     <div className="flex items-center">
@@ -185,7 +185,7 @@ const DashboardLayout: React.FC = () => {
                         <h1 className="text-xl font-bold text-gray-800 hidden sm:block">
                             {navItems.find(item => item.to === location.pathname)?.label || 'Dashboard'}
                         </h1>
-                        <span className="lg:hidden text-lg font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">Firm Flow</span>
+                        <span className="lg:hidden text-lg font-bold text-brand-primary">CAControl</span>
                     </div>
 
                     <div className="flex items-center space-x-4">

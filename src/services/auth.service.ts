@@ -169,6 +169,17 @@ class AuthService {
 
     return profile as AuthUser;
   }
+
+  async getFirm(firmId: string): Promise<any> {
+    const { data, error } = await supabase
+      .from('firms')
+      .select('*')
+      .eq('id', firmId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
 }
 
 export const authService = new AuthService();

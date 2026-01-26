@@ -141,7 +141,7 @@ export const useStaffStore = create<StaffState>((set, get) => ({
   importStaff: async (staffData) => {
     set({ isLoading: true, error: null });
 
-    await handleAsyncError(async () => {
+    return await handleAsyncError(async () => {
       const result = await staffService.importStaff(staffData);
 
       // Refetch staff to get updated state

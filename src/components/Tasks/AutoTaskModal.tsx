@@ -42,6 +42,8 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
       '24Q': 'TDS',
       '26Q': 'TDS',
       '27Q': 'TDS',
+      'ITR': 'IT',
+      'TAX-AUDIT': 'IT',
     };
     return mapping[taskCode] || taskCode;
   };
@@ -100,26 +102,46 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
       const getDueDate = (compliance: ComplianceType) => {
         const { frequency, due_day, code } = compliance;
         const day = due_day || 20;
+
         if (frequency === 'monthly' && selectedPeriod.type === 'month') {
           const month = selectedPeriod.month - 1;
+          const year = selectedPeriod.year;
+          // Due date is in the following month
           const nextMonth = month === 11 ? 0 : month + 1;
-          const nextYear = month === 11 ? selectedPeriod.year + 1 : selectedPeriod.year;
+          const nextYear = month === 11 ? year + 1 : year;
           return formatDateForInput(nextYear, nextMonth, day);
         } else if (frequency === 'quarterly' && selectedPeriod.type === 'quarter') {
           const { quarter, year } = selectedPeriod;
-          const dueMonths = [6, 9, 0, 4];
+          // TDS quarters: Q1(Apr-Jun), Q2(Jul-Sep), Q3(Oct-Dec), Q4(Jan-Mar)
+          // Due dates: Q1 due July 31, Q2 due Oct 31, Q3 due Jan 31, Q4 due May 31
+          const dueMonths = [6, 9, 0, 4]; // July, October, January, May (0-indexed)
           const dueMonth = dueMonths[quarter - 1];
-          const dueYear = (quarter === 3 || quarter === 4) ? year + 1 : year;
+
+          // Calculate due year - Q3 and Q4 roll into next year
+          let dueYear = year;
+          if (quarter === 3 || quarter === 4) {
+            dueYear = year + 1;
+          }
+
           return formatDateForInput(dueYear, dueMonth, day);
         } else if (frequency === 'yearly' && selectedPeriod.type === 'year') {
-          let dueMonth = 6;
-          const dueYear = selectedPeriod.year + 1;
-          if (code === 'TAX-AUDIT' || code === 'AUDIT') dueMonth = 8;
-          else if (code === 'TP-AUDIT') dueMonth = 9;
-          else if (code === 'GSTR-9') dueMonth = 11;
+          const { year } = selectedPeriod;
+          // For yearly returns, due date is typically in the following assessment year
+          let dueMonth = 6; // July (0-indexed)
+          const dueYear = year + 1;
+
+          // Special cases for different compliance types
+          if (code === 'TAX-AUDIT' || code === 'AUDIT') {
+            dueMonth = 8; // September
+          } else if (code === 'TP-AUDIT') {
+            dueMonth = 9; // October
+          } else if (code === 'GSTR-9') {
+            dueMonth = 11; // December
+          }
+
           return formatDateForInput(dueYear, dueMonth, day);
         }
-        return new Date().toISOString();
+        return new Date().toISOString().split('T')[0];
       };
       const clientsToProcess = selectedClients.length > 0 ? clients.filter(c => selectedClients.includes(c.id)) : clients;
       let randomCount = 0;
@@ -237,9 +259,30 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
                     </select></div>
                   <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">Year</label>
                     <select value={selectedPeriod.year} onChange={e => setSelectedPeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                      {[selectedPeriod.year - 1, selectedPeriod.year, selectedPeriod.year + 1].map(y => <option key={y} value={y}>{y}</option>)}
+                      {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => <option key={y} value={y}>{y}</option>)}
                     </select></div>
                 </>
+              )}
+              {selectedPeriod.type === 'quarter' && (
+                <>
+                  <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">Quarter</label>
+                    <select value={selectedPeriod.quarter} onChange={e => setSelectedPeriod(prev => ({ ...prev, quarter: parseInt(e.target.value) }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                      <option value={1}>Q1 (Apr-Jun)</option>
+                      <option value={2}>Q2 (Jul-Sep)</option>
+                      <option value={3}>Q3 (Oct-Dec)</option>
+                      <option value={4}>Q4 (Jan-Mar)</option>
+                    </select></div>
+                  <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">Year</label>
+                    <select value={selectedPeriod.year} onChange={e => setSelectedPeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                      {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => <option key={y} value={y}>FY {y}-{(y + 1).toString().slice(2)}</option>)}
+                    </select></div>
+                </>
+              )}
+              {selectedPeriod.type === 'year' && (
+                <div className="col-span-2"><label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">Financial Year</label>
+                  <select value={selectedPeriod.year} onChange={e => setSelectedPeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => <option key={y} value={y}>FY {y}-{(y + 1).toString().slice(2)}</option>)}
+                  </select></div>
               )}
             </div>
           </section>

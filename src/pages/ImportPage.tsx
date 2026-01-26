@@ -1,12 +1,13 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, Lock } from 'lucide-react';
 import { useClients } from '../hooks/useClients';
 import { useStaff } from '../hooks/useStaff';
 import { useTasks } from '../hooks/useTasks';
 import { useCompliance } from '../hooks/useCompliance';
 import { useAuthStore } from '../store/auth.store';
 import ImportModal from '../components/Import/ImportModal';
+import { SubscriptionService } from '../services/subscription.service';
 
 const ImportPage: React.FC = () => {
     const [showImportModal, setShowImportModal] = useState(false);
@@ -16,7 +17,9 @@ const ImportPage: React.FC = () => {
     const { staff, importStaff } = useStaff();
     const { importTasks } = useTasks();
     const { complianceTypes } = useCompliance();
-    const { user } = useAuthStore();
+    const { user, firm, setFirm } = useAuthStore();
+
+    const canImport = SubscriptionService.canImportExcel(firm);
 
     const handleImport = async (type: 'clients' | 'staff' | 'tasks', data: any[]) => {
         console.log(`[Import] Starting import for ${type}, ${data.length} records`);
@@ -86,6 +89,15 @@ const ImportPage: React.FC = () => {
                     break;
                 }
             }
+
+            // Increment usage if successful
+            if (successCount > 0 && firm) {
+                await SubscriptionService.incrementExcelImportUsage(firm.id);
+                // Ideally refresh firm to reflect new count
+                // const updatedFirm = await authService.getFirm(firm.id);
+                // setFirm(updatedFirm);
+            }
+
         } catch (error) {
             console.error('[Import] Import failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -96,9 +108,20 @@ const ImportPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Import Data</h2>
-                <p className="text-sm text-gray-600 mt-1">Import clients, staff, and tasks from Excel/CSV files</p>
+            <div className="flex justify-between items-start">
+                <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Import Data</h2>
+                    <p className="text-sm text-gray-600 mt-1">Import clients, staff, and tasks from Excel/CSV files</p>
+                </div>
+                {!canImport && (
+                    <div className="text-right">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <Lock className="w-3 h-3 mr-1" />
+                            Import Limit Reached
+                        </span>
+                        <p className="text-xs text-gray-500 mt-1">Upgrade or contact support</p>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -109,11 +132,19 @@ const ImportPage: React.FC = () => {
                 ].map(item => (
                     <button
                         key={item.type}
-                        onClick={() => { setImportType(item.type); setShowImportModal(true); }}
-                        className="p-6 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow text-left"
+                        onClick={() => {
+                            if (canImport) {
+                                setImportType(item.type);
+                                setShowImportModal(true);
+                            } else {
+                                alert('Excel Import limit reached for Free Tier. Please upgrade.');
+                            }
+                        }}
+                        disabled={!canImport}
+                        className={`p-6 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow text-left ${!canImport ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                         <div className="flex items-center justify-between mb-4">
-                            <Upload className="h-6 w-6 text-blue-600" />
+                            {canImport ? <Upload className="h-6 w-6 text-blue-600" /> : <Lock className="h-6 w-6 text-gray-400" />}
                         </div>
                         <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
                         <p className="text-gray-600 text-sm">{item.desc}</p>

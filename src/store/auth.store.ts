@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User } from '../types';
+import { User, Firm } from '../types';
 import { authService, LoginCredentials } from '../services/auth.service';
 import { ErrorService, handleAsyncError } from '../services/error.service';
 
 interface AuthState {
   user: User | null;
+  firm: Firm | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -14,6 +15,8 @@ interface AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
+  setFirm: (firm: Firm | null) => void;
+  setSession: (user: User | null, firm: Firm | null) => void;
   clearError: () => void;
 }
 
@@ -21,6 +24,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      firm: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -30,8 +34,14 @@ export const useAuthStore = create<AuthState>()(
 
         await handleAsyncError(async () => {
           const user = await authService.login(credentials);
+          let firm = null;
+          if (user.firm_id) {
+            firm = await authService.getFirm(user.firm_id);
+          }
+
           set({
             user,
+            firm,
             isAuthenticated: true,
             isLoading: false
           });
@@ -60,6 +70,7 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           set({
             user: null,
+            firm: null,
             isAuthenticated: false,
             isLoading: false,
             error: null
@@ -68,7 +79,20 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setUser: (user: User | null) => {
-        set({ user, isAuthenticated: !!user, isLoading: false });
+        set({ user });
+      },
+
+      setFirm: (firm: Firm | null) => {
+        set({ firm });
+      },
+
+      setSession: (user: User | null, firm: Firm | null) => {
+        set({
+          user,
+          firm,
+          isAuthenticated: !!user,
+          isLoading: false
+        });
       },
 
       clearError: () => set({ error: null }),
@@ -77,6 +101,7 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
+        firm: state.firm,
         isAuthenticated: state.isAuthenticated
       }),
     }
