@@ -10,25 +10,41 @@ import UrgentTasksTable from '../components/Dashboard/UrgentTasksTable';
 import ClientDependencyWidget from '../components/Dashboard/ClientDependencyWidget';
 import StaffLoadSnapshot from '../components/Dashboard/StaffLoadSnapshot';
 import QuickActions from '../components/Dashboard/QuickActions';
-import TaskModal from '../components/Tasks/TaskModal';
-import AutoTaskModal from '../components/Tasks/AutoTaskModal';
-import { Task } from '../types';
+import ClientModal from '../components/Clients/ClientModal';
+import StaffModal from '../components/Staff/StaffModal';
+import { Task, Client, Staff } from '../types';
 
 import { useAuthStore } from '../store/auth.store';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
     const { user } = useAuthStore();
+    const navigate = useNavigate();
     const { tasks, createTask } = useTasks();
-    const { clients } = useClients();
-    const { staff } = useStaff();
+    const { clients, createClient } = useClients();
+    const { staff, createStaff } = useStaff();
     const { complianceTypes } = useCompliance();
 
     const [showTaskModal, setShowTaskModal] = useState(false);
+    const [showClientModal, setShowClientModal] = useState(false);
+    const [showStaffModal, setShowStaffModal] = useState(false);
+
+    // Kept for backward compatibility if needed, but unused in new quick actions
     const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
 
     const handleTaskCreate = async (task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => {
         await createTask(task);
         setShowTaskModal(false);
+    };
+
+    const handleClientCreate = async (clientData: Omit<Client, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => {
+        await createClient(clientData);
+        setShowClientModal(false);
+    };
+
+    const handleStaffCreate = async (staffData: Omit<Staff, 'id' | 'firm_id' | 'user_id' | 'created_at' | 'updated_at'> & { password?: string }) => {
+        await createStaff(staffData);
+        setShowStaffModal(false);
     };
 
     const handleScheduleFiling = async (newTasks: Omit<Task, 'id' | 'created_at' | 'updated_at'>[]) => {
@@ -38,18 +54,7 @@ const DashboardPage: React.FC = () => {
         setShowAutoScheduleModal(false);
     };
 
-    const handleSendReminder = () => {
-        const msg = "Dear Client, \n\nThis is a reminder to please submit your pending documents for the upcoming statutory deadlines.\n\nRegards,\nFirm Flow";
-        navigator.clipboard.writeText(msg).then(() => {
-            // In a real app we would use a toast notification here
-            // For now, using a more descriptive alert or just relying on user action
-            // But since we can't show toast easily without adding a lib or context, let's just alert for now but validly.
-            alert('Reminder text copied to clipboard! You can now paste it into WhatsApp/Email.');
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-            alert('Failed to copy reminder text.');
-        });
-    };
+    // Removed handleSendReminder as it's no longer used in QuickActions
 
     return (
         <div className="space-y-5 animate-fade-in" data-walkthrough="dashboard-overview">
@@ -89,8 +94,9 @@ const DashboardPage: React.FC = () => {
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
                         <QuickActions
                             onAddTask={() => setShowTaskModal(true)}
-                            onScheduleFiling={() => setShowAutoScheduleModal(true)}
-                            onSendReminder={handleSendReminder}
+                            onAddClient={() => setShowClientModal(true)}
+                            onAddStaff={['partner', 'manager'].includes(user?.role || '') ? () => setShowStaffModal(true) : undefined}
+                            onImportData={() => navigate('/dashboard/import')}
                         />
                     </div>
 
@@ -111,6 +117,24 @@ const DashboardPage: React.FC = () => {
                     complianceTypes={complianceTypes}
                     clients={clients}
                     staff={staff}
+                />
+            )}
+
+            {showClientModal && (
+                <ClientModal
+                    mode="create"
+                    onClose={() => setShowClientModal(false)}
+                    onSubmit={handleClientCreate}
+                    allStaff={staff}
+                />
+            )}
+
+            {showStaffModal && (
+                <StaffModal
+                    mode="create"
+                    onClose={() => setShowStaffModal(false)}
+                    onSubmit={handleStaffCreate}
+                    allStaff={staff}
                 />
             )}
 

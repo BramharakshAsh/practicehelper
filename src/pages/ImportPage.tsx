@@ -30,6 +30,12 @@ const ImportPage: React.FC = () => {
             switch (type) {
                 case 'clients':
                     console.log('[Import] Importing clients...', data);
+                    // Check limit
+                    if (!SubscriptionService.canAddClient(firm, clients.length, data.length)) {
+                        alert(`Cannot import ${data.length} clients. Limit will be exceeded.\nCurrent: ${clients.length}\nImport: ${data.length}\nLimit: ${SubscriptionService.getLimits(firm).maxClients}`);
+                        return;
+                    }
+
                     const clientResult = await importClients(data) as any;
                     successCount = clientResult.success;
                     console.log(`[Import] Import completed: ${clientResult.success} success, ${clientResult.failures} failures`);
@@ -41,6 +47,12 @@ const ImportPage: React.FC = () => {
                     break;
                 case 'staff':
                     console.log('[Import] Importing staff...', data);
+                    // Check limit
+                    if (!SubscriptionService.canAddUser(firm, staff.length, data.length)) {
+                        alert(`Cannot import ${data.length} staff members. Limit will be exceeded.\nCurrent: ${staff.length}\nImport: ${data.length}\nLimit: ${SubscriptionService.getLimits(firm).maxUsers}`);
+                        return;
+                    }
+
                     const staffResult = await importStaff(data) as any;
                     successCount = staffResult.success;
                     console.log(`[Import] Import completed: ${staffResult.success} success, ${staffResult.failures} failures`);

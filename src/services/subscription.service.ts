@@ -45,16 +45,16 @@ export class SubscriptionService {
         };
     }
 
-    static canAddUser(firm: Firm | null, currentCount: number): boolean {
+    static canAddUser(firm: Firm | null, currentCount: number, countToAdd: number = 1): boolean {
         if (!firm) return false;
         const { maxUsers } = this.getLimits(firm);
-        return currentCount < maxUsers;
+        return (currentCount + countToAdd) <= maxUsers;
     }
 
-    static canAddClient(firm: Firm | null, currentCount: number): boolean {
+    static canAddClient(firm: Firm | null, currentCount: number, countToAdd: number = 1): boolean {
         if (!firm) return false;
         const { maxClients } = this.getLimits(firm);
-        return currentCount < maxClients;
+        return (currentCount + countToAdd) <= maxClients;
     }
 
     static canImportExcel(firm: Firm | null): boolean {

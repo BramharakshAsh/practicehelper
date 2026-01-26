@@ -4,6 +4,7 @@ import { Plus, Search, User, Phone, Mail, Shield, UserCheck, UserX, CreditCard a
 import { Staff, Task } from '../../types';
 import StaffModal from './StaffModal';
 import { useStaffStore } from '../../store/staff.store';
+import StaffWorkloadSummary from './StaffWorkloadSummary';
 import { RotateCcw as Undo } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { SubscriptionService } from '../../services/subscription.service';
@@ -133,8 +134,8 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
           disabled={!canAdd}
           data-walkthrough="add-staff"
           className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${canAdd
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           title={!canAdd ? `Limit reached: ${limits.maxUsers}` : 'Add New Staff'}
         >
@@ -355,6 +356,9 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
           </div>
         ))}
       </div>
+
+      {/* Workload Summary */}
+      <StaffWorkloadSummary staff={staff} tasks={tasks} />
     </div>
   );
 };
