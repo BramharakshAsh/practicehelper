@@ -21,8 +21,8 @@ const NotificationBell: React.FC = () => {
 
     useEffect(() => {
         fetchNotifications();
-        // Poll every minute
-        const interval = setInterval(fetchNotifications, 60000);
+        // Poll every 5 minutes
+        const interval = setInterval(fetchNotifications, 300000);
         return () => clearInterval(interval);
     }, []);
 
