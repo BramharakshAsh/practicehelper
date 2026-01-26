@@ -61,6 +61,17 @@ function App() {
     let mounted = true;
 
     const initAuth = async () => {
+      // Cleanup legacy or potentially corrupt storage
+      try {
+        const key = 'sb-' + import.meta.env.VITE_SUPABASE_URL?.split('//')[1].split('.')[0] + '-auth-token';
+        const stored = localStorage.getItem(key);
+        if (stored && stored === 'undefined') {
+          localStorage.removeItem(key);
+        }
+      } catch (e) {
+        // ignore
+      }
+
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (mounted) {

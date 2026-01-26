@@ -16,6 +16,8 @@ export const SessionTimeout = () => {
     // Keep ref in sync
     isAuthenticatedRef.current = isAuthenticated;
 
+    const lastActivityRef = useRef<number>(Date.now());
+
     // Stabilize handleLogout - only depends on logout function
     const handleLogout = useCallback(async () => {
         if (isAuthenticatedRef.current) {
@@ -24,8 +26,17 @@ export const SessionTimeout = () => {
         }
     }, [logout]);
 
-    // Stabilize resetInactivityTimer - only depends on handleLogout
+    // Throttled reset timer - only resets if > 30s has passed significantly reduces CPU usage on mousemove
     const resetInactivityTimer = useCallback(() => {
+        const now = Date.now();
+        // Throttle: Only reset if more than 30 seconds have passed since the last reset
+        // causing less overhead for high-frequency events like mousemove/scroll
+        if (now - lastActivityRef.current < 30000 && timeoutRef.current) {
+            return;
+        }
+
+        lastActivityRef.current = now;
+
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
@@ -42,22 +53,31 @@ export const SessionTimeout = () => {
             return;
         }
 
-        const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
-        const resetTimer = () => resetInactivityTimer();
+        // List of events that reset the inactivity timer
+        // Optimized: Removed 'mousemove' and 'scroll' to prevent performance issues
+        // Only tracking explicit actions now as per user request
+        const events = [
+            'click',
+            'keydown',
+            'focus',
+            'input' // Added input to catch typing in form fields
+        ];
 
-        activityEvents.forEach(event => {
-            window.addEventListener(event, resetTimer, { passive: true });
+        events.forEach(event => {
+            window.addEventListener(event, resetInactivityTimer);
         });
 
         resetInactivityTimer();
 
+        // Cleanup function - CRITICAL: remove all listeners
         return () => {
-            activityEvents.forEach(event => {
-                window.removeEventListener(event, resetTimer);
+            console.log('[SessionTimeout] Cleaning up activity listeners');
+            events.forEach(event => {
+                window.removeEventListener(event, resetInactivityTimer);
             });
-
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
             }
         };
     }, [isAuthenticated, resetInactivityTimer]);
