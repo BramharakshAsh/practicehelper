@@ -6,6 +6,7 @@ import { useStaffStore } from './store/staff.store';
 import { useTasksStore } from './store/tasks.store';
 import { supabase } from './services/supabase';
 import { authService } from './services/auth.service';
+import { Analytics } from "@vercel/analytics/react"
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
