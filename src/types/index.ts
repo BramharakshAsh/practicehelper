@@ -47,6 +47,7 @@ export interface Client {
   email?: string;
   phone?: string;
   address?: string;
+  legal_form?: string;
   work_types: string[];
   is_active: boolean;
   created_by?: string;
@@ -68,11 +69,6 @@ export interface Staff {
   email: string;
   phone?: string;
   role: UserRole;
-  employee_id?: string;
-  department?: string;
-  specializations: string[];
-  hourly_rate?: number;
-  is_available: boolean;
   is_active: boolean;
   date_of_joining?: string;
   manager_id?: string;
@@ -104,7 +100,7 @@ export interface TaskTemplate {
 export interface ComplianceType {
   id: string;
   firm_id?: string;
-  category: 'GST' | 'Income Tax' | 'TDS' | 'Others';
+  category: 'GST' | 'Income Tax' | 'TDS' | 'ROC' | 'Audit' | 'Payroll' | 'Others' | string;
   name: string;
   code: string;
   description?: string;

@@ -74,9 +74,21 @@ class ClientsService {
   }
 
   async deleteClient(id: string): Promise<void> {
+    console.log('[ClientsService] Deleting tasks for client:', id);
+    // Delete all tasks associated with this client
+    const { error: taskError } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('client_id', id);
+
+    if (taskError) {
+      console.error('[ClientsService] Error deleting client tasks:', taskError);
+      throw taskError;
+    }
+
     const { error } = await supabase
       .from('clients')
-      .update({ is_active: false })
+      .delete()
       .eq('id', id);
 
     if (error) throw error;
@@ -85,6 +97,10 @@ class ClientsService {
   async importClients(clientsData: any[]): Promise<{ success: number; failures: number; errors: string[] }> {
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated or missing firm ID');
+
+    // 1. Fetch staff to resolve manager names
+    const { staffService } = await import('./staff.service');
+    const allStaff = await staffService.getStaff();
 
     const results = {
       success: 0,
@@ -100,14 +116,44 @@ class ClientsService {
           throw new Error(`Name and PAN are required fields.`);
         }
 
+        // Resolve manager_id from manager_name / assigned_manager
+        let managerId: string | null = null;
+        const managerName = (item.assigned_manager || item.manager_name || '').trim();
+        if (managerName && managerName.toLowerCase() !== 'unassigned') {
+          const manager = allStaff.find(s => s.name.toLowerCase() === managerName.toLowerCase());
+          if (manager) {
+            managerId = manager.user_id;
+          } else {
+            console.warn(`[ClientsService] Row ${rowNum}: Manager "${managerName}" not found.`);
+            results.errors.push(`Row ${rowNum}: Manager "${managerName}" not found. Setting as Unassigned.`);
+          }
+        }
+
+        // Resolve work_types from individual columns
+        const workTypes: string[] = [];
+        const isYes = (val: any) => String(val || '').toLowerCase().startsWith('y');
+
+        if (isYes(item.gst_work) || isYes(item.gst)) workTypes.push('GST');
+        if (isYes(item.tds_work) || isYes(item.tds)) workTypes.push('TDS');
+        if (isYes(item.it_work) || isYes(item.it) || isYes(item.income_tax)) workTypes.push('Income Tax');
+        if (isYes(item.audit_work) || isYes(item.audit)) workTypes.push('Audit');
+        if (isYes(item.roc_work) || isYes(item.roc)) workTypes.push('ROC');
+        if (isYes(item.payroll_work) || isYes(item.payroll)) workTypes.push('Payroll');
+        if (isYes(item.accounting_work) || isYes(item.accounting)) workTypes.push('Accounting');
+
         const normalizedClient = {
           name: String(item.name).trim(),
           pan: String(item.pan).trim().toUpperCase(),
           gstin: item.gstin ? String(item.gstin).trim() : null,
           email: item.email ? String(item.email).trim() : null,
           phone: item.phone ? String(item.phone).trim() : null,
+          legal_form: item.legal_form ? String(item.legal_form).trim() : null,
+          client_group: item.client_group ? String(item.client_group).trim() : (item.group ? String(item.group).trim() : null),
+          manager_id: managerId,
           address: item.address ? String(item.address).trim() : null,
-          work_types: item.work_types || [],
+          instructions: item.special_instructions ? String(item.special_instructions).trim() : (item.instructions ? String(item.instructions).trim() : null),
+          to_remember: item.points_to_remember ? String(item.points_to_remember).trim() : (item.to_remember ? String(item.to_remember).trim() : null),
+          work_types: workTypes.length > 0 ? workTypes : (item.work_types || []),
           firm_id: firmId,
           is_active: true
         };
@@ -125,7 +171,7 @@ class ClientsService {
       } catch (err: any) {
         console.error(`[ClientsService] Row ${rowNum} failure:`, err);
         results.failures++;
-        const errorMessage = err instanceof Error ? err.message : String(err);
+        const errorMessage = typeof err === 'string' ? err : err?.message || JSON.stringify(err);
         results.errors.push(`Row ${rowNum}: ${errorMessage}`);
       }
     }

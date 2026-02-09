@@ -335,20 +335,34 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
         {Object.entries(pendingDeletions).map(([id, { staff: member }]) => (
           <div
             key={id}
-            className="bg-gray-900/95 backdrop-blur-sm text-white px-4 py-3 rounded-xl shadow-2xl border border-white/10 flex items-center space-x-6 animate-in slide-in-from-left-4 fade-in duration-300 min-w-[300px]"
+            className="group/undo relative bg-gray-900/95 backdrop-blur-sm text-white px-4 py-3 rounded-xl shadow-2xl border border-white/10 flex items-center space-x-6 animate-in slide-in-from-left-4 fade-in duration-300 min-w-[300px] overflow-hidden"
           >
-            <div className="flex items-center space-x-3">
+            {/* Progress Bar Timer */}
+            <div
+              className="absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-[15000ms] ease-linear w-full"
+              style={{ width: '0%', transitionProperty: 'width' }}
+              ref={(el) => {
+                if (el) {
+                  // Trigger the width transition on mount
+                  setTimeout(() => {
+                    el.style.width = '100%';
+                  }, 50);
+                }
+              }}
+            />
+
+            <div className="flex items-center space-x-3 relative z-10">
               <div className="bg-red-500/20 p-2 rounded-lg">
                 <Trash2 className="h-4 w-4 text-red-400" />
               </div>
               <div>
                 <p className="text-sm font-medium">Deleted {member.name}</p>
-                <p className="text-[10px] text-gray-400">Restorable for 2 minutes</p>
+                <p className="text-[10px] text-gray-400">Restorable for 15 seconds</p>
               </div>
             </div>
             <button
               onClick={() => undoStaffDeletion(id)}
-              className="ml-auto flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all text-xs font-bold uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95"
+              className="ml-auto relative z-10 flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all text-xs font-bold uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95"
             >
               <Undo className="h-3 w-3" />
               <span>Undo</span>

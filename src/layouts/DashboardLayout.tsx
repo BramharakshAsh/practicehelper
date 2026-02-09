@@ -13,6 +13,7 @@ import { CAControlLogo } from '../components/Common/CAControlLogo';
 import { useWalkthrough } from '../components/Walkthrough/WalkthroughProvider';
 import NotificationBell from '../components/Layout/NotificationBell';
 import TimerWidget from '../components/TimeTracking/TimerWidget';
+import { LocalStorageService } from '../services/local-storage.service';
 
 const DashboardLayout: React.FC = () => {
     const { user, logout } = useAuthStore();
@@ -21,8 +22,7 @@ const DashboardLayout: React.FC = () => {
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(() => {
-        const saved = localStorage.getItem('sidebar-collapsed');
-        return saved ? JSON.parse(saved) : false;
+        return LocalStorageService.getItem('sidebar-collapsed', false);
     });
 
     const handleLogout = async () => {

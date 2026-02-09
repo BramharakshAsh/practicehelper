@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy, useState } from 'react';
+import React, { useEffect, Suspense, lazy, useState } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth.store';
 import { useClientsStore } from './store/clients.store';
@@ -47,14 +47,50 @@ const PageLoader = () => (
 import { WalkthroughProvider } from './components/Walkthrough/WalkthroughProvider';
 
 function App() {
-  const { isAuthenticated, setSession, setUser } = useAuthStore();
-  // Data initialization (prefetching)
-  const { fetchClients, hasFetched: hasFetchedClients } = useClientsStore();
-  const { fetchStaff, hasFetched: hasFetchedStaff } = useStaffStore();
-  const { fetchTasks, hasFetched: hasFetchedTasks } = useTasksStore();
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const setSession = useAuthStore(state => state.setSession);
+
+  // Data initialization (prefetching) hooks with specific selectors
+  const fetchClients = useClientsStore(state => state.fetchClients);
+  const hasFetchedClients = useClientsStore(state => state.hasFetched);
+
+  const fetchStaff = useStaffStore(state => state.fetchStaff);
+  const hasFetchedStaff = useStaffStore(state => state.hasFetched);
+
+  const fetchTasks = useTasksStore(state => state.fetchTasks);
+  const hasFetchedTasks = useTasksStore(state => state.hasFetched);
 
   const [isInitialized, setIsInitialized] = useState(false);
   const navigate = useNavigate();
+  const isProcessingAuth = React.useRef(false);
+
+  // Consolidated session handler
+  const handleSession = React.useCallback(async (session: any) => {
+    if (isProcessingAuth.current) return;
+
+    try {
+      isProcessingAuth.current = true;
+      if (session) {
+        const user = await authService.getCurrentUser();
+        let firm = null;
+        if (user?.firm_id) {
+          try {
+            firm = await authService.getFirm(user.firm_id);
+          } catch (e) {
+            console.error('App: Failed to fetch firm', e);
+          }
+        }
+        setSession(user, firm);
+      } else {
+        setSession(null, null);
+      }
+    } catch (error) {
+      console.error('App: Session handling failed:', error);
+      setSession(null, null);
+    } finally {
+      isProcessingAuth.current = false;
+    }
+  }, [setSession]);
 
   // 1. Initial Auth Check (Run once)
   useEffect(() => {
@@ -75,24 +111,11 @@ function App() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (mounted) {
-          if (session) {
-            const user = await authService.getCurrentUser();
-            let firm = null;
-            if (user?.firm_id) {
-              try {
-                firm = await authService.getFirm(user.firm_id);
-              } catch (e) {
-                console.error('Failed to fetch firm', e);
-              }
-            }
-            setSession(user, firm);
-          } else {
-            setSession(null, null);
-          }
+          await handleSession(session);
         }
       } catch (error) {
         console.error('App: Initial auth check failed:', error);
-        setSession(null, null);
+        if (mounted) setSession(null, null);
       } finally {
         if (mounted) {
           setIsInitialized(true);
@@ -102,9 +125,9 @@ function App() {
 
     initAuth();
     return () => { mounted = false; };
-  }, [setSession]);
+  }, [handleSession, setSession]);
 
-  // 2. Auth State Change Listener (Run once)
+  // 2. Auth State Change Listener
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('App: Auth event detected:', event);
@@ -114,27 +137,22 @@ function App() {
         return;
       }
 
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
         if (session) {
-          const user = await authService.getCurrentUser();
-          let firm = null;
-          if (user?.firm_id) {
-            try {
-              firm = await authService.getFirm(user.firm_id);
-            } catch (e) {
-              console.error('Failed to fetch firm', e);
-            }
-          }
-          setSession(user, firm);
+          await handleSession(session);
         }
-      } else if (event === 'SIGNED_OUT') {
-        setSession(null, null);
-        navigate('/login');
+      } else if (event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        if (event === 'SIGNED_OUT') {
+          setSession(null, null);
+          navigate('/login');
+        } else if (!session) {
+          setSession(null, null);
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, setSession]);
+  }, [navigate, handleSession, setSession]);
 
   useEffect(() => {
     if (isAuthenticated) {

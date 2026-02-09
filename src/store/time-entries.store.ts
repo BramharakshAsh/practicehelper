@@ -26,9 +26,40 @@ interface TimeEntriesState {
     logManualEntry: (params: TimeEntryParams) => Promise<TimeEntry>;
 }
 
+// Custom storage handler to throttle writes
+const throttledStorage = {
+    getItem: (name: string) => {
+        const str = localStorage.getItem(name);
+        if (!str) return null;
+        try {
+            return JSON.parse(str);
+        } catch (e) {
+            console.error(`Error parsing persisted state for ${name}:`, e);
+            localStorage.removeItem(name);
+            return null;
+        }
+    },
+    setItem: (name: string, value: any) => {
+        // We only throttle the "tick" updates. 
+        // If it's a start/stop action, we might want it immediate, 
+        // but for simplicity and robustness against the 1s tick, we use a global throttle.
+        const now = Date.now();
+        const lastWrite = (window as any)[`last_write_${name}`] || 0;
+
+        // If it's been more than 5 seconds since last write, or if the timer just stopped/started
+        // (we can detect important changes if needed, but 5s is a good safe default)
+        if (now - lastWrite > 5000) {
+            localStorage.setItem(name, JSON.stringify(value));
+            (window as any)[`last_write_${name}`] = now;
+        }
+    },
+    removeItem: (name: string) => localStorage.removeItem(name),
+};
+
 export const useTimeEntriesStore = create<TimeEntriesState>()(
     persist(
         (set, get) => ({
+            // ... (rest of the store implementation remains the same)
             activeTimer: {
                 activeTaskId: null,
                 startedAt: null,
@@ -39,13 +70,13 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
             startTimer: (taskId) => {
                 const { activeTimer } = get();
                 if (activeTimer.activeTaskId && activeTimer.activeTaskId !== taskId) {
-                    // Logic to stop previous timer could go here, or throw error
                     throw new Error('Timer already running for another task');
                 }
 
                 if (activeTimer.activeTaskId === taskId && activeTimer.startedAt) {
-                    // Already running for this task, just resume if paused
                     set({ activeTimer: { ...activeTimer, isRunning: true } });
+                    // Force immediate save on start
+                    (window as any)[`last_write_firm-flow-timer-storage`] = 0;
                     return;
                 }
 
@@ -57,6 +88,8 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
                         isRunning: true,
                     }
                 });
+                // Force immediate save on start
+                (window as any)[`last_write_firm-flow-timer-storage`] = 0;
             },
 
             stopTimer: async (notes) => {
@@ -64,8 +97,6 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
                 if (!activeTimer.activeTaskId || !activeTimer.startedAt) return null;
 
                 const endTime = new Date();
-                // Adjust duration based on elapsedSeconds which handles pauses implicitly if we implemented pause logic correctly.
-                // For simplified MVP, we'll use elapsedSeconds for duration.
                 const durationMinutes = Math.ceil(activeTimer.elapsedSeconds / 60);
 
                 try {
@@ -80,6 +111,8 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
                     });
 
                     resetTimer();
+                    // Force immediate save on stop
+                    (window as any)[`last_write_firm-flow-timer-storage`] = 0;
                     return entry;
                 } catch (error) {
                     console.error('Failed to log time entry:', error);
@@ -91,12 +124,16 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
                 set(state => ({
                     activeTimer: { ...state.activeTimer, isRunning: false }
                 }));
+                // Force immediate save on pause
+                (window as any)[`last_write_firm-flow-timer-storage`] = 0;
             },
 
             resumeTimer: () => {
                 set(state => ({
                     activeTimer: { ...state.activeTimer, isRunning: true }
                 }));
+                // Force immediate save on resume
+                (window as any)[`last_write_firm-flow-timer-storage`] = 0;
             },
 
             resetTimer: () => {
@@ -108,6 +145,8 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
                         isRunning: false,
                     }
                 });
+                // Force immediate save on reset
+                (window as any)[`last_write_firm-flow-timer-storage`] = 0;
             },
 
             tick: () => {
@@ -128,6 +167,7 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
         }),
         {
             name: 'firm-flow-timer-storage',
+            storage: throttledStorage,
         }
     )
 );

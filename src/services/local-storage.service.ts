@@ -6,6 +6,8 @@ export class LocalStorageService {
             return JSON.parse(item) as T;
         } catch (error) {
             console.error(`Error parsing localStorage key "${key}":`, error);
+            // If parsing fails, the data is corrupted. Remove it to prevent repeat failures.
+            localStorage.removeItem(key);
             return defaultValue;
         }
     }

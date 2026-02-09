@@ -57,7 +57,8 @@ const ImportPage: React.FC = () => {
                     successCount = staffResult.success;
                     console.log(`[Import] Import completed: ${staffResult.success} success, ${staffResult.failures} failures`);
                     if (staffResult.failures > 0) {
-                        alert(`⚠️ Imported ${staffResult.success} staff with ${staffResult.failures} failure(s):\n${staffResult.errors.slice(0, 3).join('\n')}${staffResult.errors.length > 3 ? '\n...' : ''}`);
+                        const errorList = staffResult.errors.map((e: any) => typeof e === 'string' ? e : e?.message || JSON.stringify(e));
+                        alert(`⚠️ Imported ${staffResult.success} staff with ${staffResult.failures} failure(s):\n\n${errorList.slice(0, 5).join('\n')}${errorList.length > 5 ? '\n...' : ''}`);
                     } else {
                         alert(`✅ Successfully imported ${staffResult.success} staff member${staffResult.success !== 1 ? 's' : ''}!`);
                     }

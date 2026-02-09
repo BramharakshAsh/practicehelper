@@ -225,6 +225,18 @@ class StaffService {
   }
 
   async deleteStaffPermanently(userId: string): Promise<void> {
+    console.log('[StaffService] Deleting tasks for user:', userId);
+    // First delete all tasks assigned to the staff
+    const { error: taskError } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('staff_id', userId);
+
+    if (taskError) {
+      console.error('[StaffService] Error deleting staff tasks:', taskError);
+      throw taskError;
+    }
+
     console.log('[StaffService] Deleting user permanently:', userId);
     const { error } = await supabase.rpc('delete_user_permanent', {
       target_user_id: userId
@@ -282,22 +294,23 @@ class StaffService {
           role: role as any,
           phone: item.phone ? String(item.phone).trim() : undefined,
           manager_id: managerId,
-          date_of_joining: item.joining_date || new Date().toISOString().split('T')[0],
-          is_active: true,
-          specializations: [],
-          is_available: true
+          date_of_joining: item.joining_date instanceof Date
+            ? item.joining_date.toISOString().split('T')[0]
+            : (item.joining_date || new Date().toISOString().split('T')[0]),
+          is_active: true
         };
 
         if (!creationData.name || !creationData.email) {
           throw new Error('Full Name and Email are required.');
         }
 
-        await this.createStaff(creationData);
+        const newMember = await this.createStaff(creationData);
+        existingStaff.push(newMember); // Add to local cache so subsequent rows can reference this manager
         results.success++;
       } catch (err: any) {
         console.error(`[StaffService] Row ${rowNum} failure:`, err);
         results.failures++;
-        const errorMessage = err instanceof Error ? err.message : String(err);
+        const errorMessage = typeof err === 'string' ? err : err?.message || JSON.stringify(err);
         results.errors.push(`Row ${rowNum}: ${errorMessage}`);
       }
     }

@@ -22,7 +22,15 @@ class AuditManagementService {
             console.error('AuditService: getAuditPlans error', error);
             throw error;
         }
-        return data || [];
+
+        // Transform lead_staff data: users table has 'full_name', but Staff expects 'name'
+        return (data || []).map(plan => ({
+            ...plan,
+            lead_staff: plan.lead_staff ? {
+                ...plan.lead_staff,
+                name: plan.lead_staff.full_name || plan.lead_staff.name || 'Unknown',
+            } : null
+        }));
     }
 
     async getAuditPlan(id: string): Promise<AuditPlan> {
@@ -37,7 +45,15 @@ class AuditManagementService {
             .single();
 
         if (error) throw error;
-        return data;
+
+        // Transform lead_staff data: users table has 'full_name', but Staff expects 'name'
+        return {
+            ...data,
+            lead_staff: data.lead_staff ? {
+                ...data.lead_staff,
+                name: data.lead_staff.full_name || data.lead_staff.name || 'Unknown',
+            } : null
+        };
     }
 
     async createAuditPlan(plan: Omit<AuditPlan, 'id' | 'firm_id' | 'created_at' | 'updated_at' | 'progress'>): Promise<AuditPlan> {
