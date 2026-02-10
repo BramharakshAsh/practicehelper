@@ -2,6 +2,7 @@ import { Client } from '../types';
 import { supabase } from './supabase';
 import { useAuthStore } from '../store/auth.store';
 import { DBClientResponse } from '../types/database.types';
+import { devLog, devWarn, devError } from './logger';
 
 class ClientsService {
   async getClients(): Promise<Client[]> {
@@ -74,7 +75,7 @@ class ClientsService {
   }
 
   async deleteClient(id: string): Promise<void> {
-    console.log('[ClientsService] Deleting tasks for client:', id);
+    devLog('[ClientsService] Deleting tasks for client:', id);
     // Delete all tasks associated with this client
     const { error: taskError } = await supabase
       .from('tasks')
@@ -82,7 +83,7 @@ class ClientsService {
       .eq('client_id', id);
 
     if (taskError) {
-      console.error('[ClientsService] Error deleting client tasks:', taskError);
+      devError('[ClientsService] Error deleting client tasks:', taskError);
       throw taskError;
     }
 
@@ -124,7 +125,7 @@ class ClientsService {
           if (manager) {
             managerId = manager.user_id;
           } else {
-            console.warn(`[ClientsService] Row ${rowNum}: Manager "${managerName}" not found.`);
+            devWarn(`[ClientsService] Row ${rowNum}: Manager "${managerName}" not found.`);
             results.errors.push(`Row ${rowNum}: Manager "${managerName}" not found. Setting as Unassigned.`);
           }
         }
@@ -169,7 +170,7 @@ class ClientsService {
 
         results.success++;
       } catch (err: any) {
-        console.error(`[ClientsService] Row ${rowNum} failure:`, err);
+        devError(`[ClientsService] Row ${rowNum} failure:`, err);
         results.failures++;
         const errorMessage = typeof err === 'string' ? err : err?.message || JSON.stringify(err);
         results.errors.push(`Row ${rowNum}: ${errorMessage}`);
@@ -196,7 +197,7 @@ class ClientsService {
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated');
 
-    console.log('💾 Saving client-staff relation:', { clientId, staffId, firmId });
+    devLog('[ClientsService] Saving client-staff relation:', { clientId, staffId, firmId });
 
     // First delete any existing relation for this client (to enforce 1-to-1 default assignee behavior)
     // Actually, maybe we want multiple relations? "relations" could mean a team.
@@ -213,10 +214,10 @@ class ClientsService {
       .eq('firm_id', firmId);
 
     if (delError) {
-      console.error('❌ Delete error:', delError);
+      devError('[ClientsService] Delete error:', delError);
       throw delError;
     }
-    console.log('✅ Deleted existing relations for client');
+    devLog('[ClientsService] Deleted existing relations for client');
 
     if (staffId) { // If staffId is provided (not just clearing)
       const { error, data } = await supabase
@@ -229,12 +230,12 @@ class ClientsService {
         .select();
 
       if (error) {
-        console.error('❌ Insert error:', error);
+        devError('[ClientsService] Insert error:', error);
         throw error;
       }
-      console.log('✅ Inserted new relation:', data);
+      devLog('[ClientsService] Inserted new relation:', data);
     } else {
-      console.log('ℹ️ No staff ID provided - relation cleared (random assignment)');
+      devLog('[ClientsService] No staff ID provided - relation cleared (random assignment)');
     }
   }
 }

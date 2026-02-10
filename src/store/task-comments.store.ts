@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { TaskComment } from '../types';
 import { taskCommentsService } from '../services/task-comments.service';
 import { ErrorService, handleAsyncError } from '../services/error.service';
+import { devLog, devError } from '../services/logger';
 
 interface TaskCommentsState {
     comments: { [taskId: string]: TaskComment[] }; // Map taskId to comments
@@ -12,6 +13,9 @@ interface TaskCommentsState {
     fetchComments: (taskId: string) => Promise<void>;
     addComment: (taskId: string, content: string) => Promise<void>;
     clearError: () => void;
+
+    // Realtime sync actions
+    applyRealtimeInsert: (taskId: string, comment: TaskComment) => void;
 }
 
 export const useTaskCommentsStore = create<TaskCommentsState>((set) => ({
@@ -20,12 +24,11 @@ export const useTaskCommentsStore = create<TaskCommentsState>((set) => ({
     error: null,
 
     fetchComments: async (taskId) => {
-        // Don't set global loading as we might be fetching for just one task
-        // Or we could have refined loading states. For now, simple.
-        // set({ isLoading: true, error: null });
+        devLog('[CommentsStore] fetchComments called, taskId:', taskId);
 
         await handleAsyncError(async () => {
             const taskComments = await taskCommentsService.getComments(taskId);
+            devLog('[CommentsStore] fetchComments success, count:', taskComments.length);
             set(state => ({
                 comments: {
                     ...state.comments,
@@ -38,15 +41,17 @@ export const useTaskCommentsStore = create<TaskCommentsState>((set) => ({
             //   error: ErrorService.getErrorMessage(error),
             //   isLoading: false 
             // });
-            console.error('Failed to fetch comments', error);
+            devError('[CommentsStore] Failed to fetch comments', error);
         });
     },
 
     addComment: async (taskId, content) => {
+        devLog('[CommentsStore] addComment called, taskId:', taskId);
         set({ isLoading: true, error: null });
 
         await handleAsyncError(async () => {
             const newComment = await taskCommentsService.createComment(taskId, content);
+            devLog('[CommentsStore] addComment success:', newComment.id);
             set(state => {
                 const existingComments = state.comments[taskId] || [];
                 return {
@@ -67,4 +72,22 @@ export const useTaskCommentsStore = create<TaskCommentsState>((set) => ({
     },
 
     clearError: () => set({ error: null }),
+
+    // Realtime sync action - apply comment from other clients without API call
+    applyRealtimeInsert: (taskId: string, comment: TaskComment) => {
+        devLog('[CommentsStore] applyRealtimeInsert, taskId:', taskId, 'commentId:', comment.id);
+        set(state => {
+            const existingComments = state.comments[taskId] || [];
+            // Avoid duplicates
+            if (existingComments.some(c => c.id === comment.id)) {
+                return state;
+            }
+            return {
+                comments: {
+                    ...state.comments,
+                    [taskId]: [...existingComments, comment]
+                }
+            };
+        });
+    },
 }));

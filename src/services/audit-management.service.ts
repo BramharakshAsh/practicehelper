@@ -1,12 +1,13 @@
 import { supabase } from './supabase';
 import { useAuthStore } from '../store/auth.store';
 import { AuditPlan, AuditChecklistItem, AuditPlanTemplate } from '../types';
+import { devLog, devError } from './logger';
 
 class AuditManagementService {
     async getAuditPlans(): Promise<AuditPlan[]> {
         const firmId = useAuthStore.getState().user?.firm_id;
         if (!firmId) return [];
-        console.log('AuditService: getAuditPlans started for firm', firmId);
+        devLog('[AuditService] getAuditPlans started for firm', firmId);
 
         const { data, error } = await supabase
             .from('audit_plans')
@@ -19,7 +20,7 @@ class AuditManagementService {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('AuditService: getAuditPlans error', error);
+            devError('[AuditService] getAuditPlans error', error);
             throw error;
         }
 
@@ -208,7 +209,7 @@ class AuditManagementService {
     async getPotentialAuditTasks() {
         const firmId = useAuthStore.getState().user?.firm_id;
         if (!firmId) return [];
-        console.log('AuditService: getPotentialAuditTasks started', firmId);
+        devLog('[AuditService] getPotentialAuditTasks started', firmId);
 
         const { data, error } = await supabase
             .from('tasks')
@@ -222,7 +223,7 @@ class AuditManagementService {
             .order('due_date', { ascending: true });
 
         if (error) {
-            console.error('AuditService: getPotentialAuditTasks error', error);
+            devError('[AuditService] getPotentialAuditTasks error', error);
             throw error;
         }
 

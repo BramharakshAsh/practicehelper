@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useClients } from '../hooks/useClients';
 import { useStaff } from '../hooks/useStaff';
 import { useCompliance } from '../hooks/useCompliance';
@@ -8,19 +8,14 @@ import { useAuthStore } from '../store/auth.store';
 import { Task } from '../types';
 import AutoTaskModal from '../components/Tasks/AutoTaskModal';
 import DefineClientStaffRelation from '../components/Tasks/DefineClientStaffRelation';
-import RecurringRuleModal from '../components/Tasks/RecurringRuleModal';
-import { Zap, Users, FileText, CheckSquare, Calculator, PieChart, Repeat, Plus, Trash2, Power, PowerOff, Building } from 'lucide-react';
-import { recurringTasksService, RecurringTaskRule } from '../services/recurring-tasks.service';
+import { Zap, Users, FileText, CheckSquare, PieChart, Building } from 'lucide-react';
 import { SubscriptionService } from '../services/subscription.service';
 
 const AutoTasksPage: React.FC = () => {
     const [showAutoTaskModal, setShowAutoTaskModal] = useState(false);
     const [showRelationsModal, setShowRelationsModal] = useState(false);
-    const [showRecurringModal, setShowRecurringModal] = useState(false);
     const [selectedComplianceCode, setSelectedComplianceCode] = useState<string | null>(null);
-    const [recurringRules, setRecurringRules] = useState<RecurringTaskRule[]>([]);
     const [editingRule, setEditingRule] = useState<RecurringTaskRule | undefined>();
-    const [isLoadingRules, setIsLoadingRules] = useState(false);
 
     const { clients } = useClients();
     const { staff } = useStaff();
@@ -30,23 +25,7 @@ const AutoTasksPage: React.FC = () => {
 
     const { allowed: canRunAuto, nextRunDate } = SubscriptionService.canRunAutoTasks(firm);
 
-    /* Commented out as per request to hide recurring tasks
-    useEffect(() => {
-        loadRecurringRules();
-    }, []);
-    */
 
-    const loadRecurringRules = async () => {
-        setIsLoadingRules(true);
-        try {
-            const rules = await recurringTasksService.getRecurringRules();
-            setRecurringRules(rules);
-        } catch (error) {
-            console.error('Failed to load recurring rules:', error);
-        } finally {
-            setIsLoadingRules(false);
-        }
-    };
 
     const handleAutoTaskGeneration = async (newTasks: Omit<Task, 'id' | 'created_at' | 'updated_at'>[]) => {
         try {
@@ -68,48 +47,13 @@ const AutoTasksPage: React.FC = () => {
                 // Actually, we can reload window or just alert success.
             }
         } catch (error) {
-            console.error('Auto task generation failed:', error);
+            // Error logged by service/store
         }
     };
 
     // ... existing handlers ...
 
-    const handleSaveRecurringRule = async (rule: Omit<RecurringTaskRule, 'id' | 'firm_id' | 'created_at' | 'updated_at' | 'last_generated_at'>) => {
-        try {
-            if (editingRule) {
-                await recurringTasksService.updateRecurringRule(editingRule.id, rule);
-            } else {
-                await recurringTasksService.createRecurringRule(rule);
-            }
-            await loadRecurringRules();
-            setShowRecurringModal(false);
-            setEditingRule(undefined);
-        } catch (error) {
-            console.error('Failed to save recurring rule:', error);
-            throw error;
-        }
-    };
 
-    const handleDeleteRule = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this recurring rule?')) return;
-
-        try {
-            await recurringTasksService.deleteRecurringRule(id);
-            await loadRecurringRules();
-        } catch (error) {
-            console.error('Failed to delete rule:', error);
-            alert('Failed to delete rule');
-        }
-    };
-
-    const handleToggleRule = async (id: string, isActive: boolean) => {
-        try {
-            await recurringTasksService.toggleRuleStatus(id, !isActive);
-            await loadRecurringRules();
-        } catch (error) {
-            console.error('Failed to toggle rule:', error);
-        }
-    };
 
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -136,11 +80,6 @@ const AutoTasksPage: React.FC = () => {
     const handleCloseModal = () => {
         setShowAutoTaskModal(false);
         setSelectedComplianceCode(null);
-    };
-
-    const handleCloseRecurringModal = () => {
-        setShowRecurringModal(false);
-        setEditingRule(undefined);
     };
 
     // Map common categories to icons and colors

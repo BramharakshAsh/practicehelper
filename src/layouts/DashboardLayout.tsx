@@ -31,7 +31,7 @@ const DashboardLayout: React.FC = () => {
     };
 
     React.useEffect(() => {
-        localStorage.setItem('sidebar-collapsed', JSON.stringify(isSidebarCollapsed));
+        LocalStorageService.setItem('sidebar-collapsed', isSidebarCollapsed);
     }, [isSidebarCollapsed]);
 
     const navItems = React.useMemo(() => [

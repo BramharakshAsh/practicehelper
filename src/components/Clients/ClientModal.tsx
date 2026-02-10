@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Client, Staff, ComplianceType } from '../../types';
+import { Client, Staff } from '../../types';
 import { useAuthStore } from '../../store/auth.store';
 import { useCompliance } from '../../hooks/useCompliance';
 import { FileText, Building, X, CreditCard, Mail } from 'lucide-react';

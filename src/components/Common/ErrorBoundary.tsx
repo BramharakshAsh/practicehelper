@@ -1,5 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { devError } from '../../services/logger';
 
 interface Props {
     children: ReactNode;
@@ -21,7 +22,7 @@ class ErrorBoundary extends Component<Props, State> {
     }
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error('Uncaught error:', error, errorInfo);
+        devError('Uncaught error:', error, errorInfo);
     }
 
     private handleReset = () => {
@@ -58,7 +59,7 @@ class ErrorBoundary extends Component<Props, State> {
                                 Go Back
                             </button>
                         </div>
-                        {this.state.error && (
+                        {import.meta.env.DEV && this.state.error && (
                             <div className="mt-8 text-left">
                                 <div className="p-4 bg-gray-100 rounded-lg overflow-auto border border-gray-200 shadow-inner">
                                     <p className="text-xs font-mono text-red-800 break-words font-semibold mb-2 uppercase tracking-wider">Error Details:</p>

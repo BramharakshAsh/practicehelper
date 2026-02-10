@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Staff } from '../types';
 import { staffService } from '../services/staff.service';
 import { ErrorService, handleAsyncError } from '../services/error.service';
+import { devLog, devError } from '../services/logger';
 
 interface StaffState {
   staff: Staff[];
@@ -16,7 +17,7 @@ interface StaffState {
   updateStaff: (id: string, updates: Partial<Staff>) => Promise<void>;
   deleteStaff: (id: string) => Promise<void>;
   undoStaffDeletion: (id: string) => void;
-  importStaff: (staff: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
+  importStaff: (staff: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => Promise<{ success: number; failures: number; errors: string[] }>;
   clearError: () => void;
 }
 
@@ -28,15 +29,15 @@ export const useStaffStore = create<StaffState>((set, get) => ({
   pendingDeletions: {},
 
   fetchStaff: async () => {
-    console.log('[StaffStore] fetchStaff called');
+    devLog('[StaffStore] fetchStaff called');
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
       const staff = await staffService.getStaff();
-      console.log('[StaffStore] fetchStaff success, records:', staff.length);
+      devLog('[StaffStore] fetchStaff success, records:', staff.length);
       set({ staff, isLoading: false, hasFetched: true });
     }, 'Fetch staff').catch((error) => {
-      console.error('[StaffStore] fetchStaff error:', error);
+      devError('[StaffStore] fetchStaff error:', error);
       set({
         error: ErrorService.getErrorMessage(error),
         isLoading: false,
@@ -46,18 +47,18 @@ export const useStaffStore = create<StaffState>((set, get) => ({
   },
 
   createStaff: async (staffData) => {
-    console.log('[StaffStore] createStaff called with:', staffData.email);
+    devLog('[StaffStore] createStaff called with:', staffData.email);
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
       const newStaff = await staffService.createStaff(staffData);
-      console.log('[StaffStore] createStaff success, new member:', newStaff);
+      devLog('[StaffStore] createStaff success, new member:', newStaff);
       set(state => ({
         staff: [newStaff, ...state.staff],
         isLoading: false
       }));
     }, 'Create staff').catch((error) => {
-      console.error('[StaffStore] createStaff error:', error);
+      devError('[StaffStore] createStaff error:', error);
       set({
         error: ErrorService.getErrorMessage(error),
         isLoading: false
@@ -107,9 +108,9 @@ export const useStaffStore = create<StaffState>((set, get) => ({
             delete newPending[id];
             return { pendingDeletions: newPending };
           });
-          console.log(`[StaffStore] Permanent deletion completed for ${staffMember.name}`);
+          devLog(`[StaffStore] Permanent deletion completed for ${staffMember.name}`);
         } catch (error) {
-          console.error('[StaffStore] Final deletion failed:', error);
+          devError('[StaffStore] Final deletion failed:', error);
         }
       }
     }, 15000);

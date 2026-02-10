@@ -1,17 +1,14 @@
 import React from 'react';
 import { Plus, User, Users, Upload } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface QuickActionsProps {
     onAddTask: () => void;
     onAddClient: () => void;
-    onAddStaff?: () => void; // Optional, only if user has permission
+    onAddStaff?: () => void;
     onImportData: () => void;
-    onSendReminder?: () => void; // Kept as optional if we want to preserve it or remove? Plan said remove, but let's see. Plan said REMOVE.
 }
 
 const QuickActions: React.FC<QuickActionsProps> = ({ onAddTask, onAddClient, onAddStaff, onImportData }) => {
-    const navigate = useNavigate();
 
     const actions = [
         {

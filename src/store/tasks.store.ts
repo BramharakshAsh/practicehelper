@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Task } from '../types';
 import { tasksService } from '../services/tasks.service';
 import { ErrorService, handleAsyncError } from '../services/error.service';
+import { devLog } from '../services/logger';
 
 interface TasksState {
   tasks: Task[];
@@ -20,6 +21,11 @@ interface TasksState {
   createBulkTasks: (tasks: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
   importTasks: (tasks: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
   clearError: () => void;
+
+  // Realtime sync actions (apply changes from other clients)
+  applyRealtimeInsert: (task: Task) => void;
+  applyRealtimeUpdate: (task: Task) => void;
+  applyRealtimeDelete: (taskId: string) => void;
 }
 
 export const useTasksStore = create<TasksState>((set) => ({
@@ -29,10 +35,12 @@ export const useTasksStore = create<TasksState>((set) => ({
   error: null,
 
   fetchTasks: async () => {
+    devLog('[TasksStore] fetchTasks called');
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
       const tasks = await tasksService.getTasks();
+      devLog('[TasksStore] fetchTasks success, count:', tasks.length);
       set({ tasks, isLoading: false, hasFetched: true });
     }, 'Fetch tasks').catch((error) => {
       set({
@@ -44,10 +52,12 @@ export const useTasksStore = create<TasksState>((set) => ({
   },
 
   fetchTasksByStaff: async (staffId: string) => {
+    devLog('[TasksStore] fetchTasksByStaff called, staffId:', staffId);
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
       const tasks = await tasksService.getTasksByStaff(staffId);
+      devLog('[TasksStore] fetchTasksByStaff success, count:', tasks.length);
       set({ tasks, isLoading: false, hasFetched: true });
     }, 'Fetch tasks by staff').catch((error) => {
       set({
@@ -59,10 +69,12 @@ export const useTasksStore = create<TasksState>((set) => ({
   },
 
   createTask: async (taskData) => {
+    devLog('[TasksStore] createTask called');
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
       const newTask = await tasksService.createTask(taskData);
+      devLog('[TasksStore] createTask success:', newTask.id);
       set(state => ({
         tasks: [newTask, ...state.tasks],
         isLoading: false
@@ -77,6 +89,7 @@ export const useTasksStore = create<TasksState>((set) => ({
   },
 
   updateTask: async (id, updates) => {
+    devLog('[TasksStore] updateTask called, id:', id);
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
@@ -97,6 +110,7 @@ export const useTasksStore = create<TasksState>((set) => ({
   },
 
   deleteTask: async (id) => {
+    devLog('[TasksStore] deleteTask called, id:', id);
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
@@ -126,6 +140,7 @@ export const useTasksStore = create<TasksState>((set) => ({
 
   bulkDeleteTasks: async (ids) => {
     if (ids.length === 0) return;
+    devLog('[TasksStore] bulkDeleteTasks called, count:', ids.length);
 
     set({ isLoading: true, error: null });
 
@@ -145,6 +160,7 @@ export const useTasksStore = create<TasksState>((set) => ({
   },
 
   createBulkTasks: async (tasksData) => {
+    devLog('[TasksStore] createBulkTasks called, count:', tasksData.length);
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
@@ -163,6 +179,7 @@ export const useTasksStore = create<TasksState>((set) => ({
   },
 
   importTasks: async (tasksData) => {
+    devLog('[TasksStore] importTasks called, count:', tasksData.length);
     set({ isLoading: true, error: null });
 
     await handleAsyncError(async () => {
@@ -184,4 +201,29 @@ export const useTasksStore = create<TasksState>((set) => ({
     return useTasksStore.getState().tasks.find((t: Task) => t.id === id);
   },
   clearError: () => set({ error: null }),
+
+  // Realtime sync actions - apply changes from other clients without API calls
+  applyRealtimeInsert: (task: Task) => {
+    devLog('[TasksStore] applyRealtimeInsert:', task.id);
+    set(state => {
+      if (state.tasks.some(t => t.id === task.id)) {
+        return state;
+      }
+      return { tasks: [task, ...state.tasks] };
+    });
+  },
+
+  applyRealtimeUpdate: (task: Task) => {
+    devLog('[TasksStore] applyRealtimeUpdate:', task.id);
+    set(state => ({
+      tasks: state.tasks.map(t => t.id === task.id ? task : t)
+    }));
+  },
+
+  applyRealtimeDelete: (taskId: string) => {
+    devLog('[TasksStore] applyRealtimeDelete:', taskId);
+    set(state => ({
+      tasks: state.tasks.filter(t => t.id !== taskId)
+    }));
+  },
 }));

@@ -15,8 +15,7 @@ const mapDBTask = (task: DBTaskResponse): Task => {
       email: task.staff.email,
       role: task.staff.role as UserRole,
       is_active: true,
-      specializations: [],
-      is_available: true,
+      // specializations and is_available are not in Staff type
       created_at: '', // These will be populated by the record itself if needed
       updated_at: ''
     } : undefined,

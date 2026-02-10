@@ -1,6 +1,7 @@
 import { User } from '../types';
 import { supabase } from './supabase';
 import { handleAsyncError } from './error.service';
+import { devLog } from './logger';
 
 export interface LoginCredentials {
   username: string;
@@ -24,6 +25,7 @@ export type AuthUser = User;
 
 class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthUser> {
+    devLog('[AuthService] login called for:', credentials.username);
     return handleAsyncError(async () => {
       // Supabase Login
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -43,15 +45,19 @@ class AuthService {
 
       if (profileError) throw profileError;
 
+      devLog('[AuthService] login success, userId:', profile.id);
       return profile as AuthUser;
     }, 'User login');
   }
 
   async logout(): Promise<void> {
+    devLog('[AuthService] logout called');
     await supabase.auth.signOut();
+    devLog('[AuthService] logout complete');
   }
 
   async resetPassword(email: string): Promise<void> {
+    devLog('[AuthService] resetPassword called for:', email);
     const { error } = await supabase.functions.invoke('request-password-reset', {
       body: { email }
     });
@@ -59,13 +65,14 @@ class AuthService {
   }
 
   async updatePassword(password: string): Promise<void> {
+    devLog('[AuthService] updatePassword called');
     const { error } = await supabase.auth.updateUser({ password });
     if (error) throw error;
   }
 
   async registerOrganization(data: RegisterOrganizationData): Promise<void> {
     return handleAsyncError(async () => {
-      console.log('[Registration] Starting registration for:', data.primaryPartner.email);
+      devLog('[Registration] Starting registration for:', data.primaryPartner.email);
 
       // 1. Sign up Partner
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -151,13 +158,17 @@ class AuthService {
           date_of_joining: new Date().toISOString().split('T')[0],
         });
 
-      console.log('[Registration] ✅ Registration completed successfully!');
+      devLog('[Registration] ✅ Registration completed successfully!');
     }, 'Organization registration');
   }
 
   async getCurrentUser(): Promise<AuthUser | null> {
+    devLog('[AuthService] getCurrentUser called');
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    if (!user) {
+      devLog('[AuthService] getCurrentUser: no auth user found');
+      return null;
+    }
 
     const { data: profile } = await supabase
       .from('users')
@@ -165,12 +176,17 @@ class AuthService {
       .eq('id', user.id)
       .single();
 
-    if (!profile) return null;
+    if (!profile) {
+      devLog('[AuthService] getCurrentUser: no profile found for user:', user.id);
+      return null;
+    }
 
+    devLog('[AuthService] getCurrentUser success:', profile.id);
     return profile as AuthUser;
   }
 
   async getFirm(firmId: string): Promise<any> {
+    devLog('[AuthService] getFirm called, firmId:', firmId);
     const { data, error } = await supabase
       .from('firms')
       .select('*')

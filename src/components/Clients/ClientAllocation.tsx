@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Client, Staff, ClientStaffRelation } from '../../types';
 import { clientsService } from '../../services/clients.service';
-import { Users, User, Shield, Check, Save, Download, Upload, Search, Filter } from 'lucide-react';
+import { User, Shield, Check, Save, Download, Upload, Search } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
@@ -121,7 +121,8 @@ const ClientAllocation: React.FC<ClientAllocationProps> = ({ clients, staff, onA
         if (!file) return;
 
         const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.load(file);
+        const buffer = await file.arrayBuffer();
+        await workbook.xlsx.load(buffer);
         const worksheet = workbook.worksheets[0];
 
         const newAllocations = { ...localAllocations };
@@ -166,7 +167,6 @@ const ClientAllocation: React.FC<ClientAllocationProps> = ({ clients, staff, onA
     );
 
     const managers = staff.filter(s => ['manager', 'partner'].includes(s.role));
-    const regularStaff = staff; // Everyone can be assigned as staff? Usually articles/paid_staff.
 
     return (
         <div className="space-y-6">

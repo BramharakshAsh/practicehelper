@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { TimeEntry } from '../types';
 import { timeEntriesService, TimeEntryParams } from '../services/time-entries.service';
+import { devLog, devError } from '../services/logger';
 
 interface TimerState {
     activeTaskId: string | null;
@@ -34,7 +35,7 @@ const throttledStorage = {
         try {
             return JSON.parse(str);
         } catch (e) {
-            console.error(`Error parsing persisted state for ${name}:`, e);
+            devError(`Error parsing persisted state for ${name}:`, e);
             localStorage.removeItem(name);
             return null;
         }
@@ -68,6 +69,7 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
             },
 
             startTimer: (taskId) => {
+                devLog('[TimerStore] startTimer called, taskId:', taskId);
                 const { activeTimer } = get();
                 if (activeTimer.activeTaskId && activeTimer.activeTaskId !== taskId) {
                     throw new Error('Timer already running for another task');
@@ -93,6 +95,7 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
             },
 
             stopTimer: async (notes) => {
+                devLog('[TimerStore] stopTimer called');
                 const { activeTimer, resetTimer } = get();
                 if (!activeTimer.activeTaskId || !activeTimer.startedAt) return null;
 
@@ -110,17 +113,19 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
                         isBillable: true
                     });
 
+                    devLog('[TimerStore] stopTimer success, duration:', durationMinutes, 'min');
                     resetTimer();
                     // Force immediate save on stop
                     (window as any)[`last_write_firm-flow-timer-storage`] = 0;
                     return entry;
                 } catch (error) {
-                    console.error('Failed to log time entry:', error);
+                    devError('[TimerStore] Failed to log time entry:', error);
                     throw error;
                 }
             },
 
             pauseTimer: () => {
+                devLog('[TimerStore] pauseTimer called');
                 set(state => ({
                     activeTimer: { ...state.activeTimer, isRunning: false }
                 }));
@@ -129,6 +134,7 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
             },
 
             resumeTimer: () => {
+                devLog('[TimerStore] resumeTimer called');
                 set(state => ({
                     activeTimer: { ...state.activeTimer, isRunning: true }
                 }));
@@ -137,6 +143,7 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
             },
 
             resetTimer: () => {
+                devLog('[TimerStore] resetTimer called');
                 set({
                     activeTimer: {
                         activeTaskId: null,
@@ -162,6 +169,7 @@ export const useTimeEntriesStore = create<TimeEntriesState>()(
             },
 
             logManualEntry: async (params) => {
+                devLog('[TimerStore] logManualEntry called, taskId:', params.taskId);
                 return await timeEntriesService.createTimeEntry(params);
             }
         }),

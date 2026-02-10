@@ -1,3 +1,5 @@
+import { devLog, devError } from '../services/logger';
+
 /**
  * Generates a secure random password
  * @param length Password length (default: 12)
@@ -11,20 +13,32 @@ export const generateSecurePassword = (length: number = 12): string => {
 
     const allChars = uppercase + lowercase + numbers + special;
 
+    // Cryptographically secure random index
+    const secureRandom = (max: number): number => {
+        const array = new Uint32Array(1);
+        crypto.getRandomValues(array);
+        return array[0] % max;
+    };
+
     // Ensure at least one of each type
     let password = '';
-    password += uppercase[Math.floor(Math.random() * uppercase.length)];
-    password += lowercase[Math.floor(Math.random() * lowercase.length)];
-    password += numbers[Math.floor(Math.random() * numbers.length)];
-    password += special[Math.floor(Math.random() * special.length)];
+    password += uppercase[secureRandom(uppercase.length)];
+    password += lowercase[secureRandom(lowercase.length)];
+    password += numbers[secureRandom(numbers.length)];
+    password += special[secureRandom(special.length)];
 
     // Fill the rest randomly
     for (let i = password.length; i < length; i++) {
-        password += allChars[Math.floor(Math.random() * allChars.length)];
+        password += allChars[secureRandom(allChars.length)];
     }
 
-    // Shuffle the password
-    return password.split('').sort(() => Math.random() - 0.5).join('');
+    // Fisher-Yates shuffle (unbiased)
+    const arr = password.split('');
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = secureRandom(i + 1);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.join('');
 };
 
 /**
@@ -39,20 +53,20 @@ export const sendStaffWelcomeEmail = async (params: {
     try {
         const { supabase } = await import('../services/supabase');
 
-        console.log('[WelcomeEmail] Invoking Edge Function for:', params.email);
+        devLog('[WelcomeEmail] Invoking Edge Function for:', params.email);
 
         const { data, error } = await supabase.functions.invoke('send-staff-welcome-email', {
             body: params
         });
 
         if (error) {
-            console.error('[WelcomeEmail] Edge Function error:', error);
+            devError('[WelcomeEmail] Edge Function error:', error);
             throw error;
         }
 
-        console.log('[WelcomeEmail] Email sent successfully:', data);
+        devLog('[WelcomeEmail] Email sent successfully:', data);
     } catch (error) {
-        console.error('[WelcomeEmail] Failed to send welcome email:', error);
+        devError('[WelcomeEmail] Failed to send welcome email:', error);
         // Don't throw - we don't want staff creation to fail if email fails
         // Just log the error
     }

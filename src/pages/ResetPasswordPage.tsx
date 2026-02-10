@@ -4,6 +4,7 @@ import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import { supabase } from '../services/supabase';
 import { CAControlLogo } from '../components/Common/CAControlLogo';
+import { devLog, devError } from '../services/logger';
 
 const ResetPasswordPage: React.FC = () => {
     const [password, setPassword] = useState('');
@@ -19,16 +20,16 @@ const ResetPasswordPage: React.FC = () => {
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                console.log('ResetPasswordPage: Session active');
+                devLog('[ResetPasswordPage] Session active');
             }
         };
         checkSession();
 
         // 2. Backup listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-            console.log('ResetPasswordPage: Backup listener event:', event);
+            devLog('[ResetPasswordPage] Backup listener event:', event);
             if (event === 'USER_UPDATED') {
-                console.log('ResetPasswordPage: USER_UPDATED detected, showing success.');
+                devLog('[ResetPasswordPage] USER_UPDATED detected, showing success.');
                 setStatus('success');
                 setIsLoading(false);
             }
@@ -42,14 +43,14 @@ const ResetPasswordPage: React.FC = () => {
             await authService.logout();
             navigate('/login');
         } catch (error) {
-            console.error('Logout error:', error);
+            devError('[ResetPasswordPage] Logout error:', error);
             navigate('/login');
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('ResetPasswordPage: Starting password update...');
+        devLog('[ResetPasswordPage] Starting password update...');
 
         if (password !== confirmPassword) {
             setErrorMessage('Passwords do not match');
@@ -68,17 +69,17 @@ const ResetPasswordPage: React.FC = () => {
         setErrorMessage('');
 
         try {
-            console.log('ResetPasswordPage: Calling authService.updatePassword...');
+            devLog('[ResetPasswordPage] Calling authService.updatePassword...');
             await authService.updatePassword(password);
 
             // If the listener above didn't already catch it
             if (status !== 'success') {
-                console.log('ResetPasswordPage: Success detected via Promise resolution.');
+                devLog('[ResetPasswordPage] Success detected via Promise resolution.');
                 setStatus('success');
                 setIsLoading(false);
             }
         } catch (error: any) {
-            console.error('ResetPasswordPage: Error updating password:', error);
+            devError('[ResetPasswordPage] Error updating password:', error);
             setStatus('error');
             setErrorMessage(error.message || 'Failed to update password.');
             setIsLoading(false);

@@ -8,6 +8,7 @@ import { useCompliance } from '../hooks/useCompliance';
 import { useAuthStore } from '../store/auth.store';
 import ImportModal from '../components/Import/ImportModal';
 import { SubscriptionService } from '../services/subscription.service';
+import { devLog, devWarn, devError } from '../services/logger';
 
 const ImportPage: React.FC = () => {
     const [showImportModal, setShowImportModal] = useState(false);
@@ -22,14 +23,14 @@ const ImportPage: React.FC = () => {
     const canImport = SubscriptionService.canImportExcel(firm);
 
     const handleImport = async (type: 'clients' | 'staff' | 'tasks', data: any[]) => {
-        console.log(`[Import] Starting import for ${type}, ${data.length} records`);
+        devLog(`[Import] Starting import for ${type}, ${data.length} records`);
         let successCount = 0;
         const errors: string[] = [];
 
         try {
             switch (type) {
                 case 'clients':
-                    console.log('[Import] Importing clients...', data);
+                    devLog('[Import] Importing clients...', data);
                     // Check limit
                     if (!SubscriptionService.canAddClient(firm, clients.length, data.length)) {
                         alert(`Cannot import ${data.length} clients. Limit will be exceeded.\nCurrent: ${clients.length}\nImport: ${data.length}\nLimit: ${SubscriptionService.getLimits(firm).maxClients}`);
@@ -38,7 +39,7 @@ const ImportPage: React.FC = () => {
 
                     const clientResult = await importClients(data) as any;
                     successCount = clientResult.success;
-                    console.log(`[Import] Import completed: ${clientResult.success} success, ${clientResult.failures} failures`);
+                    devLog(`[Import] Import completed: ${clientResult.success} success, ${clientResult.failures} failures`);
                     if (clientResult.failures > 0) {
                         alert(`⚠️ Imported ${clientResult.success} client(s) with ${clientResult.failures} failure(s):\n${clientResult.errors.slice(0, 3).join('\n')}${clientResult.errors.length > 3 ? '\n...' : ''}`);
                     } else {
@@ -46,7 +47,7 @@ const ImportPage: React.FC = () => {
                     }
                     break;
                 case 'staff':
-                    console.log('[Import] Importing staff...', data);
+                    devLog('[Import] Importing staff...', data);
                     // Check limit
                     if (!SubscriptionService.canAddUser(firm, staff.length, data.length)) {
                         alert(`Cannot import ${data.length} staff members. Limit will be exceeded.\nCurrent: ${staff.length}\nImport: ${data.length}\nLimit: ${SubscriptionService.getLimits(firm).maxUsers}`);
@@ -55,7 +56,7 @@ const ImportPage: React.FC = () => {
 
                     const staffResult = await importStaff(data) as any;
                     successCount = staffResult.success;
-                    console.log(`[Import] Import completed: ${staffResult.success} success, ${staffResult.failures} failures`);
+                    devLog(`[Import] Import completed: ${staffResult.success} success, ${staffResult.failures} failures`);
                     if (staffResult.failures > 0) {
                         const errorList = staffResult.errors.map((e: any) => typeof e === 'string' ? e : e?.message || JSON.stringify(e));
                         alert(`⚠️ Imported ${staffResult.success} staff with ${staffResult.failures} failure(s):\n\n${errorList.slice(0, 5).join('\n')}${errorList.length > 5 ? '\n...' : ''}`);
@@ -64,7 +65,7 @@ const ImportPage: React.FC = () => {
                     }
                     break;
                 case 'tasks': {
-                    console.log('[Import] Processing task data...');
+                    devLog('[Import] Processing task data...');
                     // Process task data to match client and staff
                     const processedTasks = data.map(item => {
                         const client = clients.find(c => c.name === item.client_name);
@@ -88,15 +89,15 @@ const ImportPage: React.FC = () => {
                         };
                     });
 
-                    console.log('[Import] Importing tasks...', processedTasks);
+                    devLog('[Import] Importing tasks...', processedTasks);
                     await importTasks(processedTasks);
                     successCount = processedTasks.length;
 
                     if (errors.length > 0) {
-                        console.warn('[Import] Warnings:', errors);
+                        devWarn('[Import] Warnings:', errors);
                         alert(`⚠️ Imported ${successCount} tasks with ${errors.length} warning(s):\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? '\n...' : ''}`);
                     } else {
-                        console.log(`[Import] Successfully imported ${successCount} tasks`);
+                        devLog(`[Import] Successfully imported ${successCount} tasks`);
                         alert(`✅ Successfully imported ${successCount} task${successCount !== 1 ? 's' : ''}!`);
                     }
                     break;
@@ -112,7 +113,7 @@ const ImportPage: React.FC = () => {
             }
 
         } catch (error) {
-            console.error('[Import] Import failed:', error);
+            devError('[Import] Import failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             alert(`❌ Import failed: ${errorMessage}`);
             // Error handling is done in the hooks/stores

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
+import { supabase } from '../../services/supabase';
+import { devLog } from '../../services/logger';
 import RegisterOrganizationModal from './RegisterOrganizationModal';
 import { CAControlLogo } from '../../components/Common/CAControlLogo';
 
@@ -10,6 +12,15 @@ const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
+  // On mount: clear any stale session so login starts fresh
+  useEffect(() => {
+    devLog('[LoginPage] Mounted — clearing stale session if any');
+    // Reset stuck isLoading state
+    useAuthStore.setState({ isLoading: false, error: null });
+    // Clear any lingering Supabase session
+    supabase.auth.signOut().catch(() => { });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

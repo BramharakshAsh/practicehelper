@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, Mail, Phone, Shield, Calendar, Building2, IdCard, Briefcase, CheckCircle } from 'lucide-react';
+import { X, User, Mail, Phone, Shield, Calendar } from 'lucide-react';
 import { Staff } from '../../types';
 import { useAuthStore } from '../../store/auth.store';
 
