@@ -9,6 +9,7 @@ import { devLog, devWarn, devError } from './services/logger';
 import { startFreezeDetector, logActivity } from './services/freeze-detector';
 import { authService } from './services/auth.service';
 import { useRealtimeSubscription } from './hooks/useRealtimeSubscription';
+import { Analytics } from "@vercel/analytics/react"
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
