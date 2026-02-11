@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Building, Mail, FileText, CreditCard } from 'lucide-react';
 import { Client, Staff } from '../../types';
 import { useAuthStore } from '../../store/auth.store';
+import { useCompliance } from '../../hooks/useCompliance';
+import { FileText, Building, X, CreditCard, Mail } from 'lucide-react';
 
 interface ClientModalProps {
   client?: Client;
@@ -13,7 +14,10 @@ interface ClientModalProps {
 
 const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClose, onSubmit, mode }) => {
   const { user: currentUser } = useAuthStore();
+  const { complianceTypes } = useCompliance();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Removed searchTerm state
+  // Removed expandedCategories state
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: client?.name || '',
@@ -22,6 +26,7 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
     email: client?.email || '',
     phone: client?.phone || '',
     address: client?.address || '',
+    legal_form: client?.legal_form || 'Individual/HUF', // Added legal_form
     work_types: client?.work_types || [],
     manager_id: client?.manager_id || '',
     client_group: client?.client_group || '',
@@ -44,7 +49,23 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
 
   const managers = allStaff.filter(s => s.role === 'manager' || s.role === 'partner');
 
-  const workTypeOptions = ['GST', 'TDS', 'IT', 'ROC', 'Audit', 'Accounting'];
+  // Derive categories from compliance types + standard ones for UI safety
+  const categories = Array.from(new Set([
+    'GST', 'TDS', 'Income Tax', 'ROC', 'Audit', 'Payroll', 'Accounting',
+    ...complianceTypes.map(ct => ct.category)
+  ].filter(Boolean))).sort();
+
+  const legalFormOptions = [
+    'Individual/HUF',
+    'Partnership firm',
+    'Trust',
+    'LLP',
+    'Private company',
+    'Public company',
+    'section 8 company',
+    'Co-operative society',
+    'AOP/BOI'
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,6 +251,23 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
                 </select>
                 <p className="mt-1 text-xs text-gray-500">The assigned manager will be able to manage this client's tasks.</p>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                  Legal Form *
+                </label>
+                <select
+                  name="legal_form"
+                  value={formData.legal_form}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base bg-white"
+                  required
+                  disabled={isReadOnly}
+                >
+                  {legalFormOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
 
@@ -324,19 +362,22 @@ const ClientModal: React.FC<ClientModalProps> = ({ client, allStaff = [], onClos
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
               <FileText className="h-4 w-4 inline mr-2" />
-              Work Types *
+              Compliance Types *
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {workTypeOptions.map((workType) => (
-                <label key={workType} className="flex items-center space-x-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50/50 p-4 rounded-lg border border-gray-100">
+              {categories.map((category) => (
+                <label
+                  key={category}
+                  className={`flex items-center space-x-2 p-2 rounded-md border transition-all cursor-pointer ${formData.work_types.includes(category) ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200'}`}
+                >
                   <input
                     type="checkbox"
-                    checked={formData.work_types.includes(workType)}
-                    onChange={() => handleWorkTypeChange(workType)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    checked={formData.work_types.includes(category)}
+                    onChange={() => handleWorkTypeChange(category)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
                     disabled={isReadOnly}
                   />
-                  <span className="text-sm text-gray-700">{workType}</span>
+                  <span className="text-sm font-medium">{category}</span>
                 </label>
               ))}
             </div>

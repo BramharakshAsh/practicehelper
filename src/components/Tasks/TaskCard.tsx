@@ -55,15 +55,16 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
   };
 
   const getNextStatuses = (currentStatus: Task['status']) => {
+    const canFilComplete = !['staff', 'paid_staff', 'articles'].includes(currentRole);
     switch (currentStatus) {
       case 'assigned':
         return ['in_progress'];
       case 'in_progress':
-        return ['awaiting_client_data', 'ready_for_review', 'filed_completed'];
+        return ['awaiting_client_data', 'ready_for_review'];
       case 'awaiting_client_data':
         return ['in_progress'];
       case 'ready_for_review':
-        return currentRole === 'partner' ? ['in_progress', 'filed_completed'] : [];
+        return canFilComplete ? ['in_progress', 'filed_completed'] : [];
       case 'filed_completed':
         return [];
       default:
@@ -242,6 +243,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
           onClose={() => setShowDetails(false)}
           onStatusChange={(taskId, status) => onUpdate(taskId, { status })}
           onUpdateTask={onUpdate}
+          currentRole={currentRole}
         />
       )}
     </div>

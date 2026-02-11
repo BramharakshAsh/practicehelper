@@ -3,6 +3,7 @@ const { useEffect, useState } = React;
 import { Send } from 'lucide-react';
 import { useTaskCommentsStore } from '../../store/task-comments.store';
 import { useAuthStore } from '../../store/auth.store';
+import { useTaskCommentsSubscription } from '../../hooks/useRealtimeSubscription';
 
 interface TaskCommentsProps {
     taskId: string;
@@ -14,6 +15,9 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId }) => {
     const [newComment, setNewComment] = useState('');
 
     const taskComments = comments[taskId] || [];
+
+    // Subscribe to real-time comment updates for this task
+    useTaskCommentsSubscription(taskId);
 
     useEffect(() => {
         fetchComments(taskId);

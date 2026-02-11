@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '../../store/auth.store';
+import { devLog } from '../../services/logger';
 
 const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 minutes in milliseconds
 
@@ -21,7 +22,7 @@ export const SessionTimeout = () => {
     // Stabilize handleLogout - only depends on logout function
     const handleLogout = useCallback(async () => {
         if (isAuthenticatedRef.current) {
-            console.log('SessionTimeout: Logging out user due to inactivity or window closure.');
+            devLog('[SessionTimeout] Logging out user due to inactivity or window closure.');
             await logout();
         }
     }, [logout]);
@@ -71,7 +72,7 @@ export const SessionTimeout = () => {
 
         // Cleanup function - CRITICAL: remove all listeners
         return () => {
-            console.log('[SessionTimeout] Cleaning up activity listeners');
+            devLog('[SessionTimeout] Cleaning up activity listeners');
             events.forEach(event => {
                 window.removeEventListener(event, resetInactivityTimer);
             });

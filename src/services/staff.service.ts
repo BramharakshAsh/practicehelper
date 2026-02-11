@@ -4,15 +4,16 @@ import { supabase } from './supabase';
 import { useAuthStore } from '../store/auth.store';
 import { DBStaffResponse } from '../types/database.types';
 import { generateSecurePassword, sendStaffWelcomeEmail } from '../utils/email.utils';
+import { devLog, devWarn, devError } from './logger';
 
 class StaffService {
   async getStaff(): Promise<Staff[]> {
-    console.log('[StaffService] Fetching staff...');
+    devLog('[StaffService] Fetching staff...');
     const user = useAuthStore.getState().user;
     const firmId = user?.firm_id;
-    console.log('[StaffService] Current User Firm ID:', firmId);
+    devLog('[StaffService] Current User Firm ID:', firmId);
     if (!firmId) {
-      console.warn('[StaffService] No firm ID found, returning empty list');
+      devWarn('[StaffService] No firm ID found, returning empty list');
       return [];
     }
 
@@ -26,7 +27,7 @@ class StaffService {
       .eq('is_active', true);
 
     if (user.role === 'manager') {
-      console.log('[StaffService] Manager role detected, filtering by manager_id');
+      devLog('[StaffService] Manager role detected, filtering by manager_id');
       // Manager sees themselves AND staff assigned to them
       query = query.or(`manager_id.eq.${user.id},user_id.eq.${user.id}`);
     }
@@ -34,11 +35,11 @@ class StaffService {
     const { data, error } = await query.order('name');
 
     if (error) {
-      console.error('[StaffService] Error fetching staff:', error);
+      devError('[StaffService] Error fetching staff:', error);
       throw error;
     }
 
-    console.log(`[StaffService] Fetched ${data?.length || 0} staff members`);
+    devLog(`[StaffService] Fetched ${data?.length || 0} staff members`);
     // Map joined user data back to Staff interface structure if needed
     return ((data as unknown as DBStaffResponse[]) || []).map(s => ({
       ...s,
@@ -47,30 +48,30 @@ class StaffService {
   }
 
   async createStaff(staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'> & { password?: string }): Promise<Staff> {
-    console.log('[StaffService] Starting staff creation for:', staffData.email);
+    devLog('[StaffService] Starting staff creation for:', staffData.email);
     const firmId = useAuthStore.getState().user?.firm_id;
 
     if (!firmId) {
-      console.error('[StaffService] Missing firm ID during creation');
+      devError('[StaffService] Missing firm ID during creation');
       throw new Error('User not authenticated or missing firm ID');
     }
 
     // Auto-generate password if not provided
     const password = staffData.password || generateSecurePassword();
-    console.log('[StaffService] Password generated/provided for new staff');
+    devLog('[StaffService] Password generated/provided for new staff');
 
     // 1. Create Auth User
-    console.log('[StaffService] Creating Auth User...');
+    devLog('[StaffService] Creating Auth User...');
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error('[StaffService] Missing Supabase environment variables');
+      devError('[StaffService] Missing Supabase environment variables');
       throw new Error('Supabase configuration is missing. Please check the server environment.');
     }
 
     // Pre-check: Does a user with this email already exist in our public profiles?
-    console.log('[StaffService] Checking for existing user profile...');
+    devLog('[StaffService] Checking for existing user profile...');
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id, email')
@@ -78,11 +79,11 @@ class StaffService {
       .maybeSingle();
 
     if (checkError) {
-      console.error('[StaffService] Error checking existing user:', checkError);
+      devError('[StaffService] Error checking existing user:', checkError);
     }
 
     if (existingUser) {
-      console.error('[StaffService] User already exists with this email:', staffData.email);
+      devError('[StaffService] User already exists with this email:', staffData.email);
       throw new Error('A user with this email address already exists.');
     }
 
@@ -95,7 +96,7 @@ class StaffService {
     });
 
     const authRole = staffData.role;
-    console.log('[StaffService] Using role for Auth/Profile:', authRole);
+    devLog('[StaffService] Using role for Auth/Profile:', authRole);
 
     const { data: authData, error: authError } = await tempClient.auth.signUp({
       email: staffData.email.trim(),
@@ -110,7 +111,7 @@ class StaffService {
     });
 
     if (authError) {
-      console.error('[StaffService] Auth SignUp Error:', authError);
+      devError('[StaffService] Auth SignUp Error:', authError);
 
       // Provide more helpful error messages for common scenarios
       if (authError.message.includes('already registered') || authError.status === 400) {
@@ -118,23 +119,23 @@ class StaffService {
       }
 
       if (authError.message.includes('rate limit')) {
-        console.warn('[StaffService] Supabase rate limit hit for emails');
+        devWarn('[StaffService] Supabase rate limit hit for emails');
         throw new Error('Too many requests. Please try again in a few minutes.');
       }
 
       throw authError;
     }
     if (!authData.user) {
-      console.error('[StaffService] Auth SignUp succeeded but no user returned');
+      devError('[StaffService] Auth SignUp succeeded but no user returned');
       throw new Error('Failed to create auth user');
     }
 
     const userId = authData.user.id;
-    console.log('[StaffService] Auth User created with ID:', userId);
+    devLog('[StaffService] Auth User created with ID:', userId);
     const { password: providedPassword, ...staffDetails } = staffData;
 
     // 2. Create Public User Profile
-    console.log('[StaffService] Creating public user profile with ID:', userId);
+    devLog('[StaffService] Creating public user profile with ID:', userId);
     const { error: userError } = await supabase
       .from('users')
       .insert({
@@ -148,21 +149,21 @@ class StaffService {
       });
 
     if (userError) {
-      console.error('[StaffService] Error creating public user profile:', userError);
+      devError('[StaffService] Error creating public user profile:', userError);
       // If we fail here, it might be because the user already exists in auth but not in users
       // or a duplicate username error.
       throw userError;
     }
 
     // 3. Create Staff Entry
-    console.log('[StaffService] Creating staff entry...');
+    devLog('[StaffService] Creating staff entry...');
     const currentUser = useAuthStore.getState().user;
 
     // Ensure manager_id is null if it's an empty string
     const sanitizedManagerId = staffDetails.manager_id === '' ? null : staffDetails.manager_id;
     const finalManagerId = sanitizedManagerId || (currentUser?.role === 'manager' ? currentUser.id : null);
 
-    console.log('[StaffService] Final Manager ID:', finalManagerId);
+    devLog('[StaffService] Final Manager ID:', finalManagerId);
 
     const staffPayload = {
       ...staffDetails,
@@ -171,7 +172,7 @@ class StaffService {
       firm_id: firmId,
     };
 
-    console.log('[StaffService] Final staff table payload:', staffPayload);
+    devLog('[StaffService] Final staff table payload:', staffPayload);
 
     const { data, error } = await supabase
       .from('staff')
@@ -180,21 +181,25 @@ class StaffService {
       .single();
 
     if (error) {
-      console.error('[StaffService] Error creating staff record:', error);
+      devError('[StaffService] Error creating staff record:', error);
       // Attempt to log more details about the error
-      if (error.details) console.error('[StaffService] Error details:', error.details);
-      if (error.hint) console.error('[StaffService] Error hint:', error.hint);
+      if (error.details) devError('[StaffService] Error details:', error.details);
+      if (error.hint) devError('[StaffService] Error hint:', error.hint);
       throw error;
     }
 
-    console.log('[StaffService] Staff creation complete:', data);
+    devLog('[StaffService] Staff creation complete:', data);
+
+    // Fetch firm details for the email
+    const { data: firm } = await supabase.from('firms').select('name').eq('id', staffData.firm_id).single();
+    const firmName = firm?.name || 'Your Firm';
 
     // Send welcome email with credentials
     await sendStaffWelcomeEmail({
       email: staffData.email.trim(),
       name: staffData.name,
       password: password,
-      firmName: 'Your Firm', // TODO: Fetch actual firm name
+      firmName: firmName,
     });
 
     return data as unknown as DBStaffResponse;
@@ -225,19 +230,31 @@ class StaffService {
   }
 
   async deleteStaffPermanently(userId: string): Promise<void> {
-    console.log('[StaffService] Deleting user permanently:', userId);
+    devLog('[StaffService] Deleting tasks for user:', userId);
+    // First delete all tasks assigned to the staff
+    const { error: taskError } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('staff_id', userId);
+
+    if (taskError) {
+      devError('[StaffService] Error deleting staff tasks:', taskError);
+      throw taskError;
+    }
+
+    devLog('[StaffService] Deleting user permanently:', userId);
     const { error } = await supabase.rpc('delete_user_permanent', {
       target_user_id: userId
     });
 
     if (error) {
-      console.error('[StaffService] Error in permanent deletion:', error);
+      devError('[StaffService] Error in permanent deletion:', error);
       throw error;
     }
   }
 
   async importStaff(staffList: any[]): Promise<{ success: number; failures: number; errors: string[] }> {
-    console.log(`[StaffService] Starting import of ${staffList.length} staff members`);
+    devLog(`[StaffService] Starting import of ${staffList.length} staff members`);
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated or missing firm ID');
 
@@ -254,7 +271,7 @@ class StaffService {
     for (const item of staffList) {
       const rowNum = rowIndex++;
       try {
-        console.log(`[StaffService] Processing row ${rowNum}:`, item.email);
+        devLog(`[StaffService] Processing row ${rowNum}:`, item.email);
 
         // Resolve manager_id from manager_name
         let managerId: string | undefined = undefined;
@@ -265,7 +282,7 @@ class StaffService {
           if (manager) {
             managerId = manager.user_id;
           } else {
-            console.warn(`[StaffService] Row ${rowNum}: Manager "${managerName}" not found. Defaulting to Unassigned.`);
+            devWarn(`[StaffService] Row ${rowNum}: Manager "${managerName}" not found. Defaulting to Unassigned.`);
             results.errors.push(`Row ${rowNum}: Manager "${managerName}" not found. Defaulting to Unassigned.`);
           }
         }
@@ -282,22 +299,23 @@ class StaffService {
           role: role as any,
           phone: item.phone ? String(item.phone).trim() : undefined,
           manager_id: managerId,
-          date_of_joining: item.joining_date || new Date().toISOString().split('T')[0],
-          is_active: true,
-          specializations: [],
-          is_available: true
+          date_of_joining: item.joining_date instanceof Date
+            ? item.joining_date.toISOString().split('T')[0]
+            : (item.joining_date || new Date().toISOString().split('T')[0]),
+          is_active: true
         };
 
         if (!creationData.name || !creationData.email) {
           throw new Error('Full Name and Email are required.');
         }
 
-        await this.createStaff(creationData);
+        const newMember = await this.createStaff(creationData);
+        existingStaff.push(newMember); // Add to local cache so subsequent rows can reference this manager
         results.success++;
       } catch (err: any) {
-        console.error(`[StaffService] Row ${rowNum} failure:`, err);
+        devError(`[StaffService] Row ${rowNum} failure:`, err);
         results.failures++;
-        const errorMessage = err instanceof Error ? err.message : String(err);
+        const errorMessage = typeof err === 'string' ? err : err?.message || JSON.stringify(err);
         results.errors.push(`Row ${rowNum}: ${errorMessage}`);
       }
     }

@@ -42,8 +42,6 @@ const StaffModal: React.FC<StaffModalProps> = ({ staff, allStaff = [], onClose, 
     try {
       await onSubmit({
         ...formData,
-        specializations: [],
-        is_available: true,
         password: undefined
       });
     } catch (err: any) {

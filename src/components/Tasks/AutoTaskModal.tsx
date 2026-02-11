@@ -22,11 +22,24 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
   onGenerate,
 }) => {
   const [selectedPeriod, setSelectedPeriod] = useState({
-    type: 'month' as 'month' | 'quarter' | 'year',
+    type: 'month' as 'month' | 'quarter' | 'year' | 'manual',
     month: new Date().getMonth() + 1,
     quarter: Math.floor(new Date().getMonth() / 3) + 1,
     year: new Date().getFullYear(),
   });
+  const [manualDueDate, setManualDueDate] = useState(new Date().toISOString().split('T')[0]);
+  const [manualTitle, setManualTitle] = useState('');
+
+  // Check if the current compliance type requires manual mode (for 'Others' type)
+  const getSelectedComplianceType = () => {
+    if (!initialComplianceCode || initialComplianceCode === 'ALL') return null;
+    return complianceTypes.find(ct => ct.code === initialComplianceCode);
+  };
+
+  const isManualMode = () => {
+    const compliance = getSelectedComplianceType();
+    return compliance?.frequency === 'as_needed' || compliance?.code === 'OTHERS';
+  };
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,23 +47,29 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
   const [executionMode, setExecutionMode] = useState<'immediate' | 'scheduled'>('immediate');
   const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const getParentComplianceType = (taskCode: string): string => {
-    const mapping: Record<string, string> = {
-      'GSTR-1': 'GST',
-      'GSTR-3B': 'GST',
-      'GSTR-9': 'GST',
-      '24Q': 'TDS',
-      '26Q': 'TDS',
-      '27Q': 'TDS',
-      'ITR': 'IT',
-      'TAX-AUDIT': 'IT',
-    };
-    return mapping[taskCode] || taskCode;
-  };
+  const clientHasWorkType = (client: Client, code: string): boolean => {
+    // If code is a Category (e.g., 'GST'), check if client has this category in work_types
+    const isCategory = complianceTypes.some(ct => ct.category === code);
+    if (isCategory) {
+      // Check if client has this category in their work_types
+      return client.work_types.some(wt =>
+        wt.toUpperCase() === code.toUpperCase() ||
+        wt.toLowerCase().replace(/\s+/g, '') === code.toLowerCase().replace(/\s+/g, '')
+      );
+    }
 
-  const clientHasWorkType = (client: Client, taskCode: string): boolean => {
-    const parentType = getParentComplianceType(taskCode);
-    return client.work_types.includes(parentType);
+    // For specific compliance codes (e.g., 'GSTR-1'), find the compliance type and check its category
+    const compliance = complianceTypes.find(ct => ct.code === code);
+    if (compliance) {
+      // Check if client's work_types includes this compliance's category
+      return client.work_types.some(wt =>
+        wt.toUpperCase() === compliance.category.toUpperCase() ||
+        wt.toLowerCase().replace(/\s+/g, '') === compliance.category.toLowerCase().replace(/\s+/g, '')
+      );
+    }
+
+    // Fallback: direct code match (case-insensitive)
+    return client.work_types.some(wt => wt.toUpperCase() === code.toUpperCase());
   };
 
   useEffect(() => {
@@ -64,6 +83,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
         if (compliance.frequency === 'monthly') setSelectedPeriod(prev => ({ ...prev, type: 'month' }));
         else if (compliance.frequency === 'quarterly') setSelectedPeriod(prev => ({ ...prev, type: 'quarter' }));
         else if (compliance.frequency === 'yearly') setSelectedPeriod(prev => ({ ...prev, type: 'year' }));
+        else if (compliance.frequency === 'as_needed') setSelectedPeriod(prev => ({ ...prev, type: 'manual' }));
       }
     }
   }, [initialComplianceCode, clients, complianceTypes]);
@@ -79,9 +99,15 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
 
   const getApplicableComplianceTypes = () => {
     if (initialComplianceCode && initialComplianceCode !== 'ALL') {
+      const isCategory = complianceTypes.some(ct => ct.category === initialComplianceCode);
+      if (isCategory) {
+        // Filter by category and frequency (for manual mode, include 'as_needed')
+        const frequencyMap: Record<string, string> = { month: 'monthly', quarter: 'quarterly', year: 'yearly', manual: 'as_needed' };
+        return complianceTypes.filter(ct => ct.category === initialComplianceCode && ct.frequency === frequencyMap[selectedPeriod.type]);
+      }
       return complianceTypes.filter(ct => ct.code === initialComplianceCode);
     }
-    const frequencyMap: Record<string, string> = { month: 'monthly', quarter: 'quarterly', year: 'yearly' };
+    const frequencyMap: Record<string, string> = { month: 'monthly', quarter: 'quarterly', year: 'yearly', manual: 'as_needed' };
     return complianceTypes.filter(ct => ct.frequency === frequencyMap[selectedPeriod.type]);
   };
 
@@ -93,8 +119,9 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
       const tasks: Omit<Task, 'id' | 'created_at' | 'updated_at'>[] = [];
       const applicableCompliances = getApplicableComplianceTypes();
       const getPeriodText = () => {
+        if (selectedPeriod.type === 'manual') return ''; // No period for manual/as_needed tasks
         if (selectedPeriod.type === 'month') return `${months[selectedPeriod.month - 1]} ${selectedPeriod.year}`;
-        if (selectedPeriod.type === 'quarter') return `Q${selectedPeriod.quarter} FY${selectedPeriod.year}`;
+        if (selectedPeriod.type === 'quarter') return `Q${selectedPeriod.quarter} FY${selectedPeriod.year}-${(selectedPeriod.year + 1).toString().slice(2)}`;
         if (selectedPeriod.type === 'year') return `FY ${selectedPeriod.year}-${(selectedPeriod.year + 1).toString().slice(2)}`;
         return '';
       };
@@ -131,15 +158,19 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
           const dueYear = year + 1;
 
           // Special cases for different compliance types
-          if (code === 'TAX-AUDIT' || code === 'AUDIT') {
+          if (code === 'TAX_AUDIT' || code === 'TAX-AUDIT' || code === 'AUDIT') {
             dueMonth = 8; // September
-          } else if (code === 'TP-AUDIT') {
+          } else if (code === '3CEB' || code === 'TP-AUDIT') {
             dueMonth = 9; // October
-          } else if (code === 'GSTR-9') {
+          } else if (code === 'ITR_AUDIT') {
+            dueMonth = 10; // October/November
+          } else if (code.startsWith('GSTR9')) {
             dueMonth = 11; // December
           }
-
           return formatDateForInput(dueYear, dueMonth, day);
+        } else if (frequency === 'as_needed') {
+          // Use manual due date for 'as_needed' frequency
+          return manualDueDate;
         }
         return new Date().toISOString().split('T')[0];
       };
@@ -161,12 +192,16 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
               randomCount++;
             }
             if (assignedStaffId) {
+              // For manual mode (Others), use custom title or compliance name without period
+              const taskTitle = selectedPeriod.type === 'manual'
+                ? (manualTitle.trim() || compliance.name)
+                : `${compliance.name} - ${periodText}`;
               tasks.push({
                 firm_id: client.firm_id,
                 client_id: client.id,
                 staff_id: assignedStaffId,
                 compliance_type_id: compliance.id,
-                title: `${compliance.name} - ${periodText}`,
+                title: taskTitle,
                 description: `${compliance.name} for ${client.name}`,
                 due_date: getDueDate(compliance),
                 status: executionMode === 'scheduled' ? 'scheduled' : 'assigned',
@@ -234,7 +269,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
           <h2 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
             <Zap className="h-5 w-5 text-yellow-500" />
-            <span>{initialComplianceCode && initialComplianceCode !== 'ALL' ? `Generate ${initialComplianceCode} Tasks` : 'Auto Generate Tasks'}</span>
+            <span>{initialComplianceCode && initialComplianceCode !== 'ALL' ? `${initialComplianceCode} Task Generation` : 'Auto Generate Tasks'}</span>
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><X className="h-5 w-5 text-gray-500" /></button>
         </div>
@@ -284,6 +319,33 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
                     {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => <option key={y} value={y}>FY {y}-{(y + 1).toString().slice(2)}</option>)}
                   </select></div>
               )}
+              {selectedPeriod.type === 'manual' && (
+                <>
+                  <div className="col-span-2">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-amber-800 font-medium">Manual Due Date Mode</p>
+                      <p className="text-xs text-amber-600 mt-1">Set the due date and optionally a custom task title for this compliance type.</p>
+                    </div>
+                  </div>
+                  <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">Due Date</label>
+                    <input
+                      type="date"
+                      value={manualDueDate}
+                      onChange={e => setManualDueDate(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                  <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">Custom Title (Optional)</label>
+                    <input
+                      type="text"
+                      value={manualTitle}
+                      onChange={e => setManualTitle(e.target.value)}
+                      placeholder="Leave empty to use compliance name"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </section>
           <section>
@@ -295,7 +357,17 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
                 {clients.filter(c => !initialComplianceCode || initialComplianceCode === 'ALL' || clientHasWorkType(c, initialComplianceCode)).map(client => (
                   <label key={client.id} className="flex items-center space-x-3 hover:bg-white p-3 rounded-lg cursor-pointer group">
                     <input type="checkbox" checked={selectedClients.includes(client.id)} onChange={() => handleClientToggle(client.id)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4" />
-                    <div className="flex-1 min-w-0"><div className="flex items-center justify-between"><span className="text-sm font-bold text-gray-900 truncate">{client.name}</span><span className="text-[9px] font-bold px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100">{initialComplianceCode || client.work_types[0] || 'GENERAL'}</span></div></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-900 truncate">{client.name}</span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {client.work_types.slice(0, 2).map(wt => (
+                            <span key={wt} className="text-[9px] font-bold px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100">{wt}</span>
+                          ))}
+                          {client.work_types.length > 2 && <span className="text-[9px] font-bold px-2 py-0.5 bg-gray-50 text-gray-600 rounded-full border border-gray-100">+{client.work_types.length - 2}</span>}
+                        </div>
+                      </div>
+                    </div>
                   </label>
                 ))}
               </div>

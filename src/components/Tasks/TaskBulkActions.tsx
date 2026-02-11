@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, CheckCircle, Calendar, X, Trash2 } from 'lucide-react';
-import { Task, Staff } from '../../types';
+import { Task, Staff, UserRole } from '../../types';
 
 interface TaskBulkActionsProps {
     selectedTasks: Task[];
@@ -8,6 +8,7 @@ interface TaskBulkActionsProps {
     onClearSelection: () => void;
     onBulkUpdate: (taskIds: string[], updates: Partial<Task>) => Promise<void>;
     onBulkDelete: (taskIds: string[]) => Promise<void>;
+    currentRole?: UserRole;
 }
 
 const TaskBulkActions: React.FC<TaskBulkActionsProps> = ({
@@ -16,6 +17,7 @@ const TaskBulkActions: React.FC<TaskBulkActionsProps> = ({
     onClearSelection,
     onBulkUpdate,
     onBulkDelete,
+    currentRole,
 }) => {
     const [isUpdating, setIsUpdating] = useState(false);
     const [showStatusMenu, setShowStatusMenu] = useState(false);
@@ -66,7 +68,7 @@ const TaskBulkActions: React.FC<TaskBulkActionsProps> = ({
                         </button>
                         {showStatusMenu && (
                             <div className="absolute bottom-full mb-3 left-0 bg-gray-800 rounded-xl shadow-xl border border-gray-700 p-1 w-48 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                {['assigned', 'in_progress', 'awaiting_client_data', 'ready_for_review', 'filed_completed'].map((status) => (
+                                {['assigned', 'in_progress', 'awaiting_client_data', 'ready_for_review', ...(!['staff', 'paid_staff', 'articles'].includes(currentRole || '') ? ['filed_completed'] : [])].map((status) => (
                                     <button
                                         key={status}
                                         onClick={() => handleUpdate({ status: status as Task['status'] })}

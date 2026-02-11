@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Document } from '../types';
 import { documentsService, DocumentFilters, UploadDocumentParams } from '../services/documents.service';
+import { devLog, devError } from '../services/logger';
 
 interface DocumentsState {
     documents: Document[];
@@ -20,14 +21,14 @@ export const useDocuments = create<DocumentsState>((set) => ({
     error: null,
 
     fetchDocuments: async (filters) => {
-        console.log('DocumentsStore: fetchDocuments started', filters);
+        devLog('[DocumentsStore] fetchDocuments started', filters);
         set({ isLoading: true, error: null });
         try {
             const documents = await documentsService.getDocuments(filters);
-            console.log('DocumentsStore: fetchDocuments success', documents.length);
+            devLog('[DocumentsStore] fetchDocuments success', documents.length);
             set({ documents, isLoading: false, hasFetched: true });
         } catch (error: any) {
-            console.error('DocumentsStore: fetchDocuments error', error);
+            devError('[DocumentsStore] fetchDocuments error', error);
             set({ error: error.message, isLoading: false, hasFetched: true });
         }
     },

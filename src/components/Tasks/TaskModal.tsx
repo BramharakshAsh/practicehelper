@@ -120,14 +120,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
       const dueYear = year + 1;
 
       // Special cases for different compliance types
-      if (selectedCompliance.code === 'TAX-AUDIT') {
+      if (selectedCompliance.code === 'TAX_AUDIT' || selectedCompliance.code === 'TAX-AUDIT' || selectedCompliance.code === 'AUDIT' || selectedCompliance.code === 'STAT_AUDIT') {
         dueMonth = 8; // September
-      } else if (selectedCompliance.code === 'TP-AUDIT') {
+      } else if (selectedCompliance.code === '3CEB' || selectedCompliance.code === 'TP-AUDIT') {
         dueMonth = 9; // October
-      } else if (selectedCompliance.code === 'GSTR-9') {
+      } else if (selectedCompliance.code === 'ITR_AUDIT') {
+        dueMonth = 10; // October/November
+      } else if (selectedCompliance.code.startsWith('GSTR9')) {
         dueMonth = 11; // December
-      } else if (selectedCompliance.code === 'AUDIT') {
-        dueMonth = 8; // September
       }
 
       dueDateStr = formatDateForInput(dueYear, dueMonth, due_day);

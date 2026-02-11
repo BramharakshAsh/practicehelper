@@ -135,7 +135,15 @@ const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500 mt-1">PAN: {client.pan}</p>
+              <div className="flex items-center space-x-2 mt-1">
+                <p className="text-xs text-gray-500">PAN: {client.pan}</p>
+                {client.legal_form && (
+                  <>
+                    <span className="text-gray-300">•</span>
+                    <p className="text-xs text-gray-500 font-medium">{client.legal_form}</p>
+                  </>
+                )}
+              </div>
               <div className="flex flex-wrap gap-1 mt-3">
                 {client.work_types.map((type) => (
                   <span

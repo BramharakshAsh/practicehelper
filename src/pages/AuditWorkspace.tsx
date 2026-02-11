@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 const AuditWorkspace: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
+    const { auditId: id } = useParams<{ auditId: string }>();
     const navigate = useNavigate();
     const [audit, setAudit] = useState<AuditPlan | null>(null);
     const [checklist, setChecklist] = useState<AuditChecklistItem[]>([]);

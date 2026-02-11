@@ -1,3 +1,5 @@
+import { devError } from './logger';
+
 export class LocalStorageService {
     static getItem<T>(key: string, defaultValue: T): T {
         const item = localStorage.getItem(key);
@@ -5,7 +7,9 @@ export class LocalStorageService {
         try {
             return JSON.parse(item) as T;
         } catch (error) {
-            console.error(`Error parsing localStorage key "${key}":`, error);
+            devError(`Error parsing localStorage key "${key}":`, error);
+            // If parsing fails, the data is corrupted. Remove it to prevent repeat failures.
+            localStorage.removeItem(key);
             return defaultValue;
         }
     }
@@ -14,7 +18,7 @@ export class LocalStorageService {
         try {
             localStorage.setItem(key, JSON.stringify(value));
         } catch (error) {
-            console.error(`Error setting localStorage key "${key}":`, error);
+            devError(`Error setting localStorage key "${key}":`, error);
         }
     }
 

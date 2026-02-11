@@ -1,12 +1,13 @@
 import { supabase } from './supabase';
 import { useAuthStore } from '../store/auth.store';
 import { AuditPlan, AuditChecklistItem, AuditPlanTemplate } from '../types';
+import { devLog, devError } from './logger';
 
 class AuditManagementService {
     async getAuditPlans(): Promise<AuditPlan[]> {
         const firmId = useAuthStore.getState().user?.firm_id;
         if (!firmId) return [];
-        console.log('AuditService: getAuditPlans started for firm', firmId);
+        devLog('[AuditService] getAuditPlans started for firm', firmId);
 
         const { data, error } = await supabase
             .from('audit_plans')
@@ -19,10 +20,18 @@ class AuditManagementService {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('AuditService: getAuditPlans error', error);
+            devError('[AuditService] getAuditPlans error', error);
             throw error;
         }
-        return data || [];
+
+        // Transform lead_staff data: users table has 'full_name', but Staff expects 'name'
+        return (data || []).map(plan => ({
+            ...plan,
+            lead_staff: plan.lead_staff ? {
+                ...plan.lead_staff,
+                name: plan.lead_staff.full_name || plan.lead_staff.name || 'Unknown',
+            } : null
+        }));
     }
 
     async getAuditPlan(id: string): Promise<AuditPlan> {
@@ -37,7 +46,15 @@ class AuditManagementService {
             .single();
 
         if (error) throw error;
-        return data;
+
+        // Transform lead_staff data: users table has 'full_name', but Staff expects 'name'
+        return {
+            ...data,
+            lead_staff: data.lead_staff ? {
+                ...data.lead_staff,
+                name: data.lead_staff.full_name || data.lead_staff.name || 'Unknown',
+            } : null
+        };
     }
 
     async createAuditPlan(plan: Omit<AuditPlan, 'id' | 'firm_id' | 'created_at' | 'updated_at' | 'progress'>): Promise<AuditPlan> {
@@ -192,7 +209,7 @@ class AuditManagementService {
     async getPotentialAuditTasks() {
         const firmId = useAuthStore.getState().user?.firm_id;
         if (!firmId) return [];
-        console.log('AuditService: getPotentialAuditTasks started', firmId);
+        devLog('[AuditService] getPotentialAuditTasks started', firmId);
 
         const { data, error } = await supabase
             .from('tasks')
@@ -206,7 +223,7 @@ class AuditManagementService {
             .order('due_date', { ascending: true });
 
         if (error) {
-            console.error('AuditService: getPotentialAuditTasks error', error);
+            devError('[AuditService] getPotentialAuditTasks error', error);
             throw error;
         }
 

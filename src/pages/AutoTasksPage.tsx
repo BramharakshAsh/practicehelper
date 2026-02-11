@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useClients } from '../hooks/useClients';
 import { useStaff } from '../hooks/useStaff';
 import { useCompliance } from '../hooks/useCompliance';
@@ -8,19 +8,14 @@ import { useAuthStore } from '../store/auth.store';
 import { Task } from '../types';
 import AutoTaskModal from '../components/Tasks/AutoTaskModal';
 import DefineClientStaffRelation from '../components/Tasks/DefineClientStaffRelation';
-import RecurringRuleModal from '../components/Tasks/RecurringRuleModal';
-import { Zap, Users, FileText, CheckSquare, Calculator, PieChart, Repeat, Plus, Trash2, Power, PowerOff } from 'lucide-react';
-import { recurringTasksService, RecurringTaskRule } from '../services/recurring-tasks.service';
+import { Zap, Users, FileText, CheckSquare, PieChart, Building } from 'lucide-react';
 import { SubscriptionService } from '../services/subscription.service';
 
 const AutoTasksPage: React.FC = () => {
     const [showAutoTaskModal, setShowAutoTaskModal] = useState(false);
     const [showRelationsModal, setShowRelationsModal] = useState(false);
-    const [showRecurringModal, setShowRecurringModal] = useState(false);
     const [selectedComplianceCode, setSelectedComplianceCode] = useState<string | null>(null);
-    const [recurringRules, setRecurringRules] = useState<RecurringTaskRule[]>([]);
     const [editingRule, setEditingRule] = useState<RecurringTaskRule | undefined>();
-    const [isLoadingRules, setIsLoadingRules] = useState(false);
 
     const { clients } = useClients();
     const { staff } = useStaff();
@@ -30,23 +25,7 @@ const AutoTasksPage: React.FC = () => {
 
     const { allowed: canRunAuto, nextRunDate } = SubscriptionService.canRunAutoTasks(firm);
 
-    /* Commented out as per request to hide recurring tasks
-    useEffect(() => {
-        loadRecurringRules();
-    }, []);
-    */
 
-    const loadRecurringRules = async () => {
-        setIsLoadingRules(true);
-        try {
-            const rules = await recurringTasksService.getRecurringRules();
-            setRecurringRules(rules);
-        } catch (error) {
-            console.error('Failed to load recurring rules:', error);
-        } finally {
-            setIsLoadingRules(false);
-        }
-    };
 
     const handleAutoTaskGeneration = async (newTasks: Omit<Task, 'id' | 'created_at' | 'updated_at'>[]) => {
         try {
@@ -68,54 +47,32 @@ const AutoTasksPage: React.FC = () => {
                 // Actually, we can reload window or just alert success.
             }
         } catch (error) {
-            console.error('Auto task generation failed:', error);
+            // Error logged by service/store
         }
     };
 
     // ... existing handlers ...
 
-    const handleSaveRecurringRule = async (rule: Omit<RecurringTaskRule, 'id' | 'firm_id' | 'created_at' | 'updated_at' | 'last_generated_at'>) => {
-        try {
-            if (editingRule) {
-                await recurringTasksService.updateRecurringRule(editingRule.id, rule);
-            } else {
-                await recurringTasksService.createRecurringRule(rule);
-            }
-            await loadRecurringRules();
-            setShowRecurringModal(false);
-            setEditingRule(undefined);
-        } catch (error) {
-            console.error('Failed to save recurring rule:', error);
-            throw error;
-        }
-    };
 
-    const handleDeleteRule = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this recurring rule?')) return;
 
-        try {
-            await recurringTasksService.deleteRecurringRule(id);
-            await loadRecurringRules();
-        } catch (error) {
-            console.error('Failed to delete rule:', error);
-            alert('Failed to delete rule');
-        }
-    };
-
-    const handleToggleRule = async (id: string, isActive: boolean) => {
-        try {
-            await recurringTasksService.toggleRuleStatus(id, !isActive);
-            await loadRecurringRules();
-        } catch (error) {
-            console.error('Failed to toggle rule:', error);
-        }
-    };
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
     const handleTileClick = (code: string) => {
         if (!canRunAuto) {
             alert(`Auto task generation is limited. Next run available on ${nextRunDate?.toLocaleDateString()}.\n\nUpgrade to Growth for unlimited runs.`);
             return;
         }
+
+        const isCategory = dynamicCategories.includes(code);
+        if (isCategory) {
+            setSelectedCategory(code);
+        } else {
+            setSelectedComplianceCode(code);
+            setShowAutoTaskModal(true);
+        }
+    };
+
+    const handleSubComplianceClick = (code: string) => {
         setSelectedComplianceCode(code);
         setShowAutoTaskModal(true);
     };
@@ -125,25 +82,27 @@ const AutoTasksPage: React.FC = () => {
         setSelectedComplianceCode(null);
     };
 
-    const handleCloseRecurringModal = () => {
-        setShowRecurringModal(false);
-        setEditingRule(undefined);
+    // Map common categories to icons and colors
+    const categoryStyles: Record<string, { icon: any, color: string }> = {
+        'GST': { icon: FileText, color: 'bg-orange-50 text-orange-600' },
+        'TDS': { icon: PieChart, color: 'bg-blue-50 text-blue-600' },
+        'Income Tax': { icon: FileText, color: 'bg-indigo-50 text-indigo-600' },
+        'Audit': { icon: CheckSquare, color: 'bg-red-50 text-red-600' },
+        'ROC': { icon: Building, color: 'bg-purple-50 text-purple-600' },
+        'Payroll': { icon: Users, color: 'bg-green-50 text-green-600' },
+        'Others': { icon: Zap, color: 'bg-gray-50 text-gray-600' },
     };
 
-    // Define tiles configuration manually for now or derived from compliance types?
-    // Manual for better UI/Icons mapping
-    const tileConfig = [
-        { code: 'GSTR-1', label: 'GSTR-1', icon: FileText, color: 'bg-orange-50 text-orange-600' },
-        { code: 'GSTR-3B', label: 'GSTR-3B', icon: FileText, color: 'bg-orange-50 text-orange-600' },
-        { code: 'ACCOUNTING', label: 'Accounting', icon: Calculator, color: 'bg-green-50 text-green-600' },
-        { code: '24Q', label: 'TDS (24Q)', icon: PieChart, color: 'bg-blue-50 text-blue-600' },
-        { code: '26Q', label: 'TDS (26Q)', icon: PieChart, color: 'bg-blue-50 text-blue-600' },
-        { code: '27Q', label: 'TDS (27Q)', icon: PieChart, color: 'bg-blue-50 text-blue-600' },
-        { code: 'PAYROLL', label: 'Payroll', icon: Users, color: 'bg-purple-50 text-purple-600' },
-        { code: 'AUDIT', label: 'Audit', icon: CheckSquare, color: 'bg-red-50 text-red-600' },
-        { code: 'ITR', label: 'ITR', icon: FileText, color: 'bg-indigo-50 text-indigo-600' },
-        { code: 'GSTR-9', label: 'GSTR-9', icon: FileText, color: 'bg-orange-50 text-orange-600' },
-    ];
+    // Derived unique categories from compliance types
+    const dynamicCategories = Array.from(new Set(complianceTypes.map(ct => ct.category || 'Others'))).sort();
+
+    const tileConfig = dynamicCategories.map(cat => ({
+        code: cat,
+        label: cat,
+        icon: categoryStyles[cat]?.icon || Zap,
+        color: categoryStyles[cat]?.color || 'bg-gray-50 text-gray-600',
+        isCategory: true
+    }));
 
     const getClientName = (id: string) => clients.find(c => c.id === id)?.name || 'Unknown';
 
@@ -159,51 +118,96 @@ const AutoTasksPage: React.FC = () => {
                         </p>
                     )}
                 </div>
-                <button
-                    onClick={() => setShowRelationsModal(true)}
-                    className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                >
-                    <Users className="h-4 w-4" />
-                    Define Client-Staff Relations
-                </button>
+                <div className="flex items-center gap-3">
+                    {selectedCategory && (
+                        <button
+                            onClick={() => setSelectedCategory(null)}
+                            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            Back to Categories
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setShowRelationsModal(true)}
+                        className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                        <Users className="h-4 w-4" />
+                        Define Client-Staff Relations
+                    </button>
+                </div>
             </div>
 
+            {/* Sub-compliance Selection for Category */}
+            {selectedCategory && (
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-8">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        {categoryStyles[selectedCategory]?.icon && React.createElement(categoryStyles[selectedCategory].icon, { className: "h-5 w-5 text-blue-600" })}
+                        Select Sub Compliance for {selectedCategory}
+                    </h3>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {complianceTypes
+                            .filter(ct => ct.category === selectedCategory)
+                            .map(ct => (
+                                <button
+                                    key={ct.id}
+                                    onClick={() => handleSubComplianceClick(ct.code)}
+                                    className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-blue-300 transition-all text-left group"
+                                >
+                                    <div className="text-sm font-bold text-gray-900 group-hover:text-blue-600">{ct.name}</div>
+                                    <div className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">{ct.code}</div>
+                                    <div className="text-[10px] text-blue-600 font-medium mt-2">{ct.frequency}</div>
+                                </button>
+                            ))}
+                        {/* Option to generate all for this category */}
+                        <button
+                            onClick={() => handleSubComplianceClick(selectedCategory)}
+                            className="p-4 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition-all text-left flex flex-col justify-center"
+                        >
+                            <div className="text-sm font-bold">Generate All</div>
+                            <div className="text-[10px] opacity-80">All {selectedCategory} forms</div>
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Task Tiles Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {tileConfig.map(tile => (
+            {!selectedCategory && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    {tileConfig.map(tile => (
+                        <button
+                            key={tile.code}
+                            onClick={() => handleTileClick(tile.code)}
+                            disabled={!canRunAuto}
+                            className={`p-6 rounded-xl border border-gray-200 shadow-sm text-left group transition-all ${canRunAuto
+                                ? 'bg-white hover:shadow-md hover:scale-[1.02] cursor-pointer'
+                                : 'bg-gray-50 opacity-60 cursor-not-allowed'
+                                }`}
+                        >
+                            <div className={`p-3 rounded-lg w-fit mb-4 ${canRunAuto ? tile.color : 'bg-gray-200 text-gray-400'} group-hover:bg-opacity-80`}>
+                                <tile.icon className="h-6 w-6" />
+                            </div>
+                            <h3 className={`text-lg font-semibold ${canRunAuto ? 'text-gray-900' : 'text-gray-500'}`}>{tile.label}</h3>
+                            <p className="text-sm text-gray-500 mt-1">Generate tasks</p>
+                        </button>
+                    ))}
+
+                    {/* Fallback/Generic Tile */}
                     <button
-                        key={tile.code}
-                        onClick={() => handleTileClick(tile.code)}
+                        onClick={() => handleTileClick('ALL')}
                         disabled={!canRunAuto}
                         className={`p-6 rounded-xl border border-gray-200 shadow-sm text-left group transition-all ${canRunAuto
                             ? 'bg-white hover:shadow-md hover:scale-[1.02] cursor-pointer'
                             : 'bg-gray-50 opacity-60 cursor-not-allowed'
                             }`}
                     >
-                        <div className={`p-3 rounded-lg w-fit mb-4 ${canRunAuto ? tile.color : 'bg-gray-200 text-gray-400'} group-hover:bg-opacity-80`}>
-                            <tile.icon className="h-6 w-6" />
+                        <div className={`p-3 rounded-lg w-fit mb-4 ${canRunAuto ? 'bg-gray-50 text-gray-600' : 'bg-gray-200 text-gray-400'}`}>
+                            <Zap className="h-6 w-6" />
                         </div>
-                        <h3 className={`text-lg font-semibold ${canRunAuto ? 'text-gray-900' : 'text-gray-500'}`}>{tile.label}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Generate tasks</p>
+                        <h3 className={`text-lg font-semibold ${canRunAuto ? 'text-gray-900' : 'text-gray-500'}`}>Custom / All</h3>
+                        <p className="text-sm text-gray-500 mt-1">Select manually</p>
                     </button>
-                ))}
-
-                {/* Fallback/Generic Tile */}
-                <button
-                    onClick={() => handleTileClick('ALL')}
-                    disabled={!canRunAuto}
-                    className={`p-6 rounded-xl border border-gray-200 shadow-sm text-left group transition-all ${canRunAuto
-                        ? 'bg-white hover:shadow-md hover:scale-[1.02] cursor-pointer'
-                        : 'bg-gray-50 opacity-60 cursor-not-allowed'
-                        }`}
-                >
-                    <div className={`p-3 rounded-lg w-fit mb-4 ${canRunAuto ? 'bg-gray-50 text-gray-600' : 'bg-gray-200 text-gray-400'}`}>
-                        <Zap className="h-6 w-6" />
-                    </div>
-                    <h3 className={`text-lg font-semibold ${canRunAuto ? 'text-gray-900' : 'text-gray-500'}`}>Custom / All</h3>
-                    <p className="text-sm text-gray-500 mt-1">Select manually</p>
-                </button>
-            </div>
+                </div>
+            )}
 
             {/* Recurring Rules Section - Hidden for now
             <div>

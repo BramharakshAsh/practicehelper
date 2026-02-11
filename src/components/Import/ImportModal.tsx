@@ -34,26 +34,51 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
         { header: 'GSTIN', key: 'gstin', width: 20 },
         { header: 'Email', key: 'email', width: 25 },
         { header: 'Phone', key: 'phone', width: 15 },
+        { header: 'Legal Form', key: 'legal_form', width: 20 },
+        { header: 'Client Group', key: 'client_group', width: 20 },
+        { header: 'Assigned Manager', key: 'assigned_manager', width: 25 },
         { header: 'Address', key: 'address', width: 40 },
-        { header: 'GST Work (Yes/No)', key: 'gst_work', width: 15 },
-        { header: 'TDS Work (Yes/No)', key: 'tds_work', width: 15 },
-        { header: 'IT Work (Yes/No)', key: 'it_work', width: 15 },
-        { header: 'ROC Work (Yes/No)', key: 'roc_work', width: 15 },
-        { header: 'Audit Work (Yes/No)', key: 'audit_work', width: 15 },
-        { header: 'Accounting Work (Yes/No)', key: 'accounting_work', width: 20 },
+        { header: 'Special Instructions', key: 'special_instructions', width: 40 },
+        { header: 'Points to Remember', key: 'points_to_remember', width: 40 },
+        // Category Level Compliances
+        { header: 'GST (Yes/No)', key: 'gst_work', width: 15 },
+        { header: 'TDS (Yes/No)', key: 'tds_work', width: 15 },
+        { header: 'Income Tax (Yes/No)', key: 'it_work', width: 20 },
+        { header: 'Audit (Yes/No)', key: 'audit_work', width: 15 },
+        { header: 'ROC (Yes/No)', key: 'roc_work', width: 15 },
+        { header: 'Payroll (Yes/No)', key: 'payroll_work', width: 15 },
+        { header: 'Accounting (Yes/No)', key: 'accounting_work', width: 15 },
       ];
 
-      // Add Data Validation for Yes/No columns
-      for (let i = 7; i <= 12; i++) {
-        worksheet.getColumn(i).eachCell({ includeEmpty: true }, (cell, rowNumber) => {
-          if (rowNumber > 1) {
-            cell.dataValidation = {
-              type: 'list',
-              allowBlank: true,
-              formulae: ['"Yes,No"'],
-            };
-          }
-        });
+      // Add Data Validations to first 100 rows
+      for (let i = 2; i <= 101; i++) {
+        const row = worksheet.getRow(i);
+
+        // Legal Form (Column 6)
+        row.getCell(6).dataValidation = {
+          type: 'list',
+          allowBlank: true,
+          formulae: ['"Individual/HUF,Partnership firm,Trust,LLP,Private company,Public company,section 8 company,Co-operative society,AOP/BOI"'],
+        };
+
+        // Assigned Manager List (Column 8)
+        const managerNames = staff.map(s => s.name).join(',');
+        if (managerNames) {
+          row.getCell(8).dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: [`"${managerNames}"`]
+          };
+        }
+
+        // Yes/No columns (Index 12 to 18)
+        for (let j = 12; j <= 18; j++) {
+          row.getCell(j).dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: ['"Yes,No"'],
+          };
+        }
       }
 
       // Add sample data
@@ -63,13 +88,19 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
         gstin: '29ABCDE1234F1Z5',
         email: 'contact@abc.com',
         phone: '+91 98765 43210',
+        legal_form: 'Private company',
+        client_group: 'Retailers',
+        assigned_manager: staff[0]?.name || 'Unassigned',
         address: '123 Business Park Mumbai',
+        special_instructions: 'Handle with care',
+        points_to_remember: 'Old client',
         gst_work: 'Yes',
         tds_work: 'Yes',
         it_work: 'Yes',
-        roc_work: 'No',
         audit_work: 'No',
-        accounting_work: 'Yes',
+        roc_work: 'No',
+        payroll_work: 'No',
+        accounting_work: 'No'
       });
     } else if (type === 'staff') {
       worksheet.columns = [
@@ -81,7 +112,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
         { header: 'Joining Date', key: 'joining_date', width: 20 },
       ];
 
-      // Add Data Validation for Role
+      // Add Data Validation for Role (Column 3)
       const roles = 'Partner,Manager,paid_staff,article';
       for (let i = 2; i <= 101; i++) {
         worksheet.getRow(i).getCell(3).dataValidation = {
@@ -206,29 +237,57 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
         // Clean values
         if (typeof value === 'string') {
           value = value.trim();
+        } else if (value instanceof Date) {
+          // Format date as YYYY-MM-DD
+          value = value.toISOString().split('T')[0];
         }
 
         if (value !== null && value !== undefined && value !== '') {
           hasData = true;
         }
 
-        if (type === 'clients' && header.endsWith('_work')) {
-          const isYes = String(value).toLowerCase().startsWith('y'); // Match "Yes", "Y", "yes"
+        const complianceKeywords = ['gst', 'tds', 'it', 'income_tax', 'audit', 'roc', 'payroll', 'accounting'];
+        const isCompliance = type === 'clients' && (header.endsWith('_work') || complianceKeywords.includes(header));
+
+        if (isCompliance) {
+          const isYes = String(value || '').toLowerCase().startsWith('y');
           if (!rowData.work_types) rowData.work_types = [];
           if (isYes) {
-            const workType = header.replace('_work', '').toUpperCase();
-            rowData.work_types.push(workType);
+            const key = header.replace('_work', '');
+            const categoryMap: Record<string, string> = {
+              'gst': 'GST',
+              'tds': 'TDS',
+              'it': 'Income Tax',
+              'income_tax': 'Income Tax',
+              'audit': 'Audit',
+              'roc': 'ROC',
+              'payroll': 'Payroll',
+              'accounting': 'Accounting'
+            };
+            const mappedValue = categoryMap[key] || key.toUpperCase();
+            if (!rowData.work_types.includes(mappedValue)) {
+              rowData.work_types.push(mappedValue);
+            }
           }
+          // Still keep the original key for the service to check if needed
+          rowData[header] = value;
         } else {
           rowData[header] = value;
         }
       });
 
       if (hasData) {
-        // Skip sample data rows
+        // Skip sample data rows more robustly
+        const name = String(rowData.name || '').toLowerCase();
+        const pan = String(rowData.pan || '').toLowerCase();
         const email = String(rowData.email || '').toLowerCase();
-        if (email === 'john.doe@example.com' || email === 'contact@abc.com') {
-          console.log(`[Import] Skipping sample data row ${rowNumber}:`, email);
+
+        if (
+          (name === 'abc enterprises pvt ltd' && pan === 'abcde1234f') ||
+          (email === 'contact@abc.com') ||
+          (name === 'john doe' && email === 'john.doe@example.com')
+        ) {
+          console.log(`[Import] Skipping sample data row ${rowNumber}:`, name);
           return;
         }
         data.push(rowData);
