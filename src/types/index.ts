@@ -134,6 +134,8 @@ export interface Task {
   filing_reference?: string;
   filing_date?: string;
   filing_proof_url?: string;
+  time_involved?: number;
+  billing_status?: 'billed' | 'not_billed';
   created_at: string;
   updated_at: string;
   assigned_by: string;

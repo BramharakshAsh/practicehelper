@@ -3,7 +3,7 @@ import { X, Calendar, User, Building, FileText, ExternalLink, CheckSquare, Plus,
 import { useNavigate } from 'react-router-dom';
 import { auditManagementService } from '../../services/audit-management.service';
 import { tasksService } from '../../services/tasks.service';
-import { Task, Document } from '../../types';
+import { Task, Document, UserRole } from '../../types';
 import TaskComments from './TaskComments';
 import { useDocuments } from '../../store/documents.store';
 import { useTimeEntriesStore } from '../../store/time-entries.store';
@@ -15,6 +15,7 @@ interface TaskDetailsModalProps {
     onClose: () => void;
     onStatusChange: (taskId: string, status: Task['status']) => void;
     onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
+    currentRole?: UserRole;
 }
 
 const statusColors: Record<Task['status'], string> = {
@@ -26,7 +27,7 @@ const statusColors: Record<Task['status'], string> = {
     scheduled: 'bg-indigo-100 text-indigo-800 ring-indigo-200',
 };
 
-const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onStatusChange, onUpdateTask }) => {
+const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onStatusChange, onUpdateTask, currentRole }) => {
     const navigate = useNavigate();
     const { documents, fetchDocuments, uploadDocument, deleteDocument } = useDocuments();
     const { startTimer, activeTimer } = useTimeEntriesStore();
@@ -191,7 +192,9 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                             <option value="in_progress">In Progress</option>
                                             <option value="awaiting_client_data">Awaiting Data</option>
                                             <option value="ready_for_review">Ready for Review</option>
-                                            <option value="filed_completed">Filed / Completed</option>
+                                            {!['staff', 'paid_staff', 'articles'].includes(currentRole || '') && (
+                                                <option value="filed_completed">Filed / Completed</option>
+                                            )}
                                         </select>
 
                                         <button

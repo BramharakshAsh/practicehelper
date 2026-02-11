@@ -552,6 +552,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
         selectedTasks={tasks.filter(t => selectedTaskIds.includes(t.id))}
         staff={staff}
         onClearSelection={() => setSelectedTaskIds([])}
+        currentRole={currentRole}
         onBulkUpdate={async (taskIds, updates) => {
           for (const taskId of taskIds) {
             await onTaskUpdate(taskId, updates);

@@ -69,7 +69,7 @@ function App() {
   const navigateRef = React.useRef(navigate);
   navigateRef.current = navigate;
 
-  const lastSessionHandledRef = React.useRef(0);
+  const lastAccessTokenRef = React.useRef<string | null>(null);
 
   // Start freeze detector in dev mode
   useEffect(() => { startFreezeDetector(); }, []);
@@ -81,6 +81,13 @@ function App() {
   const handleSession = React.useCallback(async (session: any) => {
     try {
       if (session) {
+        // optimistically check if we already have this user loaded to avoid re-fetch
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser && currentUser.id === session.user.id) {
+          devLog('[App] User already loaded, skipping handling');
+          return;
+        }
+
         logActivity('handleSession: fetching user');
         const user = await authService.getCurrentUser();
 
@@ -108,7 +115,7 @@ function App() {
       devError('[App] Session handling failed:', error);
       setSession(null, null);
     }
-  }, [setSession]);
+  }, [setSession]); /** Stable config, generally safe to include or omit if we trust zustand */
 
   const handleSessionRef = React.useRef(handleSession);
   handleSessionRef.current = handleSession;
@@ -125,8 +132,10 @@ function App() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (mounted) {
+          if (session) {
+            lastAccessTokenRef.current = session.access_token;
+          }
           await handleSessionRef.current(session);
-          lastSessionHandledRef.current = Date.now();
         }
       } catch (error) {
         devError('[App] Initial auth check failed:', error);
@@ -141,41 +150,44 @@ function App() {
 
     initAuth();
     return () => { mounted = false; };
-  }, []); // Empty deps — runs exactly once on mount
+  }, []);
 
   // ── Global auth state change listener ──
   // Uses refs to avoid re-subscribing on every render
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      logActivity(`authStateChange: ${event}`);
-      devLog('[App] Auth event:', event);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Decoupled async logic
+      void (async () => {
+        logActivity(`authStateChange: ${event}`);
+        devLog('[App] Auth event:', event);
 
-      if (event === 'PASSWORD_RECOVERY') {
-        navigateRef.current('/reset-password');
-        return;
-      }
-
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        // Debounce: skip if we handled a session within the last 5 seconds
-        // This prevents the infinite loop: TOKEN_REFRESHED → handleSession → getUser → refresh → TOKEN_REFRESHED
-        const now = Date.now();
-        if (now - lastSessionHandledRef.current < 5000) {
-          devLog('[App] Skipping session refresh — handled recently');
+        if (event === 'PASSWORD_RECOVERY') {
+          navigateRef.current('/reset-password');
           return;
         }
 
-        if (session) {
-          lastSessionHandledRef.current = now;
-          await handleSessionRef.current(session);
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // Token-based debounce
+          const newToken = session?.access_token;
+          if (newToken && newToken === lastAccessTokenRef.current) {
+            devLog('[App] Skipping session refresh — token unchanged');
+            return;
+          }
+
+          if (session) {
+            lastAccessTokenRef.current = session.access_token;
+            await handleSessionRef.current(session);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          lastAccessTokenRef.current = null;
+          setSession(null, null);
+          navigateRef.current('/login');
         }
-      } else if (event === 'SIGNED_OUT') {
-        setSession(null, null);
-        navigateRef.current('/login');
-      }
+      })();
     });
 
     return () => subscription.unsubscribe();
-  }, [setSession]); // Only depends on stable Zustand action
+  }, []); // Empty dependency array - setSession is stable, refs are stable
 
   // ── Fix #4: Start/stop idle session check based on auth state ──
   useEffect(() => {
@@ -187,15 +199,31 @@ function App() {
     return () => stopIdleSessionCheck();
   }, [isAuthenticated]);
 
-  // Prefetch data when authenticated
+  // Prefetch data when authenticated - Improved safety
   useEffect(() => {
-    if (isAuthenticated) {
+    let cancelled = false;
+
+    const prefetch = async () => {
+      if (!isAuthenticated) return;
+
       logActivity('prefetch: starting data fetch');
-      if (!hasFetchedClients) fetchClients();
-      if (!hasFetchedStaff) fetchStaff();
-      if (!hasFetchedTasks) fetchTasks();
+      try {
+        await Promise.all([
+          !hasFetchedClients && fetchClients(),
+          !hasFetchedStaff && fetchStaff(),
+          !hasFetchedTasks && fetchTasks(),
+        ]);
+      } catch (error) {
+        devError('[App] Prefetch error:', error);
+      }
+    };
+
+    if (isAuthenticated) {
+      prefetch();
     }
-  }, [isAuthenticated, fetchClients, fetchStaff, fetchTasks, hasFetchedClients, hasFetchedStaff, hasFetchedTasks]);
+
+    return () => { cancelled = true; };
+  }, [isAuthenticated, hasFetchedClients, hasFetchedStaff, hasFetchedTasks]);
 
   // Wait for auth initialization to complete
   if (!isInitialized) {
