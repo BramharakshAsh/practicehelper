@@ -10,6 +10,7 @@ export const useTasks = () => {
     hasFetched,
     error,
     fetchTasks,
+    fetchUserTasks,
     fetchTasksByStaff,
     createTask,
     updateTask,
@@ -23,13 +24,9 @@ export const useTasks = () => {
 
   useEffect(() => {
     if (!hasFetched && !isLoading && user) {
-      if (user.role === 'staff') {
-        fetchTasksByStaff(user.id);
-      } else {
-        fetchTasks();
-      }
+      fetchUserTasks();
     }
-  }, [hasFetched, isLoading, user, fetchTasks, fetchTasksByStaff]);
+  }, [hasFetched, isLoading, user, fetchUserTasks]);
 
   const handleCreateTask = (taskData: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => createTask(taskData);
   const handleUpdateTask = (id: string, updates: Partial<Task>) => updateTask(id, updates);
@@ -38,11 +35,7 @@ export const useTasks = () => {
   const handleImportTasks = (tasksData: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => importTasks(tasksData);
 
   const refetch = () => {
-    if (user?.role === 'staff') {
-      fetchTasksByStaff(user.id);
-    } else {
-      fetchTasks();
-    }
+    fetchUserTasks();
   };
 
   return {

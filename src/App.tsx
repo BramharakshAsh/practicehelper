@@ -60,7 +60,7 @@ function App() {
   const fetchStaff = useStaffStore(state => state.fetchStaff);
   const hasFetchedStaff = useStaffStore(state => state.hasFetched);
 
-  const fetchTasks = useTasksStore(state => state.fetchTasks);
+  const fetchTasks = useTasksStore(state => state.fetchUserTasks);
   const hasFetchedTasks = useTasksStore(state => state.hasFetched);
 
   const [isInitialized, setIsInitialized] = useState(false);

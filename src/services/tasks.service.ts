@@ -94,7 +94,19 @@ class TasksService {
       .order('due_date', { ascending: true });
 
     if (error) throw error;
-    return ((data as unknown as DBTaskResponse[]) || []).map(mapDBTask);
+
+    const typedData = (data as unknown as DBTaskResponse[]) || [];
+
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+    const filteredData = typedData.filter(task => {
+      if (task.status === 'filed_completed') {
+        // Only show completed tasks if they were updated in the last 12 hours
+        return task.updated_at >= twelveHoursAgo;
+      }
+      return true;
+    });
+
+    return filteredData.map(mapDBTask);
   }
 
   async createTask(task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>): Promise<Task> {

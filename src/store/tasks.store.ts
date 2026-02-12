@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Task } from '../types';
 import { tasksService } from '../services/tasks.service';
+import { useAuthStore } from './auth.store';
 import { ErrorService, handleAsyncError } from '../services/error.service';
 import { devLog } from '../services/logger';
 
@@ -12,6 +13,7 @@ interface TasksState {
 
   // Actions
   fetchTasks: () => Promise<void>;
+  fetchUserTasks: () => Promise<void>; // Smart fetch based on role
   fetchTasksByStaff: (staffId: string) => Promise<void>;
   createTask: (task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
@@ -49,6 +51,22 @@ export const useTasksStore = create<TasksState>((set) => ({
         hasFetched: true
       });
     });
+  },
+
+  fetchUserTasks: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    devLog('[TasksStore] fetchUserTasks called for user:', user.email, 'role:', user.role);
+
+    // Use the same role check as useTasks hook
+    if (['staff', 'paid_staff', 'articles'].includes(user.role)) {
+      devLog('[TasksStore] fetchUserTasks: Routing to fetchTasksByStaff');
+      await useTasksStore.getState().fetchTasksByStaff(user.id);
+    } else {
+      devLog('[TasksStore] fetchUserTasks: Routing to fetchTasks (All)');
+      await useTasksStore.getState().fetchTasks();
+    }
   },
 
   fetchTasksByStaff: async (staffId: string) => {

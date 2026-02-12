@@ -17,7 +17,9 @@ const CalendarPage: React.FC = () => {
     const { staff } = useStaffStore();
 
     const [showMeetingModal, setShowMeetingModal] = useState(false);
-    const [filterStaffId, setFilterStaffId] = useState<string>(user?.role === 'staff' ? user.id : 'all');
+    const [filterStaffId, setFilterStaffId] = useState<string>(
+        ['staff', 'paid_staff', 'articles'].includes(user?.role || '') ? (user?.id || '') : 'all'
+    );
 
     useEffect(() => {
         fetchMeetings();
@@ -47,7 +49,7 @@ const CalendarPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3">
-                    {user?.role !== 'staff' && (
+                    {!['staff', 'paid_staff', 'articles'].includes(user?.role || '') && (
                         <div className="flex items-center space-x-2 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm">
                             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">View:</span>
                             <select
@@ -77,7 +79,7 @@ const CalendarPage: React.FC = () => {
             <CalendarView
                 tasks={tasks}
                 meetings={meetings}
-                currentRole={(user?.role === 'staff' || activeStaffId) ? 'staff' : 'partner'}
+                currentRole={(['staff', 'paid_staff', 'articles'].includes(user?.role || '') || activeStaffId) ? 'staff' : 'partner'}
                 currentStaffId={activeStaffId}
             />
 
