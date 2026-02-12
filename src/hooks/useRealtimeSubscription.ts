@@ -23,7 +23,7 @@ export function useRealtimeSubscription(): UseRealtimeSubscriptionResult {
 
     // Get store actions for applying realtime changes
     const applyTaskDelete = useTasksStore(state => state.applyRealtimeDelete);
-    const fetchTasks = useTasksStore(state => state.fetchTasks);
+    const fetchTasks = useTasksStore(state => state.fetchUserTasks);
 
     // Debounce refetch: batch rapid-fire changes into a single refetch
     const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

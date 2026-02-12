@@ -12,6 +12,8 @@ import StaffLoadSnapshot from '../components/Dashboard/StaffLoadSnapshot';
 import QuickActions from '../components/Dashboard/QuickActions';
 import ClientModal from '../components/Clients/ClientModal';
 import StaffModal from '../components/Staff/StaffModal';
+import TaskModal from '../components/Tasks/TaskModal';
+import AutoTaskModal from '../components/Tasks/AutoTaskModal';
 import { Task, Client, Staff } from '../types';
 
 import { useAuthStore } from '../store/auth.store';
@@ -28,6 +30,9 @@ const DashboardPage: React.FC = () => {
     const [showTaskModal, setShowTaskModal] = useState(false);
     const [showClientModal, setShowClientModal] = useState(false);
     const [showStaffModal, setShowStaffModal] = useState(false);
+
+    // Partner dashboard view mode: 'my_tasks' (default) or 'firm_overview'
+    const [viewMode, setViewMode] = useState<'my_tasks' | 'firm_overview'>('my_tasks');
 
     // Kept for backward compatibility if needed, but unused in new quick actions
     const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
@@ -54,18 +59,52 @@ const DashboardPage: React.FC = () => {
         setShowAutoScheduleModal(false);
     };
 
-    // Removed handleSendReminder as it's no longer used in QuickActions
+
+    // Filter tasks based on view mode (only for partners)
+    const dashboardTasks = React.useMemo(() => {
+        if (user?.role === 'partner' && viewMode === 'my_tasks') {
+            return tasks.filter(t => t.assigned_by === user.id);
+        }
+        return tasks;
+    }, [tasks, user, viewMode]);
+
 
     return (
         <div className="space-y-5 animate-fade-in" data-walkthrough="dashboard-overview">
+            {/* View Mode Toggle for Partners */}
+            {user?.role === 'partner' && (
+                <div className="flex justify-end -mb-10 relative z-40">
+                    <div className="bg-gray-100 p-1 rounded-lg inline-flex">
+                        <button
+                            onClick={() => setViewMode('my_tasks')}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'my_tasks'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            My Tasks
+                        </button>
+                        <button
+                            onClick={() => setViewMode('firm_overview')}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'firm_overview'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            Firm Overview
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Section A: Critical Alert Strip - Sticky */}
-            <div className="-mx-3 sm:-mx-4 lg:-mx-5 -mt-5 mb-4 sticky top-0 z-30">
-                <CriticalAlertBanner tasks={tasks} complianceTypes={complianceTypes} />
+            <div className="-mx-3 sm:-mx-4 lg:-mx-5 -mt-5 mb-4 sticky top-0 z-30 pt-4">
+                <CriticalAlertBanner tasks={dashboardTasks} complianceTypes={complianceTypes} />
             </div>
 
             {/* Section B: Today's Reality Cards */}
             <InsightCards
-                tasks={tasks}
+                tasks={dashboardTasks}
                 complianceTypes={complianceTypes}
             />
 
@@ -74,17 +113,17 @@ const DashboardPage: React.FC = () => {
                 <div className="lg:col-span-2 space-y-5">
                     {/* Section C: Statutory Heatmap */}
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
-                        <StatutoryHeatmap tasks={tasks} complianceTypes={complianceTypes} />
+                        <StatutoryHeatmap tasks={dashboardTasks} complianceTypes={complianceTypes} />
                     </div>
 
                     {/* Section D: Urgent Tasks Table */}
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
-                        <UrgentTasksTable tasks={tasks} clients={clients} staff={staff} />
+                        <UrgentTasksTable tasks={dashboardTasks} clients={clients} staff={staff} />
                     </div>
 
                     {/* Section E: Client Dependency Tracker */}
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
-                        <ClientDependencyWidget tasks={tasks} clients={clients} />
+                        <ClientDependencyWidget tasks={dashboardTasks} clients={clients} />
                     </div>
                 </div>
 
@@ -103,7 +142,7 @@ const DashboardPage: React.FC = () => {
                     {/* Section F: Staff Load Snapshot - Only for Partners/Managers */}
                     {['partner', 'manager'].includes(user?.role || '') && (
                         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
-                            <StaffLoadSnapshot tasks={tasks} staff={staff} />
+                            <StaffLoadSnapshot tasks={dashboardTasks} staff={staff} />
                         </div>
                     )}
                 </div>
