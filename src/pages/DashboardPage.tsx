@@ -60,11 +60,19 @@ const DashboardPage: React.FC = () => {
     };
 
 
-    // Filter tasks based on view mode (only for partners)
+    // Filter tasks based on view mode (only for partners) or strict role check (for staff)
     const dashboardTasks = React.useMemo(() => {
+        const isStaff = ['staff', 'paid_staff', 'articles'].includes(user?.role || '');
+
+        if (isStaff) {
+            // Strict enforcement for staff: only show tasks assigned to them
+            return tasks.filter(t => t.staff_id === user?.id);
+        }
+
         if (user?.role === 'partner' && viewMode === 'my_tasks') {
             return tasks.filter(t => t.assigned_by === user.id);
         }
+
         return tasks;
     }, [tasks, user, viewMode]);
 

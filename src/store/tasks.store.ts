@@ -55,18 +55,25 @@ export const useTasksStore = create<TasksState>((set) => ({
 
   fetchUserTasks: async () => {
     const user = useAuthStore.getState().user;
-    if (!user) return;
+    if (!user) {
+      devLog('[TasksStore] fetchUserTasks skipped: no user');
+      return;
+    }
 
-    devLog('[TasksStore] fetchUserTasks called for user:', user.email, 'role:', user.role);
+    // Normalize role for comparison just in case
+    const role = user.role?.toLowerCase().trim();
+    devLog(`[TasksStore] fetchUserTasks called for user: ${user.email}, role: ${user.role}, normalized: ${role}`);
 
     // Use the same role check as useTasks hook
-    if (['staff', 'paid_staff', 'articles'].includes(user.role)) {
+    if (['staff', 'paid_staff', 'articles'].includes(role || '')) {
       devLog('[TasksStore] fetchUserTasks: Routing to fetchTasksByStaff');
       await useTasksStore.getState().fetchTasksByStaff(user.id);
     } else {
       devLog('[TasksStore] fetchUserTasks: Routing to fetchTasks (All)');
       await useTasksStore.getState().fetchTasks();
     }
+
+    devLog('[TasksStore] fetchUserTasks completed, total tasks in store:', useTasksStore.getState().tasks.length);
   },
 
   fetchTasksByStaff: async (staffId: string) => {
