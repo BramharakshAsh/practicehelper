@@ -10,6 +10,7 @@ import AutoTaskModal from '../components/Tasks/AutoTaskModal';
 import DefineClientStaffRelation from '../components/Tasks/DefineClientStaffRelation';
 import { Zap, Users, FileText, CheckSquare, PieChart, Building } from 'lucide-react';
 import { SubscriptionService } from '../services/subscription.service';
+import { RecurringTaskRule } from '../services/recurring-tasks.service';
 
 const AutoTasksPage: React.FC = () => {
     const [showAutoTaskModal, setShowAutoTaskModal] = useState(false);

@@ -1,3 +1,4 @@
+# Logs
 logs
 *.log
 npm-debug.log*
@@ -6,18 +7,41 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Dependencies
+node_modules/
+**/node_modules/
 
+# Build outputs
+dist/
+dist-ssr/
+.next/
+out/
+build/
+
+# Environment files
+.env
+.env*.local
+**/.env
+**/.env*.local
+
+# Platform/Workspace metadata
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-*.env
+.bolt/
+.idx/
+
+# Project-specific temporary/backup files
+DNU/
+Logo.bak.png
+Logo.pdf
+Logo.png
+
+# Others
+*.local

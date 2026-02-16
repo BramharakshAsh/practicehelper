@@ -27,7 +27,7 @@ CORE FEATURES & FUNCTIONALITY
    - Quick search and filtering capabilities for large client databases
    - Client-wise task organization and workload visualization
 
-2. STAFF MANAGEMENT
+5. STAFF MANAGEMENT
    ---------------
    - Role-based user management (Partner, Manager, Staff)
    - Staff profile management with contact information and expertise areas
@@ -35,8 +35,9 @@ CORE FEATURES & FUNCTIONALITY
    - Staff performance tracking and task completion metrics
    - Hierarchical access controls based on organizational roles
    - Real-time staff availability and task allocation views
+   - 15-second "Undo Deletion" window for accidental staff removal
 
-3. TASK & WORKLOAD MANAGEMENT
+6. TASK & WORKLOAD MANAGEMENT
    --------------------------
    - Create, assign, and track tasks with detailed metadata
    - Set priorities (Low, Medium, High, Critical) and deadlines
@@ -47,25 +48,21 @@ CORE FEATURES & FUNCTIONALITY
    - Task dependency and client document requirement flags
    - Bulk task creation and assignment capabilities
    - Visual task boards with drag-and-drop functionality
+   - Selective Live Sync for real-time task and comment updates
 
-4. AUTO-TASK GENERATION & RECURRING TASKS
-   --------------------------------------
+7. AUTO-TASK GENERATION
+   ----------------------
    - One-time bulk task generation for multiple clients and compliance types
-   - Recurring task rule creation with customizable schedules:
-     * Monthly compliance tasks (GST returns, TDS filings)
-     * Quarterly obligations (24Q, 26Q, 27Q)
-     * Annual requirements (ITR, Audit, GSTR-9)
    - Intelligent period selection based on compliance type
-   - Automatic task generation at defined intervals
    - Client-staff assignment automation
    - Support for all major Indian compliance types:
      * GST (GSTR-1, GSTR-3B, GSTR-9)
      * TDS (24Q, 26Q, 27Q)
      * Income Tax (ITR, Advance Tax)
      * Audits (Tax Audit, Statutory Audit)
+     * Payroll Processing (Monthly)
+     * Custom "Others" types with manual due dates
      * ROC filings and other statutory requirements
-   - Active/inactive rule toggling for seasonal compliance
-   - Last generation timestamp tracking
 
 5. AUDIT & COMPLIANCE WORKFLOWS
    ----------------------------
@@ -94,7 +91,7 @@ CORE FEATURES & FUNCTIONALITY
    - Quick action buttons for common workflows
    - Real-time dashboard updates
 
-7. CALENDAR & SCHEDULING
+8. CALENDAR & SCHEDULING
    ---------------------
    - Consolidated calendar view of all tasks and deadlines
    - Color-coded by compliance type for quick identification
@@ -103,77 +100,26 @@ CORE FEATURES & FUNCTIONALITY
    - Integration with task management system
    - Quick task creation from calendar interface
 
-8. REPORTING & BUSINESS INTELLIGENCE
-   ---------------------------------
-   (Available to Partners & Managers only)
-   - Revenue analysis and trends
-   - Task distribution by compliance type
-   - Staff performance metrics and workload analysis
-   - Client engagement statistics
-   - Compliance deadline tracking reports
-   - Exportable data for further analysis
-   - Visual charts and graphs using Recharts library
-
 9. IMPORT & EXPORT CAPABILITIES
    ----------------------------
    (Available to Partners & Managers only)
    - Excel template download for standardized data imports:
      * Client import template with validation rules
+     * Staff allocation template for bulk assignments
      * Task import template with dropdown lists for client/staff/compliance selection
    - Bulk client onboarding via .xlsx files
    - Bulk task creation from Excel spreadsheets
+   - Client Allocation feature with bulk import/export of staff/manager assignments
    - Data validation and error reporting during import
    - Sample data included in templates for guidance
    - Export functionality for reports and data backups
 
-10. COMMUNICATIONS HUB
-    ------------------
-    - Centralized communication management
-    - Email integration capabilities
-    - WhatsApp reminder generation
-    - Template-based client communication
-    - Quick copy-to-clipboard for messages
-    - Communication history tracking
-    - Multi-channel outreach planning
-
-11. DOCUMENT MANAGEMENT
-    -------------------
-    - Document upload and organization
-    - Client-wise document categorization
-    - Document versioning and tracking
-    - Secure file storage integration
-    - Quick search and retrieval
-    - Document status tracking (pending, received, reviewed)
-
-12. TIME TRACKING & BILLING
-    -----------------------
-    - Built-in timer widget for task-based time tracking
-    - Time log association with tasks and clients
-    - Billable hours calculation
-    - Time tracking across multiple tasks
-    - Billing preparation support
-    - Automated timesheet generation
-    - Fixed bottom-right timer widget for easy access
-
-13. NOTIFICATIONS & ALERTS
-    ----------------------
-    - Real-time notification bell with unread counts
-    - Task deadline reminders
-    - Critical compliance deadline alerts
-    - Overdue task notifications
-    - Client document submission reminders
-    - System-wide alert banner for urgent items
-    - Role-based notification filtering
-
-14. SETTINGS & CONFIGURATION
+10. SETTINGS & CONFIGURATION
     ------------------------
     (Available to Partners & Managers only)
     - Firm profile management
     - User preferences and customization
-    - Compliance type configuration
-    - System settings and defaults
-    - Data management options
-    - Integration configurations
+    - System settings and defaults (firm-wide)
 
 
 ========================================================================================================
@@ -186,20 +132,17 @@ PARTNER
 -------
 - Full access to all features and modules
 - Client, staff, and firm management
-- Financial reports and analytics
-- Import/export capabilities
 - System settings and configuration
-- All dashboard views including staff performance metrics
+- All dashboard views restricted to partner oversight
+- Switchable dashboard view (My Tasks vs. Firm Overview)
 
 MANAGER
 -------
 - Client and task management
 - Staff oversight (limited to assigned teams)
 - Audit and compliance workflows
-- Reports and analytics
-- Import/export capabilities
 - Settings access
-- Dashboard with staff performance metrics
+- Dashboard with team oversight
 
 STAFF
 -----
@@ -209,7 +152,7 @@ STAFF
 - Task completion and time tracking
 - Audit workspace participation
 - Communications for assigned clients
-- Personal dashboard view (no staff performance metrics)
+- Personal dashboard view ONLY (no firm-wide or team data leakage)
 - Completed tasks view
 
 All users have access to:
@@ -262,7 +205,7 @@ TECHNICAL ARCHITECTURE
 FRONTEND STACK
 --------------
 - Framework: React 18.3+ with TypeScript
-- Build Tool: Vite 6.4+
+- Build Tool: Hybrid Build (Vite 6.4+ / Next.js) for optimized deployment
 - Routing: React Router DOM v7
 - State Management: Zustand 5.0+
 - UI Framework: Tailwind CSS 3.4+
@@ -271,6 +214,7 @@ FRONTEND STACK
 - Excel Processing: ExcelJS 4.4+
 - Guided Tours: React Joyride 2.9+
 - Print Support: React-to-Print 3.2+
+- Performance: Integrated Freeze Detection and Diagnostic tools
 
 BACKEND & INFRASTRUCTURE
 ------------------------
@@ -344,17 +288,7 @@ ONBOARDING NEW CLIENTS
 2. Click "Add Client" button
 3. Fill in client details (name, contact, GSTIN, PAN)
 4. Save client profile
-5. Optionally, set up recurring compliance tasks for the client via Auto Tasks
-
-CREATING RECURRING COMPLIANCE TASKS
------------------------------------
-1. Go to Auto Tasks page
-2. Click "Create Recurring Rule"
-3. Select compliance type (GST, TDS, ITR, etc.)
-4. Choose affected clients and assigned staff
-5. Set recurrence pattern (monthly, quarterly, yearly)
-6. Activate rule for automatic task generation
-7. System will auto-generate tasks at defined intervals
+5. Optionally, assign specific staff and managers via "Client Allocation" tab
 
 AUDIT ENGAGEMENT WORKFLOW
 -------------------------
@@ -445,16 +379,19 @@ FUTURE ENHANCEMENTS
 ========================================================================================================
 
 Planned features for upcoming releases:
+- Advanced Reporting & Business Intelligence Dashboard
+- Recurring Task Automations (Monthly/Quarterly/Annual)
+- Automated Billing & Invoicing Module
 - Direct Tally integration via ODBC
 - Advanced GST reconciliation tools (GSTR-2A vs. 2B)
-- WhatsApp integration for automated client reminders
-- Email automation and template management
+- WhatsApp & Email integration for automated client reminders
+- Centralized Communications Hub & Template Management
+- Full Document Management System with secure storage
 - Advanced analytics and predictive insights
 - Mobile applications (iOS and Android)
 - Client portal for document submission
 - API endpoints for third-party integrations
 - Multi-firm management for consultants
-- Advanced billing and invoicing module
 
 
 ========================================================================================================
@@ -469,5 +406,5 @@ maintaining operational excellence.
 For questions, support, or feature requests, please contact your system administrator or refer to 
 the in-app Help system.
 
-Version: 1.0.0
-Last Updated: January 2026
+Version: 1.1.0
+Last Updated: February 2026

@@ -12,7 +12,7 @@ export interface Firm {
   invoice_sequence: number;
   invoice_theme: 'classic' | 'modern' | 'minimal';
   subscription_tier: 'free' | 'growth';
-  subscription_status: 'active' | 'inactive' | 'past_due';
+  subscription_status: 'active' | 'inactive' | 'past_due' | 'cancelled';
   custom_user_limit?: number;
   custom_client_limit?: number;
   excel_imports_count: number;

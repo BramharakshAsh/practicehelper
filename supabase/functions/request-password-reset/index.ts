@@ -41,7 +41,7 @@ serve(async (req) => {
             type: 'recovery',
             email: email,
             options: {
-                redirectTo: 'https://firmflow.app/reset-password' // Fallback to firmflow.app but normally it should be dynamic
+                redirectTo: `${Deno.env.get('APP_URL') || 'https://app.cacontrol.online'}/reset-password`
             }
         })
 
