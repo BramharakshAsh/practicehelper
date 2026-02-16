@@ -278,9 +278,9 @@ const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onImport }) =>
 
       if (hasData) {
         // Skip sample data rows more robustly
-        const name = String(rowData.name || '').toLowerCase();
-        const pan = String(rowData.pan || '').toLowerCase();
-        const email = String(rowData.email || '').toLowerCase();
+        const name = String(rowData.full_name || rowData.name || '').trim().toLowerCase();
+        const pan = String(rowData.pan || '').trim().toLowerCase();
+        const email = String(rowData.email || '').trim().toLowerCase();
 
         if (
           (name === 'abc enterprises pvt ltd' && pan === 'abcde1234f') ||

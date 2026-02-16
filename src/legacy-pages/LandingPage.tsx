@@ -1,5 +1,6 @@
+"use client";
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { UniversalLink as Link } from '../components/Common/UniversalLink';
 import {
     Users, CheckSquare, Zap, ClipboardList,
     BarChart3, ShieldCheck, ArrowRight, PlayCircle,
@@ -29,9 +30,9 @@ const LandingPage: React.FC = () => {
                             <a href="#about" className="text-gray-600 hover:text-brand-primary transition-colors font-medium">About</a>
                             <a href="#benefits" className="text-gray-600 hover:text-brand-primary transition-colors font-medium">Benefits</a>
                             <a href="#pricing" className="text-gray-600 hover:text-brand-primary transition-colors font-medium">Pricing</a>
-                            <Link to="/login" className="text-gray-600 hover:text-brand-primary transition-colors font-medium">Login</Link>
+                            <Link to="/app/login" className="text-gray-600 hover:text-brand-primary transition-colors font-medium">Login</Link>
                             <Link
-                                to="/login"
+                                to="/app/login"
                                 className="bg-brand-primary text-white px-6 py-2.5 rounded-full font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all hover:bg-orange-600"
                             >
                                 Register for Free
@@ -54,9 +55,9 @@ const LandingPage: React.FC = () => {
                         <a href="#about" onClick={() => setIsMenuOpen(false)} className="block text-gray-600 font-medium">About</a>
                         <a href="#benefits" onClick={() => setIsMenuOpen(false)} className="block text-gray-600 font-medium">Benefits</a>
                         <a href="#pricing" onClick={() => setIsMenuOpen(false)} className="block text-gray-600 font-medium">Pricing</a>
-                        <Link to="/login" className="block text-gray-600 font-medium">Login</Link>
+                        <Link to="/app/login" className="block text-gray-600 font-medium">Login</Link>
                         <Link
-                            to="/login"
+                            to="/app/login"
                             className="block bg-brand-primary text-white px-6 py-3 rounded-xl font-semibold text-center hover:bg-orange-600"
                         >
                             Register for Free
@@ -86,14 +87,14 @@ const LandingPage: React.FC = () => {
 
                         <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
                             <Link
-                                to="/login"
+                                to="/app/login"
                                 className="w-full sm:w-auto bg-brand-primary text-white px-10 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-orange-200/50 hover:scale-105 transition-all flex items-center justify-center group hover:bg-orange-600"
                             >
                                 Register for Free
                                 <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
                             </Link>
                             <Link
-                                to="/login"
+                                to="/app/login"
                                 className="w-full sm:w-auto bg-gray-50 text-gray-900 border border-gray-200 px-10 py-4 rounded-xl font-bold text-lg hover:bg-white hover:border-brand-primary hover:text-brand-primary transition-all flex items-center justify-center"
                             >
                                 <PlayCircle className="mr-2" />
@@ -375,7 +376,7 @@ const LandingPage: React.FC = () => {
                             </ul>
 
                             <Link
-                                to="/login"
+                                to="/app/login"
                                 className="block w-full text-center bg-gray-50 text-gray-900 font-bold py-3 rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors"
                             >
                                 Get Started Free
@@ -420,7 +421,7 @@ const LandingPage: React.FC = () => {
                             </ul>
 
                             <Link
-                                to="/login"
+                                to="/app/login"
                                 className="block w-full text-center bg-brand-primary text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-orange-500/30 hover:bg-orange-600 transition-all"
                             >
                                 Upgrade to Growth
@@ -441,7 +442,7 @@ const LandingPage: React.FC = () => {
                             </div>
                             <div className="text-left">
                                 <p className="text-sm text-gray-500 font-medium">Email Support</p>
-                                <a href="mailto:learnwithfun116@gmail.com" className="text-lg font-bold text-gray-900 hover:text-brand-primary">learnwithfun116@gmail.com</a>
+                                <a href="mailto:learnwithfun116@gmail.com" class="text-lg font-bold text-gray-900 hover:text-brand-primary">learnwithfun116@gmail.com</a>
                             </div>
                         </div>
                         <div className="h-px w-full md:h-12 md:w-px bg-gray-200"></div>
@@ -464,14 +465,14 @@ const LandingPage: React.FC = () => {
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 text-white">
                         <Link
-                            to="/login"
+                            to="/app/login"
                             className="w-full sm:w-auto bg-brand-primary text-white px-10 py-4 rounded-xl font-bold text-lg hover:bg-orange-600 transition-all flex items-center justify-center"
                         >
                             Register for Free
                             <ArrowRight className="ml-2" />
                         </Link>
                         <Link
-                            to="/login"
+                            to="/app/login"
                             className="w-full sm:w-auto bg-transparent border-2 border-white/30 text-white px-10 py-4 rounded-xl font-bold text-lg hover:bg-white/10 transition-all text-white"
                         >
                             Login

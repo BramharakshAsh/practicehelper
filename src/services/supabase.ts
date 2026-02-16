@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
+import { isDev, getEnvVar } from '../utils/env';
 import { devLog, devWarn, devError } from './logger';
 import { logActivity } from './freeze-detector';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL');
+const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
 if (!supabaseUrl || !supabaseKey) {
     throw new Error(
@@ -101,8 +102,12 @@ export function forceAuthRecovery() {
 
     // 2. Wipe Supabase auth tokens from localStorage
     try {
-        const sbKey = 'sb-' + supabaseUrl.split('//')[1].split('.')[0] + '-auth-token';
-        localStorage.removeItem(sbKey);
+        const urlToSplit = supabaseUrl || '';
+        const parts = urlToSplit.split('//')[1]?.split('.');
+        if (parts && parts[0]) {
+            const sbKey = `sb-${parts[0]}-auth-token`;
+            localStorage.removeItem(sbKey);
+        }
     } catch (e) { }
 
     // 3. Wipe Supabase IndexedDB

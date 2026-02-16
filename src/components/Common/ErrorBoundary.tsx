@@ -59,7 +59,8 @@ class ErrorBoundary extends Component<Props, State> {
                                 Go Back
                             </button>
                         </div>
-                        {import.meta.env.DEV && this.state.error && (
+                        {/* Environment-safe check for development mode */}
+                        {(typeof process !== 'undefined' ? process.env.NODE_ENV === 'development' : (import.meta as any).env?.DEV) && this.state.error && (
                             <div className="mt-8 text-left">
                                 <div className="p-4 bg-gray-100 rounded-lg overflow-auto border border-gray-200 shadow-inner">
                                     <p className="text-xs font-mono text-red-800 break-words font-semibold mb-2 uppercase tracking-wider">Error Details:</p>

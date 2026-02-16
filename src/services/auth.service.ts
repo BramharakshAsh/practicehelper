@@ -2,6 +2,7 @@ import { User } from '../types';
 import { supabase } from './supabase';
 import { handleAsyncError } from './error.service';
 import { devLog } from './logger';
+import { getEnvVar } from '../utils/env';
 
 export interface LoginCredentials {
   username: string;
@@ -79,6 +80,7 @@ class AuthService {
         email: data.primaryPartner.email,
         password: data.primaryPartner.password,
         options: {
+          emailRedirectTo: `${getEnvVar('VITE_APP_URL', 'NEXT_PUBLIC_APP_URL') || 'https://app.cacontrol.online'}/auth/callback`,
           data: {
             full_name: data.primaryPartner.fullName,
             pan: data.primaryPartner.pan,

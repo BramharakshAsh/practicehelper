@@ -1,12 +1,4 @@
-/**
- * Freeze Detector — Reports when the main thread is blocked for too long.
- * 
- * Uses a Web Worker + main-thread heartbeat to detect freezes.
- * When the main thread doesn't respond within 3 seconds, it logs
- * what was happening just before the freeze.
- * 
- * Only active in development mode.
- */
+import { isDev } from '../utils/env';
 
 const HEARTBEAT_INTERVAL = 1000; // Check every 1 second
 const FREEZE_THRESHOLD = 3000;   // Consider frozen if > 3 seconds between beats
@@ -28,7 +20,7 @@ export function logActivity(label: string) {
 }
 
 export function startFreezeDetector() {
-    if (isRunning || !import.meta.env.DEV) return;
+    if (isRunning || !isDev()) return;
     isRunning = true;
     lastBeatTime = Date.now();
 

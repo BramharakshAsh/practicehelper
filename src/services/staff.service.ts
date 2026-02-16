@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/auth.store';
 import { DBStaffResponse } from '../types/database.types';
 import { generateSecurePassword, sendStaffWelcomeEmail } from '../utils/email.utils';
 import { devLog, devWarn, devError } from './logger';
+import { getEnvVar } from '../utils/env';
 
 class StaffService {
   async getStaff(): Promise<Staff[]> {
@@ -62,8 +63,8 @@ class StaffService {
 
     // 1. Create Auth User
     devLog('[StaffService] Creating Auth User...');
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL');
+    const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
     if (!supabaseUrl || !supabaseKey) {
       devError('[StaffService] Missing Supabase environment variables');
@@ -191,7 +192,7 @@ class StaffService {
     devLog('[StaffService] Staff creation complete:', data);
 
     // Fetch firm details for the email
-    const { data: firm } = await supabase.from('firms').select('name').eq('id', staffData.firm_id).single();
+    const { data: firm } = await supabase.from('firms').select('name').eq('id', firmId).single();
     const firmName = firm?.name || 'Your Firm';
 
     // Send welcome email with credentials

@@ -15,9 +15,11 @@
  *   localStorage.removeItem('debug'); location.reload();
  */
 
+import { isDev } from '../utils/env';
+
 function isDebugEnabled(): boolean {
     try {
-        return import.meta.env.DEV || localStorage.getItem('debug') === 'true';
+        return isDev() || localStorage.getItem('debug') === 'true';
     } catch {
         return false;
     }

@@ -16,7 +16,7 @@ async function runManualTest() {
         const { data: firms, error: firmError } = await supabase
             .from('firms')
             .select('*')
-            .eq('is_active', true)
+            .ilike('name', '%pokemon%')
             .limit(1);
 
         if (firmError) {

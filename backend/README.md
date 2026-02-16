@@ -6,8 +6,8 @@ Reliable, idempotent email notification system for daily task summaries.
 - **Runtime**: Node.js 20+
 - **Language**: TypeScript
 - **Database**: Supabase (Postgres)
-- **Email**: Resend API
-- **Scheduling**: `node-cron`
+- **Email**: Resend API (Domain: cacontrol.online)
+- **Scheduling**: `node-cron` with persistent `email_jobs` table
 
 ## Production Configuration
 1. **Environment Variables**:
@@ -41,4 +41,5 @@ Reliable, idempotent email notification system for daily task summaries.
 
 ## Monitoring
 - Check the `email_jobs` table in Supabase for delivery status.
-- Logs include structured tags like `[EMAIL_SENT]`, `[EMAIL_FAILED]`, and `[JOB_CREATOR]`.
+- Primary logs: `[EMAIL_JOB_STARTED]`, `[EMAIL_SENT]`, `[EMAIL_FAILED]`.
+- Failure recovery: Standard Resend error handling implemented.

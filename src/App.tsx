@@ -15,27 +15,27 @@ import { Analytics } from "@vercel/analytics/react"
 import DashboardLayout from './layouts/DashboardLayout';
 
 // Pages - Lazy Loaded
-const DashboardPage = lazy(() => import('./pages/DashboardPage'));
-const TasksPage = lazy(() => import('./pages/TasksPage'));
-const ClientsPage = lazy(() => import('./pages/ClientsPage'));
-const StaffPage = lazy(() => import('./pages/StaffPage'));
-const CalendarPage = lazy(() => import('./pages/CalendarPage'));
-const ImportPage = lazy(() => import('./pages/ImportPage'));
-const AutoTasksPage = lazy(() => import('./pages/AutoTasksPage'));
-const CommunicationsPage = lazy(() => import('./pages/CommunicationsPage'));
-const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const DashboardPage = lazy(() => import('./legacy-pages/DashboardPage'));
+const TasksPage = lazy(() => import('./legacy-pages/TasksPage'));
+const ClientsPage = lazy(() => import('./legacy-pages/ClientsPage'));
+const StaffPage = lazy(() => import('./legacy-pages/StaffPage'));
+const CalendarPage = lazy(() => import('./legacy-pages/CalendarPage'));
+const ImportPage = lazy(() => import('./legacy-pages/ImportPage'));
+const AutoTasksPage = lazy(() => import('./legacy-pages/AutoTasksPage'));
+const CommunicationsPage = lazy(() => import('./legacy-pages/CommunicationsPage'));
+const ReportsPage = lazy(() => import('./legacy-pages/ReportsPage'));
 const LoginPage = lazy(() => import('./components/Auth/LoginPage'));
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
-const AuditDashboard = lazy(() => import('./pages/AuditDashboard'));
-const AuditWorkspace = lazy(() => import('./pages/AuditWorkspace'));
-const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
-const BillingPage = lazy(() => import('./pages/BillingPage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
-const CompletedTasksPage = lazy(() => import('./pages/CompletedTasksPage'));
-const UpgradePage = lazy(() => import('./pages/UpgradePage'));
+const ForgotPasswordPage = lazy(() => import('./legacy-pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./legacy-pages/ResetPasswordPage'));
+const AuditDashboard = lazy(() => import('./legacy-pages/AuditDashboard'));
+const AuditWorkspace = lazy(() => import('./legacy-pages/AuditWorkspace'));
+const DocumentsPage = lazy(() => import('./legacy-pages/DocumentsPage'));
+const BillingPage = lazy(() => import('./legacy-pages/BillingPage'));
+const SettingsPage = lazy(() => import('./legacy-pages/SettingsPage'));
+const CompletedTasksPage = lazy(() => import('./legacy-pages/CompletedTasksPage'));
+const UpgradePage = lazy(() => import('./legacy-pages/UpgradePage'));
 
-import LandingPage from './pages/LandingPage';
+import LandingPage from './legacy-pages/LandingPage';
 import ErrorBoundary from './components/Common/ErrorBoundary';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 
@@ -236,7 +236,7 @@ function App() {
       <WalkthroughProvider>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route
               path="/login"
               element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}

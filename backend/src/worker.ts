@@ -21,8 +21,10 @@ export async function processEmailQueue() {
                 .select('*')
                 .eq('status', 'pending')
                 .lte('scheduled_for', new Date().toISOString())
+                .order('scheduled_for', { ascending: false })
+                .order('created_at', { ascending: false })
                 .limit(1)
-                .maybeSingle(); // Changed from .single() to .maybeSingle() to handle no rows gracefully
+                .maybeSingle();
 
             if (fetchError) {
                 console.error('[WORKER] Error fetching jobs:', fetchError.message);
@@ -86,6 +88,7 @@ export async function processEmailQueue() {
 
                     html = HtmlRenderer.renderManagerEmail(user, summaryA, summaryB);
                     subject = 'CAControl daily update';
+                    console.log(`[WORKER] Built Manager email for ${user.email}. Tasks A: ${summaryA.totalCount}, B: ${summaryB.totalCount}`);
                 } else {
                     const summary = await TaskSummaryService.getUserTaskSummary(user.id);
                     pendingCount = summary.totalCount;
@@ -98,6 +101,7 @@ export async function processEmailQueue() {
 
                     html = HtmlRenderer.renderStaffEmail(user, summary);
                     subject = 'CAControl daily update';
+                    console.log(`[WORKER] Built Staff email for ${user.email}. Tasks: ${summary.totalCount}`);
                 }
 
                 // 5. Send email via Resend
@@ -127,8 +131,8 @@ export async function processEmailQueue() {
                 }
             }
 
-            // Wait random 20–45 seconds between sends
-            const waitTime = Math.floor(Math.random() * (45000 - 20000 + 1)) + 20000;
+            // Wait random 5–10 seconds between sends
+            const waitTime = Math.floor(Math.random() * (10000 - 5000 + 1)) + 5000;
             console.log(`[WORKER] Pacing: sleeping for ${Math.round(waitTime / 1000)}s`);
             await delay(waitTime);
 

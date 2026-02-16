@@ -107,9 +107,10 @@ const ImportPage: React.FC = () => {
             // Increment usage if successful
             if (successCount > 0 && firm) {
                 await SubscriptionService.incrementExcelImportUsage(firm.id);
-                // Ideally refresh firm to reflect new count
-                // const updatedFirm = await authService.getFirm(firm.id);
-                // setFirm(updatedFirm);
+                // Refresh firm to reflect new count
+                const { authService } = await import('../services/auth.service');
+                const updatedFirm = await authService.getFirm(firm.id);
+                setFirm(updatedFirm);
             }
 
         } catch (error) {
