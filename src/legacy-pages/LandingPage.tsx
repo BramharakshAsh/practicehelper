@@ -442,7 +442,7 @@ const LandingPage: React.FC = () => {
                             </div>
                             <div className="text-left">
                                 <p className="text-sm text-gray-500 font-medium">Email Support</p>
-                                <a href="mailto:learnwithfun116@gmail.com" class="text-lg font-bold text-gray-900 hover:text-brand-primary">learnwithfun116@gmail.com</a>
+                                <a href="mailto:learnwithfun116@gmail.com" className="text-lg font-bold text-gray-900 hover:text-brand-primary">learnwithfun116@gmail.com</a>
                             </div>
                         </div>
                         <div className="h-px w-full md:h-12 md:w-px bg-gray-200"></div>
