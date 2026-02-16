@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
+    // Set output directory to 'dist' to match Vercel project settings
+    distDir: 'dist',
     // Ensure we can use CSS modules and Tailwind
     transpilePackages: ['lucide-react'],
     // Rewrites to handle the App Surface (SPA) catch-all
