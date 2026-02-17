@@ -163,7 +163,7 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
           } else if (code === '3CEB' || code === 'TP-AUDIT') {
             dueMonth = 9; // October
           } else if (code === 'ITR_AUDIT') {
-            dueMonth = 10; // October/November
+            dueMonth = 9; // October/November
           } else if (code.startsWith('GSTR9')) {
             dueMonth = 11; // December
           }

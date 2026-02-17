@@ -13,13 +13,11 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
-  // On mount: clear any stale session so login starts fresh
+  // On mount: clear any stale UI state
   useEffect(() => {
-    devLog('[LoginPage] Mounted — clearing stale session if any');
+    devLog('[LoginPage] Mounted');
     // Reset stuck isLoading state
     useAuthStore.setState({ isLoading: false, error: null });
-    // Clear any lingering Supabase session
-    supabase.auth.signOut().catch(() => { });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

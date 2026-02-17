@@ -60,8 +60,27 @@ export function useRealtimeSubscription(): UseRealtimeSubscriptionResult {
             if (payload.old?.id) {
                 applyTaskDelete(payload.old.id);
             }
+        } else if (payload.eventType === 'INSERT') {
+            // INSERT: Fetch the single new task immediately and add to store
+            // This is faster than refetching the whole list
+            if (payload.new?.id) {
+                try {
+                    // We need to fetch the full task with relations (client, staff, etc)
+                    // The payload only has the raw table data
+                    const { tasksService } = await import('../services/tasks.service'); // Dynamic import to avoid cycles
+                    const newTask = await tasksService.getTask(payload.new.id);
+                    if (newTask) {
+                        const applyRealtimeInsert = useTasksStore.getState().applyRealtimeInsert;
+                        applyRealtimeInsert(newTask);
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch new realtime task', e);
+                    debouncedRefetch(); // Fallback
+                }
+            }
         } else {
-            // INSERT and UPDATE: debounce into a single refetch
+            // UPDATE: For now, we still refetch or could implement partial updates
+            // But debounced refetch is safer for complex relation updates
             debouncedRefetch();
         }
     }, [applyTaskDelete, debouncedRefetch]);

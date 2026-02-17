@@ -16,7 +16,8 @@ async function runManualTest() {
         const { data: firms, error: firmError } = await supabase
             .from('firms')
             .select('*')
-            .ilike('name', '%pokemon%')
+            // .ilike('name', '%pokemon%') // OLD
+            .ilike('name', '%pokemon%')       // NEW
             .limit(1);
 
         if (firmError) {

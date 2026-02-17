@@ -1,4 +1,10 @@
 import React from 'react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Compliance Calendar 2026",
+    description: "Stay ahead of GST, TDS, and Income Tax deadlines with our comprehensive compliance calendar.",
+};
 
 export default function CalendarPage() {
     return (

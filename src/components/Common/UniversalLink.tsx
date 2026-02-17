@@ -32,20 +32,40 @@ export function UniversalLink({ to, href, children, className, onClick }: Univer
     }
 
     // On the client, we can determine if we are in the Next.js app or the legacy SPA
-    // For now, if we are in the Next.js pages (handled by App Router), next/link is preferred.
-    // If we are inside the mounted SPA, RouterLink is preferred.
-    const isAppPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/app');
+    const isAppPath = typeof window !== 'undefined' && (
+        window.location.pathname.startsWith('/app') ||
+        window.location.hostname.startsWith('app.') ||
+        window.location.hostname.includes('firmflow')
+    );
+
+    let finalHref = linkHref;
+    const isExternal = linkHref.startsWith('http');
+
+    // If we are on the landing page (cacontrol.online) and pointing to the app,
+    // use the absolute subdomain URL to avoid redirects.
+    if (!isAppPath && !isExternal && linkHref.startsWith('/app/')) {
+        if (typeof window !== 'undefined' && window.location.hostname === 'cacontrol.online') {
+            finalHref = `https://app.cacontrol.online${linkHref.replace('/app', '')}`;
+        }
+    }
 
     if (isAppPath) {
+        // If we are already on the subdomain, and the link starts with /app, strip it
+        if (typeof window !== 'undefined' && (window.location.hostname.startsWith('app.') || window.location.hostname.includes('firmflow'))) {
+            if (finalHref.startsWith('/app/')) {
+                finalHref = finalHref.replace('/app', '');
+            }
+        }
+
         return (
-            <RouterLink to={linkHref} className={className} onClick={onClick}>
+            <RouterLink to={finalHref} className={className} onClick={onClick}>
                 {children}
             </RouterLink>
         );
     }
 
     return (
-        <Link href={linkHref} className={className} onClick={onClick}>
+        <Link href={finalHref} className={className} onClick={onClick}>
             {children}
         </Link>
     );

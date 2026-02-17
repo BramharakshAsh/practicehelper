@@ -90,4 +90,13 @@ export const useTaskCommentsStore = create<TaskCommentsState>((set) => ({
             };
         });
     },
+
+    // Clean up comments to prevent memory leaks
+    clearComments: (taskId: string) => {
+        set(state => {
+            const newComments = { ...state.comments };
+            delete newComments[taskId];
+            return { comments: newComments };
+        });
+    },
 }));

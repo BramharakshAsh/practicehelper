@@ -87,8 +87,39 @@ function isAuthError(error: any): boolean {
 // ──────────────────────────────────────────────
 let isRecovering = false;
 
+// Track recovery attempts to prevent infinite loops
+const RECOVERY_KEY = 'auth-recovery-attempts';
+const MAX_RECOVERIES_PER_MINUTE = 2; // Allow at most 2 recoveries per minute
+
+function getRecoveryAttempts(): number[] {
+    try {
+        const stored = localStorage.getItem(RECOVERY_KEY);
+        return stored ? JSON.parse(stored) : [];
+    } catch {
+        return [];
+    }
+}
+
+function recordRecoveryAttempt() {
+    const attempts = getRecoveryAttempts();
+    const now = Date.now();
+    // Keep only attempts within the last minute
+    const recent = attempts.filter(t => now - t < 60000);
+    recent.push(now);
+    localStorage.setItem(RECOVERY_KEY, JSON.stringify(recent));
+    return recent.length;
+}
+
 export function forceAuthRecovery() {
     if (isRecovering) return;
+
+    // Check if we are looping
+    const attempts = recordRecoveryAttempt();
+    if (attempts > MAX_RECOVERIES_PER_MINUTE) {
+        devError(`[Supabase] Too many auth recovery attempts (${attempts}). Aborting to prevent loop.`);
+        return; // STOP! Don't clear tokens, don't redirect. Let the user decide what to do or refresh manually.
+    }
+
     isRecovering = true;
 
     // Auto-reset after 10 seconds so recovery can be re-triggered on next failure
@@ -140,7 +171,7 @@ export function scheduleAppDataCleanup() {
         APP_DATA_KEYS.forEach(key => {
             try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
         });
-    }, 5000);
+    }, 1000); // reduced to 1s
 }
 
 // ──────────────────────────────────────────────

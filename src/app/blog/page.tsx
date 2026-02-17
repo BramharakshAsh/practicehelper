@@ -1,4 +1,10 @@
 import React from 'react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Blog",
+    description: "Insights and updates for modern accounting firms. Learn about practice management and compliance automation.",
+};
 
 export default function BlogPage() {
     return (

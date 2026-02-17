@@ -16,6 +16,7 @@ export async function processEmailQueue() {
             // But for simplicity in this implementation, I'll fetch and mark processing. 
             // To avoid race conditions in a firm-grade system, I'll use a simple "status update" with filter.
 
+            // 1. Fetch one job with priority (newest first)
             const { data: job, error: fetchError } = await supabase
                 .from('email_jobs')
                 .select('*')
@@ -45,10 +46,10 @@ export async function processEmailQueue() {
                 .eq('id', job.id)
                 .eq('status', 'pending') // Double check status hasn't changed
                 .select()
-                .single();
+                .maybeSingle();
 
             if (updateError || !leadJob) {
-                // Job was likely picked up by another worker or updated
+                // Job was likely picked up by another worker or was already updated
                 continue;
             }
 

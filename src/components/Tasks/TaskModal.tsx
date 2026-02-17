@@ -125,7 +125,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
       } else if (selectedCompliance.code === '3CEB' || selectedCompliance.code === 'TP-AUDIT') {
         dueMonth = 9; // October
       } else if (selectedCompliance.code === 'ITR_AUDIT') {
-        dueMonth = 10; // October/November
+        dueMonth = 9; // October/November
       } else if (selectedCompliance.code.startsWith('GSTR9')) {
         dueMonth = 11; // December
       }
