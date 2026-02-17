@@ -9,7 +9,7 @@ export const PricingSection: React.FC = () => {
         <section id="pricing" className="py-24 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent <span className="text-brand-primary">Pricing</span></h2>
+                    <h1 className="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent <span className="text-brand-primary">Pricing</span></h1>
                     <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                         Choose the plan that best fits your practice size and needs. No hidden fees.
                     </p>
@@ -50,7 +50,7 @@ export const PricingSection: React.FC = () => {
                         </ul>
 
                         <Link
-                            to="/login"
+                            to="/app/login"
                             className="block w-full text-center bg-gray-50 text-gray-900 font-bold py-3 rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors"
                         >
                             Get Started Free
@@ -95,7 +95,7 @@ export const PricingSection: React.FC = () => {
                         </ul>
 
                         <Link
-                            to="/login"
+                            to="/app/login"
                             className="block w-full text-center bg-brand-primary text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-orange-500/30 hover:bg-orange-600 transition-all"
                         >
                             Upgrade to Growth

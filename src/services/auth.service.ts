@@ -47,6 +47,17 @@ class AuthService {
       if (profileError) throw profileError;
 
       devLog('[AuthService] login success, userId:', profile.id);
+
+      // Generate a new session ID and store it in the DB
+      const newSessionId = crypto.randomUUID();
+      await supabase
+        .from('users')
+        .update({ current_session_id: newSessionId })
+        .eq('id', profile.id);
+
+      // Store locally to compare later
+      localStorage.setItem('process_helper_session_id', newSessionId);
+
       return profile as AuthUser;
     }, 'User login');
   }

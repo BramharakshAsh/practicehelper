@@ -109,6 +109,27 @@ class TasksService {
     return filteredData.map(mapDBTask);
   }
 
+  async getTask(id: string): Promise<Task | null> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select(`
+        *,
+        client:clients(*),
+        staff:users!tasks_staff_id_fkey(id, full_name, role, email),
+        creator:users!tasks_assigned_by_fkey(id, full_name, role, email),
+        compliance_type:compliance_types(*)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching single task:', error);
+      return null;
+    }
+
+    return mapDBTask(data as unknown as DBTaskResponse);
+  }
+
   async createTask(task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>): Promise<Task> {
     const firmId = useAuthStore.getState().user?.firm_id;
     if (!firmId) throw new Error('User not authenticated or missing firm ID');

@@ -1,4 +1,10 @@
 import React from 'react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Quick Start Guide",
+    description: "Learn how to streamline your CA firm's workflow with CAControl. Step-by-step guides for onboarding and management.",
+};
 
 export default function GuidePage() {
     return (

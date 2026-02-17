@@ -1,4 +1,10 @@
 import React from 'react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Practice Management Tools",
+    description: "Free tools and calculators to help CA firms manage their daily operations and compliance.",
+};
 
 export default function ToolsPage() {
     return (

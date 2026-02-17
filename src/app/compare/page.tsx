@@ -1,4 +1,10 @@
 import React from 'react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "CAControl vs. Alternatives",
+    description: "Compare CAControl with spreadsheets and generic tools. See why leading firms choose our centralized hub.",
+};
 
 export default function ComparePage() {
     return (

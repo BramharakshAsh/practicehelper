@@ -1,4 +1,10 @@
 import React from 'react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Audit Templates",
+    description: "Download and use our professionally designed audit templates and checklists for your CA practice.",
+};
 
 export default function TemplatesPage() {
     return (

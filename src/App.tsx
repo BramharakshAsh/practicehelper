@@ -75,6 +75,20 @@ function App() {
   // Start freeze detector in dev mode
   useEffect(() => { startFreezeDetector(); }, []);
 
+  // Detect recovery mode from URL hash immediately on load
+  // This handles the case where Supabase redirects to the Site URL with a hash
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes('type=recovery') || hash.includes('recovery')) {
+      devLog('[App] Recovery hash detected in URL, redirecting to /reset-password');
+      // Use window.location.replace to ensure the hash is preserved or passed properly
+      // if the router navigate is too slow or conflicts
+      if (!window.location.pathname.startsWith('/reset-password')) {
+        navigate('/reset-password', { replace: true });
+      }
+    }
+  }, [navigate]);
+
   // Initialize Supabase Realtime subscription for live task sync
   useRealtimeSubscription();
 
@@ -93,7 +107,8 @@ function App() {
         const user = await authService.getCurrentUser();
 
         if (!user) {
-          devWarn('[App] Session exists but user fetch failed — clearing auth');
+          devWarn('[App] Session exists but local profile missing (maybe registering or reset password)');
+          // Set user to null in store but DON'T clear the Supabase session
           setSession(null, null);
           return;
         }
@@ -109,12 +124,15 @@ function App() {
         logActivity('handleSession: setting session (user+firm)');
         setSession(user, firm);
       } else {
-        logActivity('handleSession: no session, clearing');
+        logActivity('handleSession: no session, clearing store');
         setSession(null, null);
       }
     } catch (error: any) {
       devError('[App] Session handling failed:', error);
-      setSession(null, null);
+      // Only clear if it's a real auth error, not a missing profile
+      if (error.status === 401 || error.status === 403) {
+        setSession(null, null);
+      }
     }
   }, [setSession]); /** Stable config, generally safe to include or omit if we trust zustand */
 
@@ -153,14 +171,84 @@ function App() {
     return () => { mounted = false; };
   }, []);
 
+  // ── Fix #4: Start/stop idle session check based on auth state ──
+  useEffect(() => {
+    if (isAuthenticated) {
+      startIdleSessionCheck();
+
+      // ── Single Session Enforcement ──
+      const user = useAuthStore.getState().user;
+      const localSessionId = localStorage.getItem('process_helper_session_id');
+
+      let channel: any = null;
+      let sessionCheckInterval: any = null;
+
+      if (user && localSessionId) {
+        // Don't enforce single session on the reset-password page
+        // as the recovery session doesn't have a local session ID yet
+        const isResetPage = window.location.pathname === '/reset-password';
+
+        if (!isResetPage) {
+          // 1. Realtime Listener
+          channel = supabase
+            .channel(`user_session_${user.id}`)
+            .on(
+              'postgres_changes',
+              {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'users',
+                filter: `id=eq.${user.id}`,
+              },
+              (payload) => {
+                const newSessionId = payload.new.current_session_id;
+                if (newSessionId && newSessionId !== localSessionId) {
+                  devWarn('[App] Session invalidated by newer login (Realtime).');
+                  authService.logout().then(() => {
+                    window.location.href = '/login?reason=concurrent_login';
+                  });
+                }
+              }
+            )
+            .subscribe();
+
+          // 2. Polling Fallback (Every 30s)
+          sessionCheckInterval = setInterval(async () => {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('current_session_id')
+              .eq('id', user.id)
+              .single();
+
+            if (userData && userData.current_session_id && userData.current_session_id !== localSessionId) {
+              devWarn('[App] Session invalidated by newer login (Polling).');
+              clearInterval(sessionCheckInterval);
+              authService.logout().then(() => {
+                window.location.href = '/login?reason=concurrent_login';
+              });
+            }
+          }, 30000);
+        }
+      }
+
+      return () => {
+        stopIdleSessionCheck();
+        if (channel) supabase.removeChannel(channel);
+        if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+      };
+    } else {
+      stopIdleSessionCheck();
+    }
+  }, [isAuthenticated]);
+
   // ── Global auth state change listener ──
-  // Uses refs to avoid re-subscribing on every render
+  const lastRefreshTimeRef = React.useRef(0);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // Decoupled async logic
       void (async () => {
-        logActivity(`authStateChange: ${event}`);
-        devLog('[App] Auth event:', event);
+        // logActivity(`authStateChange: ${event}`); // Reduce noise
 
         if (event === 'PASSWORD_RECOVERY') {
           navigateRef.current('/reset-password');
@@ -168,10 +256,21 @@ function App() {
         }
 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // Token-based debounce
+          // 1. Throttle Refreshes (Fix 429 loops)
+          if (event === 'TOKEN_REFRESHED') {
+            const now = Date.now();
+            // Ignore refreshes within 10 seconds of the last one
+            if (now - lastRefreshTimeRef.current < 10000) {
+              devLog('[App] Debouncing TOKEN_REFRESHED');
+              return;
+            }
+            lastRefreshTimeRef.current = now;
+          }
+
+          // 2. Token Check
           const newToken = session?.access_token;
           if (newToken && newToken === lastAccessTokenRef.current) {
-            devLog('[App] Skipping session refresh — token unchanged');
+            // devLog('[App] Skipping session refresh — token unchanged');
             return;
           }
 
@@ -188,17 +287,7 @@ function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, []); // Empty dependency array - setSession is stable, refs are stable
-
-  // ── Fix #4: Start/stop idle session check based on auth state ──
-  useEffect(() => {
-    if (isAuthenticated) {
-      startIdleSessionCheck();
-    } else {
-      stopIdleSessionCheck();
-    }
-    return () => stopIdleSessionCheck();
-  }, [isAuthenticated]);
+  }, []);
 
   // Prefetch data when authenticated - Improved safety
   useEffect(() => {

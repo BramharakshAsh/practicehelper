@@ -5,13 +5,34 @@ import "../index.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-    title: "CAControl - Workflow Under Control",
-    description: "The all-in-one practice management hub for CA practitioners and finance professionals.",
+    metadataBase: new URL("https://app.cacontrol.online"),
+    title: {
+        default: "CAControl - Workflow Under Control",
+        template: "%s | CAControl",
+    },
+    description: "The all-in-one practice management hub for CA practitioners and finance professionals. Centralize clients, staff, tasks, and compliance.",
+    alternates: {
+        canonical: "/",
+    },
     openGraph: {
         title: "CAControl",
         description: "Streamline your firm's workflow",
-        images: ["/logo.svg"],
+        url: "https://app.cacontrol.online",
+        siteName: "CAControl",
+        images: [
+            {
+                url: "/logo.svg",
+                width: 800,
+                height: 600,
+            },
+        ],
+        locale: "en_US",
+        type: "website",
     },
+    robots: {
+        index: true,
+        follow: true,
+    }
 };
 
 export default function RootLayout({

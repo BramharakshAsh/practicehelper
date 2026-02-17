@@ -1,70 +1,19 @@
-"use client";
 import React from 'react';
 import { UniversalLink as Link } from '../components/Common/UniversalLink';
 import {
     Users, CheckSquare, Zap, ClipboardList,
     BarChart3, ShieldCheck, ArrowRight, PlayCircle,
-    Menu, X, Compass, UserCheck, Settings,
-    HelpCircle, Database, Check, Mail, Phone
+    Compass, UserCheck, Settings,
+    HelpCircle, Database, Check, Mail
 } from 'lucide-react';
 import { CAControlLogo } from '../components/Common/CAControlLogo';
+import { LandingHeader } from '../components/Landing/LandingHeader';
 
 const LandingPage: React.FC = () => {
-    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-
     return (
         <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-teal-100">
-            {/* Navigation */}
-            <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-20">
-                        <div className="flex items-center">
-                            <CAControlLogo size="lg" />
-                            <span className="hidden">CAControl</span>
-
-                        </div>
-
-                        {/* Desktop Nav */}
-                        <div className="hidden md:flex items-center space-x-8">
-                            <a href="#features" className="text-gray-600 hover:text-brand-primary transition-colors font-medium">Features</a>
-                            <a href="#about" className="text-gray-600 hover:text-brand-primary transition-colors font-medium">About</a>
-                            <a href="#benefits" className="text-gray-600 hover:text-brand-primary transition-colors font-medium">Benefits</a>
-                            <a href="#pricing" className="text-gray-600 hover:text-brand-primary transition-colors font-medium">Pricing</a>
-                            <Link to="/app/login" className="text-gray-600 hover:text-brand-primary transition-colors font-medium">Login</Link>
-                            <Link
-                                to="/app/login"
-                                className="bg-brand-primary text-white px-6 py-2.5 rounded-full font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all hover:bg-orange-600"
-                            >
-                                Register for Free
-                            </Link>
-                        </div>
-
-                        {/* Mobile menu button */}
-                        <div className="md:hidden flex items-center">
-                            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-600">
-                                {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Mobile Nav */}
-                {isMenuOpen && (
-                    <div className="md:hidden bg-white border-b border-gray-100 py-4 px-4 space-y-4 shadow-xl">
-                        <a href="#features" onClick={() => setIsMenuOpen(false)} className="block text-gray-600 font-medium">Features</a>
-                        <a href="#about" onClick={() => setIsMenuOpen(false)} className="block text-gray-600 font-medium">About</a>
-                        <a href="#benefits" onClick={() => setIsMenuOpen(false)} className="block text-gray-600 font-medium">Benefits</a>
-                        <a href="#pricing" onClick={() => setIsMenuOpen(false)} className="block text-gray-600 font-medium">Pricing</a>
-                        <Link to="/app/login" className="block text-gray-600 font-medium">Login</Link>
-                        <Link
-                            to="/app/login"
-                            className="block bg-brand-primary text-white px-6 py-3 rounded-xl font-semibold text-center hover:bg-orange-600"
-                        >
-                            Register for Free
-                        </Link>
-                    </div>
-                )}
-            </nav>
+            {/* Navigation - now handled by a Client Component */}
+            <LandingHeader />
 
             {/* Hero Section */}
             <section className="pt-32 pb-20 overflow-hidden">
@@ -482,17 +431,51 @@ const LandingPage: React.FC = () => {
             </section>
 
             {/* Footer */}
-            <footer className="py-12 border-t border-gray-100">
+            <footer className="py-20 border-t border-gray-100 bg-gray-50/50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col md:flex-row justify-between items-center text-gray-500 text-sm">
-                        <div className="flex items-center mb-4 md:mb-0">
-                            <CAControlLogo size="sm" showText={true} className="opacity-70 grayscale" />
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+                        <div className="col-span-1 md:col-span-1">
+                            <CAControlLogo size="md" showText={true} className="mb-6" />
+                            <p className="text-gray-500 text-sm leading-relaxed">
+                                The all-in-one practice management hub for CA practitioners and finance professionals worldwide.
+                            </p>
                         </div>
-                        <div className="flex space-x-8">
-                            <a href="#" className="hover:text-brand-primary transition-colors">Privacy Policy</a>
-                            <a href="#" className="hover:text-brand-primary transition-colors">Terms of Service</a>
-                            <a href="#" className="hover:text-brand-primary transition-colors">Contact Support</a>
+
+                        <div>
+                            <h4 className="font-bold text-gray-900 mb-6 uppercase text-xs tracking-widest">Product</h4>
+                            <ul className="space-y-4 text-sm text-gray-600">
+                                <li><a href="#features" className="hover:text-brand-primary transition-colors">Features</a></li>
+                                <li><a href="#benefits" className="hover:text-brand-primary transition-colors">Benefits</a></li>
+                                <li><Link to="/pricing" className="hover:text-brand-primary transition-colors">Pricing</Link></li>
+                                <li><Link to="/compare" className="hover:text-brand-primary transition-colors">Comparison</Link></li>
+                            </ul>
                         </div>
+
+                        <div>
+                            <h4 className="font-bold text-gray-900 mb-6 uppercase text-xs tracking-widest">Learning</h4>
+                            <ul className="space-y-4 text-sm text-gray-600">
+                                <li><Link to="/blog" className="hover:text-brand-primary transition-colors">Blog</Link></li>
+                                <li><Link to="/guides" className="hover:text-brand-primary transition-colors">Quick-start Guide</Link></li>
+                                <li><Link to="/templates" className="hover:text-brand-primary transition-colors">Templates</Link></li>
+                                <li><Link to="/tools" className="hover:text-brand-primary transition-colors">Tools</Link></li>
+                                <li><Link to="/calendar" className="hover:text-brand-primary transition-colors">Calendar</Link></li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 className="font-bold text-gray-900 mb-6 uppercase text-xs tracking-widest">Legal & Support</h4>
+                            <ul className="space-y-4 text-sm text-gray-600">
+                                <li><Link to="/privacy" className="hover:text-brand-primary transition-colors">Privacy Policy</Link></li>
+                                <li><Link to="/terms" className="hover:text-brand-primary transition-colors">Terms of Service</Link></li>
+                                <li><a href="mailto:learnwithfun116@gmail.com" className="hover:text-brand-primary transition-colors">Contact Support</a></li>
+                                <li><Link to="/app/login" className="hover:text-brand-primary transition-colors font-semibold text-brand-primary">User Login</Link></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="pt-12 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-gray-400 text-xs text-center md:text-left gap-4">
+                        <p>© 2026 CAControl Practice Helper. All rights reserved.</p>
+                        <p>Designed for CA Firms, CPA Practices, and Tax Professionals.</p>
                     </div>
                 </div>
             </footer>
