@@ -7,6 +7,7 @@ import { Task, Document, UserRole } from '../../types';
 import TaskComments from './TaskComments';
 import { useDocuments } from '../../store/documents.store';
 import { useTimeEntriesStore } from '../../store/time-entries.store';
+import { formatDate } from '../../utils/date.utils';
 import DocumentList from '../Documents/DocumentList';
 import DocumentUploadModal from '../Documents/DocumentUploadModal';
 
@@ -98,8 +99,8 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
         }
     };
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-IN', {
+    const formatDateDisplay = (dateString: string) => {
+        return formatDate(dateString, {
             day: 'numeric', month: 'long', year: 'numeric'
         });
     };
@@ -117,7 +118,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                 {task.priority.toUpperCase()}
                             </span>
                             <span className="text-sm text-gray-500">
-                                Created: {formatDate(task.created_at)}
+                                Created: {formatDateDisplay(task.created_at)}
                             </span>
                         </div>
                     </div>
@@ -251,7 +252,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                         <div className="flex items-center text-sm text-gray-700">
                                             <Calendar className="h-4 w-4 mr-3 text-gray-400" />
                                             <span className="font-medium mr-2">Due Date:</span>
-                                            {formatDate(task.due_date)}
+                                            {formatDateDisplay(task.due_date)}
                                         </div>
                                         <div className="flex items-center text-sm text-gray-700">
                                             <FileText className="h-4 w-4 mr-3 text-gray-400" />

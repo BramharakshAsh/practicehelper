@@ -2,6 +2,7 @@ import * as React from 'react';
 const { useState } = React;
 import { MoreVertical, User, Building, Calendar, MessageSquare, CheckCircle, AlertTriangle, Eye, Trash2 } from 'lucide-react';
 import { Task, UserRole } from '../../types';
+import { formatDate } from '../../utils/date.utils';
 import TaskDetailsModal from './TaskDetailsModal';
 
 interface TaskCardProps {
@@ -32,9 +33,19 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
+  // Use the central utility, but locally we might want specific options if needed.
+  // However, the utility defaults to numeric/numeric/numeric (DD/MM/YYYY).
+  // The original code here used { day: 'numeric', month: 'short' }.
+  // Let's stick to the consistent look or allow the utility to be flexible.
+  // The user wants CONSISTENCY.
+  // Let's use the utility's default for consistency, OR if the design requires 'short' month, we pass it.
+  // The user said "seeing MM/DD/YYYY vs DD/MM/YYYY". 
+  // TaskCard originally used `toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })` -> "1 Jan".
+  // This doesn't seem to be the "MM/DD/YYYY" issue location, as it was explicit 'en-IN'.
+  // But let's use the utility to be safe and consistent.
+
+  const formatDateDisplay = (dateString: string) => {
+    return formatDate(dateString, {
       day: 'numeric',
       month: 'short',
     });
@@ -183,7 +194,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
         <div className="flex items-center justify-between">
           <span className={`text-xs font-medium ${isOverdue(task.due_date) ? 'text-red-600' : 'text-gray-600'
             }`}>
-            Due: {formatDate(task.due_date)}
+            Due: {formatDateDisplay(task.due_date)}
             {isOverdue(task.due_date) && ' (Overdue)'}
           </span>
 

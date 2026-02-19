@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock, User, Building, AlertTriangle, CheckCircle, PlayCircle } from 'lucide-react';
 import { Task } from '../../types';
+import { formatDate } from '../../utils/date.utils';
 
 interface RecentTasksProps {
   tasks: Task[];
@@ -55,9 +56,8 @@ const RecentTasks: React.FC<RecentTasksProps> = ({ tasks, title }) => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
+  const formatDateDisplay = (dateString: string) => {
+    return formatDate(dateString, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -86,7 +86,7 @@ const RecentTasks: React.FC<RecentTasksProps> = ({ tasks, title }) => {
                     {task.status.replace('_', ' ')}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
                   <div className="flex items-center space-x-1">
                     <Building className="h-4 w-4" />
@@ -100,10 +100,9 @@ const RecentTasks: React.FC<RecentTasksProps> = ({ tasks, title }) => {
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">{task.period}</span>
-                  <span className={`text-sm font-medium ${
-                    isOverdue(task.due_date) ? 'text-red-600' : 'text-gray-600'
-                  }`}>
-                    Due: {formatDate(task.due_date)}
+                  <span className={`text-sm font-medium ${isOverdue(task.due_date) ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                    Due: {formatDateDisplay(task.due_date)}
                     {isOverdue(task.due_date) && ' (Overdue)'}
                   </span>
                 </div>
@@ -115,7 +114,7 @@ const RecentTasks: React.FC<RecentTasksProps> = ({ tasks, title }) => {
             </div>
           </div>
         ))}
-        
+
         {tasks.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />

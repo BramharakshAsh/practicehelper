@@ -8,6 +8,7 @@ import StaffWorkloadSummary from './StaffWorkloadSummary';
 import { RotateCcw as Undo } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { SubscriptionService } from '../../services/subscription.service';
+import { formatDate } from '../../utils/date.utils';
 
 interface StaffListProps {
   staff: Staff[];
@@ -230,7 +231,7 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
               {member.date_of_joining && (
                 <div className="flex items-center text-sm text-gray-600">
                   <Calendar className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
-                  <span className="text-xs">Joined {new Date(member.date_of_joining).toLocaleDateString()}</span>
+                  <span className="text-xs">Joined {formatDate(member.date_of_joining)}</span>
                 </div>
               )}
             </div>

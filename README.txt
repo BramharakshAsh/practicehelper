@@ -408,3 +408,34 @@ the in-app Help system.
 
 Version: 1.1.0
 Last Updated: February 2026
+
+
+========================================================================================================
+VERCEL CRON DEPLOYMENT (BACKGROUND EMAILS)
+========================================================================================================
+
+This project uses **Vercel Cron Jobs** to handle daily email reminders. This replaces the old `backend/` folder approach.
+
+1. ENVIRONMENT VARIABLES TO ADD ON VERCEL
+-----------------------------------------
+Go to your Vercel Project Settings > Environment Variables and add:
+
+- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase Anon Key
+- `SUPABASE_SERVICE_ROLE_KEY`: **Critical** for background jobs (found in Supabase > Project Settings > API)
+- `RESEND_API_KEY`: Your Resend API Key
+- `CRON_SECRET`: A random string (e.g. `GeneratedUUID`) to secure your cron endpoints.
+
+2. VERIFY CRON JOBS
+-------------------
+After deploying, go to the **Settings** tab in your Vercel dashboard, then click **Cron Jobs** on the left sidebar. You should see two jobs listed:
+1.  `/api/cron/schedule` (Every 15 mins)
+2.  `/api/cron/process` (Every 1 minute)
+
+3. TESTING LOCALLY
+------------------
+You can manually trigger the jobs by visiting:
+- `http://localhost:3000/api/cron/schedule`
+- `http://localhost:3000/api/cron/process`
+
+Note: You might need to add `?key=YOUR_CRON_SECRET` or header `Authorization: Bearer YOUR_CRON_SECRET` if you enabled local checks.
