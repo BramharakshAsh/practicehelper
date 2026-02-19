@@ -14,8 +14,9 @@ interface User {
 }
 
 // Security: Verify CRON_SECRET if present in env
+// Security: Verify CRON_SECRET if present in env
 const CRON_SECRET = process.env.CRON_SECRET;
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_123456789'; // Fallback to prevent build error
 
 // Vercel Serverless Function Timeout is typically 10s on Hobby, 60s on Pro.
 // We must be efficient.
