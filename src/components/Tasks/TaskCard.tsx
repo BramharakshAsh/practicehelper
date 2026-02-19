@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useAuthStore } from '../../store/auth.store';
 const { useState } = React;
 import { MoreVertical, User, Building, Calendar, MessageSquare, CheckCircle, AlertTriangle, Eye, Trash2 } from 'lucide-react';
 import { Task, UserRole } from '../../types';
@@ -85,6 +86,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
 
   const nextStatuses = getNextStatuses(task.status);
 
+  const { user } = useAuthStore();
+  const canDelete = task.assigned_by === user?.id;
+  const canUpdateStatus = task.assigned_by === user?.id || task.staff_id === user?.id;
+
   return (
     <div
       onDoubleClick={() => setShowDetails(true)}
@@ -126,7 +131,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
                   <Eye className="h-4 w-4 mr-2" />
                   View Details
                 </button>
-                {nextStatuses.map((status) => (
+                {canUpdateStatus && nextStatuses.map((status) => (
                   <button
                     key={status}
                     onClick={() => handleStatusChange(status as Task['status'])}
@@ -141,7 +146,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
                 >
                   Add/Edit Remarks
                 </button>
-                {currentRole === 'partner' && (
+                {canDelete && (
                   <button
                     onClick={() => {
                       console.log('Task delete clicked:', task.id, 'Audit ID:', task.audit_id);

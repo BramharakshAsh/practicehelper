@@ -185,25 +185,52 @@ class AuditManagementService {
         if (templateError) throw templateError;
         if (!templateItems) return;
 
-        const idMap = new Map<string, string>();
+        // Build a tree in memory to ensure we insert parents before children
+        const itemMap = new Map<string, any>();
+        const roots: any[] = [];
 
-        for (const item of templateItems) {
+        // 1. Initialize map and find roots
+        templateItems.forEach(item => {
+            itemMap.set(item.id, { ...item, children: [] });
+        });
+
+        // 2. Build hierarchy
+        templateItems.forEach(item => {
+            if (item.parent_id && itemMap.has(item.parent_id)) {
+                itemMap.get(item.parent_id).children.push(itemMap.get(item.id));
+            } else {
+                roots.push(itemMap.get(item.id));
+            }
+        });
+
+        // 3. Recursive insertion function
+        const insertNode = async (node: any, parentId: string | null = null) => {
             const { data: newItem, error: insertError } = await supabase
                 .from('audit_checklist_items')
                 .insert({
                     audit_id: auditId,
-                    parent_id: item.parent_id ? idMap.get(item.parent_id) : null,
-                    title: item.title,
-                    description: item.description,
-                    order_index: item.order_index,
+                    parent_id: parentId,
+                    title: node.title,
+                    description: node.description,
+                    order_index: node.order_index,
                     is_completed: false
                 })
                 .select()
                 .single();
 
-            if (insertError) throw insertError;
-            idMap.set(item.id, newItem.id);
-        }
+            if (insertError) {
+                console.error('Failed to insert template item', insertError);
+                return;
+            }
+
+            // Insert children in parallel
+            if (node.children && node.children.length > 0) {
+                await Promise.all(node.children.map((child: any) => insertNode(child, newItem.id)));
+            }
+        };
+
+        // 4. Start insertion from roots in parallel
+        await Promise.all(roots.map(root => insertNode(root, null)));
     }
 
     async getPotentialAuditTasks() {
@@ -233,6 +260,57 @@ class AuditManagementService {
             task.compliance_type?.code?.toLowerCase().includes('audit') ||
             task.title?.toLowerCase().includes('audit')
         );
+    }
+    async createTemplateFromAudit(auditId: string, name: string, description: string): Promise<string> {
+        const firmId = useAuthStore.getState().user?.firm_id;
+        if (!firmId) throw new Error('User not authenticated');
+
+        // 1. Create the template
+        const { data: template, error: templateError } = await supabase
+            .from('audit_plan_templates')
+            .insert({
+                firm_id: firmId,
+                name: name,
+                description: description,
+                is_active: true
+            })
+            .select()
+            .single();
+
+        if (templateError) throw templateError;
+
+        // 2. Fetch existing checklist items
+        const checklistItems = await this.getAuditChecklist(auditId);
+
+        // 3. Helper to recursively insert items
+        const insertItems = async (items: AuditChecklistItem[], parentId: string | null = null) => {
+            for (const item of items) {
+                const { data: newItem, error: itemError } = await supabase
+                    .from('audit_template_items')
+                    .insert({
+                        template_id: template.id,
+                        parent_id: parentId,
+                        title: item.title,
+                        description: item.description,
+                        order_index: item.order_index
+                    })
+                    .select()
+                    .single();
+
+                if (itemError) {
+                    console.error('Failed to save template item', itemError);
+                    continue; // Skip failed items but try to continue
+                }
+
+                if (item.children && item.children.length > 0) {
+                    await insertItems(item.children, newItem.id);
+                }
+            }
+        };
+
+        await insertItems(checklistItems);
+
+        return template.id;
     }
 }
 

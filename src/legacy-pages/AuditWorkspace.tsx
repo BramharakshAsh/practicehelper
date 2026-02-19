@@ -229,6 +229,26 @@ const AuditWorkspace: React.FC = () => {
         );
     };
 
+    const handleSaveAsTemplate = async () => {
+        if (!id || !audit) return;
+
+        const name = prompt('Enter a name for this template:', `Template from ${audit.title}`);
+        if (!name) return;
+
+        const description = prompt('Enter a description (optional):', `Created from audit ${audit.client?.name} on ${new Date().toLocaleDateString()}`);
+
+        try {
+            setLoading(true); // Re-use loading state or add a specific one
+            await auditManagementService.createTemplateFromAudit(id, name, description || '');
+            alert('Template saved successfully!');
+        } catch (error) {
+            console.error('Failed to save template', error);
+            alert('Error saving template');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (loading) return <div className="p-12 text-center animate-pulse">Loading Audit Workspace...</div>;
     if (!audit) return <div className="p-12 text-center text-red-500">Audit not found.</div>;
 
@@ -266,13 +286,22 @@ const AuditWorkspace: React.FC = () => {
                             ></div>
                         </div>
                     </div>
-                    <button
-                        onClick={() => addItem()}
-                        className="flex items-center px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-bold shadow-md hover:shadow-lg active:scale-95"
-                    >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Root Section
-                    </button>
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={handleSaveAsTemplate}
+                            className="flex items-center px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-bold shadow-sm"
+                        >
+                            <ListTodo className="h-4 w-4 mr-2" />
+                            Save as Template
+                        </button>
+                        <button
+                            onClick={() => addItem()}
+                            className="flex items-center px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-bold shadow-md hover:shadow-lg active:scale-95"
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Root Section
+                        </button>
+                    </div>
                 </div>
             </div>
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuthStore } from '../../store/auth.store';
 import { User, CheckCircle, Calendar, X, Trash2 } from 'lucide-react';
 import { Task, Staff, UserRole } from '../../types';
 
@@ -25,8 +26,22 @@ const TaskBulkActions: React.FC<TaskBulkActionsProps> = ({
     const [showDateMenu, setShowDateMenu] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [newDueDate, setNewDueDate] = useState('');
+    const { user } = useAuthStore();
 
     const taskIds = selectedTasks.map(t => t.id);
+
+    // Check if the current user is the assigner of ALL selected tasks
+    // If even one task was assigned by someone else, disable date editing
+    const canEditDate = selectedTasks.every(t => t.assigned_by === user?.id);
+
+    // Status: User must be assigner OR assignee for ALL selected tasks
+    const canUpdateStatus = selectedTasks.every(t => t.assigned_by === user?.id || t.staff_id === user?.id);
+
+    // Assign: User must be assigner for ALL selected tasks
+    const canAssign = selectedTasks.every(t => t.assigned_by === user?.id);
+
+    // Delete: User must be assigner for ALL selected tasks
+    const canDelete = selectedTasks.every(t => t.assigned_by === user?.id);
 
     const handleUpdate = async (updates: Partial<Task>) => {
         setIsUpdating(true);
@@ -59,14 +74,24 @@ const TaskBulkActions: React.FC<TaskBulkActionsProps> = ({
                     {/* Status Update */}
                     <div className="relative">
                         <button
-                            onClick={() => { setShowStatusMenu(!showStatusMenu); setShowAssignMenu(false); setShowDateMenu(false); }}
-                            className="flex items-center space-x-2 hover:bg-white/10 px-3 py-2 rounded-xl transition-colors text-sm"
-                            disabled={isUpdating}
+                            onClick={() => {
+                                if (canUpdateStatus) {
+                                    setShowStatusMenu(!showStatusMenu);
+                                    setShowAssignMenu(false);
+                                    setShowDateMenu(false);
+                                }
+                            }}
+                            className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-colors text-sm ${canUpdateStatus
+                                ? 'hover:bg-white/10 cursor-pointer'
+                                : 'opacity-50 cursor-not-allowed'
+                                }`}
+                            disabled={isUpdating || !canUpdateStatus}
+                            title={!canUpdateStatus ? "You can only update status for tasks assigned to or by you" : "Update Status"}
                         >
                             <CheckCircle className="h-4 w-4 text-green-400" />
                             <span>Status</span>
                         </button>
-                        {showStatusMenu && (
+                        {showStatusMenu && canUpdateStatus && (
                             <div className="absolute bottom-full mb-3 left-0 bg-gray-800 rounded-xl shadow-xl border border-gray-700 p-1 w-48 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                 {['assigned', 'in_progress', 'awaiting_client_data', 'ready_for_review', ...(!['staff', 'paid_staff', 'articles'].includes(currentRole || '') ? ['filed_completed'] : [])].map((status) => (
                                     <button
@@ -84,14 +109,24 @@ const TaskBulkActions: React.FC<TaskBulkActionsProps> = ({
                     {/* Re-assignment */}
                     <div className="relative">
                         <button
-                            onClick={() => { setShowAssignMenu(!showAssignMenu); setShowStatusMenu(false); setShowDateMenu(false); }}
-                            className="flex items-center space-x-2 hover:bg-white/10 px-3 py-2 rounded-xl transition-colors text-sm"
-                            disabled={isUpdating}
+                            onClick={() => {
+                                if (canAssign) {
+                                    setShowAssignMenu(!showAssignMenu);
+                                    setShowStatusMenu(false);
+                                    setShowDateMenu(false);
+                                }
+                            }}
+                            className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-colors text-sm ${canAssign
+                                ? 'hover:bg-white/10 cursor-pointer'
+                                : 'opacity-50 cursor-not-allowed'
+                                }`}
+                            disabled={isUpdating || !canAssign}
+                            title={!canAssign ? "You can only reassign tasks you created" : "Assign Staff"}
                         >
                             <User className="h-4 w-4 text-blue-400" />
                             <span>Assign</span>
                         </button>
-                        {showAssignMenu && (
+                        {showAssignMenu && canAssign && (
                             <div className="absolute bottom-full mb-3 left-0 bg-gray-800 rounded-xl shadow-xl border border-gray-700 p-1 w-56 max-h-64 overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
                                 <p className="px-3 py-2 text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-700 mb-1">Select Staff</p>
                                 {staff.map((s) => (
@@ -111,14 +146,24 @@ const TaskBulkActions: React.FC<TaskBulkActionsProps> = ({
                     {/* Due Date Extension */}
                     <div className="relative">
                         <button
-                            onClick={() => { setShowDateMenu(!showDateMenu); setShowStatusMenu(false); setShowAssignMenu(false); }}
-                            className="flex items-center space-x-2 hover:bg-white/10 px-3 py-2 rounded-xl transition-colors text-sm"
-                            disabled={isUpdating}
+                            onClick={() => {
+                                if (canEditDate) {
+                                    setShowDateMenu(!showDateMenu);
+                                    setShowStatusMenu(false);
+                                    setShowAssignMenu(false);
+                                }
+                            }}
+                            className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-colors text-sm ${canEditDate
+                                ? 'hover:bg-white/10 cursor-pointer'
+                                : 'opacity-50 cursor-not-allowed'
+                                }`}
+                            disabled={isUpdating || !canEditDate}
+                            title={!canEditDate ? "You can only extend due dates for tasks you assigned" : "Extend Due Date"}
                         >
                             <Calendar className="h-4 w-4 text-orange-400" />
                             <span>Ext. Date</span>
                         </button>
-                        {showDateMenu && (
+                        {showDateMenu && canEditDate && (
                             <div className="absolute bottom-full mb-3 left-0 bg-gray-800 rounded-xl shadow-xl border border-gray-700 p-4 w-64 animate-in fade-in zoom-in-95 duration-200">
                                 <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Select New Due Date</label>
                                 <div className="flex flex-col space-y-3">
@@ -143,14 +188,22 @@ const TaskBulkActions: React.FC<TaskBulkActionsProps> = ({
                     {/* Delete Button */}
                     <div className="relative">
                         <button
-                            onClick={() => setShowDeleteConfirm(true)}
-                            className="flex items-center space-x-2 hover:bg-red-600/20 px-3 py-2 rounded-xl transition-colors text-sm"
-                            disabled={isUpdating}
+                            onClick={() => {
+                                if (canDelete) {
+                                    setShowDeleteConfirm(true);
+                                }
+                            }}
+                            className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-colors text-sm ${canDelete
+                                ? 'hover:bg-red-600/20 cursor-pointer'
+                                : 'opacity-50 cursor-not-allowed'
+                                }`}
+                            disabled={isUpdating || !canDelete}
+                            title={!canDelete ? "You can only delete tasks you created" : "Delete Selected"}
                         >
                             <Trash2 className="h-4 w-4 text-red-400" />
                             <span>Delete</span>
                         </button>
-                        {showDeleteConfirm && (
+                        {showDeleteConfirm && canDelete && (
                             <div className="absolute bottom-full mb-3 right-0 bg-gray-800 rounded-xl shadow-xl border border-red-500/50 p-4 w-72 animate-in fade-in zoom-in-95 duration-200">
                                 <h4 className="text-sm font-bold text-white mb-2">Confirm Deletion</h4>
                                 <p className="text-xs text-gray-300 mb-4">

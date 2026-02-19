@@ -75,24 +75,38 @@ class ClientsService {
   }
 
   async deleteClient(id: string): Promise<void> {
-    devLog('[ClientsService] Deleting tasks for client:', id);
-    // Delete all tasks associated with this client
-    const { error: taskError } = await supabase
-      .from('tasks')
-      .delete()
-      .eq('client_id', id);
+    devLog('[ClientsService] Attempting to delete client:', id);
 
-    if (taskError) {
-      devError('[ClientsService] Error deleting client tasks:', taskError);
-      throw taskError;
+    // 1. Check for active tasks (not 'filed_completed')
+    const { count, error: countError } = await supabase
+      .from('tasks')
+      .select('*', { count: 'exact', head: true })
+      .eq('client_id', id)
+      .neq('status', 'filed_completed');
+
+    if (countError) {
+      devError('[ClientsService] Error checking active tasks:', countError);
+      throw countError;
     }
 
+    if (count && count > 0) {
+      const msg = `Cannot delete client. There are ${count} active task(s) that must be completed or deleted first.`;
+      devWarn('[ClientsService] Delete aborted:', msg);
+      throw new Error(msg);
+    }
+
+    // 2. Perform Soft Delete (mark as inactive)
     const { error } = await supabase
       .from('clients')
-      .delete()
+      .update({ is_active: false })
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      devError('[ClientsService] Error soft-deleting client:', error);
+      throw error;
+    }
+
+    devLog('[ClientsService] Client soft-deleted successfully');
   }
 
   async importClients(clientsData: any[]): Promise<{ success: number; failures: number; errors: string[] }> {

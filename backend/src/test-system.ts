@@ -84,7 +84,8 @@ async function runManualTest() {
         console.log('Keep this running to see logs. Press Ctrl+C to stop after you see completion.');
 
         // Start worker
-        processEmailQueue();
+        // processEmailQueue();
+        console.log('Jobs created. Run "npx tsx scripts/test-cron.ts" to process them via API.');
 
     } catch (err: any) {
         console.error('Test script failed:', err.message);

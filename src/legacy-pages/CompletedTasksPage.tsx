@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { CheckCircle, RotateCcw, Calendar, User, Building, Clock, Receipt, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTasks } from '../hooks/useTasks';
-import { useClients } from '../hooks/useClients';
+// import { useClients } from '../hooks/useClients';
 import { useStaff } from '../hooks/useStaff';
 import { Task } from '../types';
 
 const CompletedTasksPage: React.FC = () => {
     const { tasks, updateTask } = useTasks();
-    const { clients } = useClients();
+    // const { clients } = useClients(); // clients no longer needed for completed tasks lookup
     const { staff } = useStaff();
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -23,11 +23,11 @@ const CompletedTasksPage: React.FC = () => {
         .filter(t => {
             if (!searchTerm) return true;
             const term = searchTerm.toLowerCase();
-            const client = clients.find(c => c.id === t.client_id);
+            const clientName = t.client?.name || '';
             const staffMember = staff.find(s => s.user_id === t.staff_id);
             return (
                 t.title.toLowerCase().includes(term) ||
-                client?.name.toLowerCase().includes(term) ||
+                clientName.toLowerCase().includes(term) ||
                 staffMember?.name.toLowerCase().includes(term) ||
                 (t.period || '').toLowerCase().includes(term)
             );
@@ -216,7 +216,7 @@ const CompletedTasksPage: React.FC = () => {
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {completedTasks.map((task: Task) => {
-                                    const client = clients.find(c => c.id === task.client_id);
+                                    const clientName = task.client ? task.client.name : 'N/A';
                                     const staffMember = staff.find(s => s.user_id === task.staff_id);
                                     const billingStatus = task.billing_status || 'not_billed';
                                     const isBilled = billingStatus === 'billed';
@@ -239,7 +239,7 @@ const CompletedTasksPage: React.FC = () => {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center text-sm text-gray-900">
                                                     <Building className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
-                                                    <span className="truncate max-w-[140px]">{client?.name || 'N/A'}</span>
+                                                    <span className="truncate max-w-[140px]">{clientName}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
