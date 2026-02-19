@@ -43,9 +43,7 @@ class TasksService {
         client:clients(*),
         staff:users!tasks_staff_id_fkey(id, full_name, role, email),
         creator:users!tasks_assigned_by_fkey(id, full_name, role, email),
-        compliance_type:compliance_types(*
-
-)
+        compliance_type:compliance_types(*)
       `)
       .eq('firm_id', firmId);
 

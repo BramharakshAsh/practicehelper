@@ -187,9 +187,13 @@ const ClientList: React.FC<ClientListProps> = ({ clients, staff, complianceTypes
                 <span>Edit</span>
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (confirm(`Are you sure you want to delete ${client.name}?`)) {
-                    onClientDelete(client.id);
+                    try {
+                      await onClientDelete(client.id);
+                    } catch (error: any) {
+                      alert(error.message || 'Failed to delete client');
+                    }
                   }
                 }}
                 className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-500 border border-red-100"

@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { auditManagementService } from '../../services/audit-management.service';
 import { tasksService } from '../../services/tasks.service';
 import { Task, Document, UserRole } from '../../types';
+import { useAuthStore } from '../../store/auth.store';
 import TaskComments from './TaskComments';
 import { useDocuments } from '../../store/documents.store';
 import { useTimeEntriesStore } from '../../store/time-entries.store';
+import { formatDate } from '../../utils/date.utils';
 import DocumentList from '../Documents/DocumentList';
 import DocumentUploadModal from '../Documents/DocumentUploadModal';
 
@@ -98,11 +100,14 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
         }
     };
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-IN', {
+    const formatDateDisplay = (dateString: string) => {
+        return formatDate(dateString, {
             day: 'numeric', month: 'long', year: 'numeric'
         });
     };
+
+    const { user } = useAuthStore();
+    const canUpdateStatus = task.assigned_by === user?.id || task.staff_id === user?.id;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -117,7 +122,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                 {task.priority.toUpperCase()}
                             </span>
                             <span className="text-sm text-gray-500">
-                                Created: {formatDate(task.created_at)}
+                                Created: {formatDateDisplay(task.created_at)}
                             </span>
                         </div>
                     </div>
@@ -186,7 +191,9 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                         <select
                                             value={task.status}
                                             onChange={(e) => onStatusChange(task.id, e.target.value as Task['status'])}
-                                            className={`rounded-lg text-sm font-medium px-3 py-1 border-0 ring-1 ring-inset focus:ring-2 focus:ring-blue-600 ${statusColors[task.status]}`}
+                                            className={`rounded-lg text-sm font-medium px-3 py-1 border-0 ring-1 ring-inset focus:ring-2 focus:ring-blue-600 ${statusColors[task.status]} ${!canUpdateStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            disabled={!canUpdateStatus}
+                                            title={!canUpdateStatus ? "You can only update status for tasks assigned to or by you" : "Update Status"}
                                         >
                                             <option value="assigned">Assigned</option>
                                             <option value="in_progress">In Progress</option>
@@ -251,7 +258,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                         <div className="flex items-center text-sm text-gray-700">
                                             <Calendar className="h-4 w-4 mr-3 text-gray-400" />
                                             <span className="font-medium mr-2">Due Date:</span>
-                                            {formatDate(task.due_date)}
+                                            {formatDateDisplay(task.due_date)}
                                         </div>
                                         <div className="flex items-center text-sm text-gray-700">
                                             <FileText className="h-4 w-4 mr-3 text-gray-400" />

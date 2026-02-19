@@ -8,12 +8,17 @@ import { AuditPlan, Task } from '../types';
 import { ClipboardList, User, Calendar, ExternalLink, Plus, AlertCircle, CheckCircle2, ListTodo, Trash2, Lock } from 'lucide-react';
 
 const AuditDashboard: React.FC = () => {
+    const navigate = useNavigate();
+    const { firm } = useAuthStore();
+
     const [audits, setAudits] = useState<AuditPlan[]>([]);
     const [potentialTasks, setPotentialTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [monthlyAuditCount, setMonthlyAuditCount] = useState(0);
-    const navigate = useNavigate();
-    const { firm } = useAuthStore();
+
+    const [showTemplateModal, setShowTemplateModal] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [templates, setTemplates] = useState<any[]>([]);
 
     useEffect(() => {
         loadData();
@@ -24,9 +29,10 @@ const AuditDashboard: React.FC = () => {
         setLoading(true);
         try {
             console.log('AuditDashboard: Fetching audits and tasks...');
-            const [activeAudits, pendingTasks] = await Promise.all([
+            const [activeAudits, pendingTasks, fetchedTemplates] = await Promise.all([
                 auditManagementService.getAuditPlans(),
-                auditManagementService.getPotentialAuditTasks()
+                auditManagementService.getPotentialAuditTasks(),
+                auditManagementService.getTemplates()
             ]);
 
             if (firm) {
@@ -37,6 +43,7 @@ const AuditDashboard: React.FC = () => {
             console.log('AuditDashboard: Fetch success', { audits: activeAudits.length, tasks: pendingTasks.length });
             setAudits(activeAudits);
             setPotentialTasks(pendingTasks);
+            setTemplates(fetchedTemplates);
         } catch (error) {
             console.error('Failed to load audits', error);
         } finally {
@@ -60,51 +67,107 @@ const AuditDashboard: React.FC = () => {
         }
     };
 
-    const handleInitialize = async (task: Task) => {
+    const initiateInitialize = (task: Task) => {
         if (!canCreate) {
             alert('Monthly audit creation limit reached. Please upgrade to Growth.');
             return;
         }
+        setSelectedTask(task);
+        setShowTemplateModal(true);
+    };
+
+    const handleConfirmInitialize = async (templateId: string | null) => {
+        if (!selectedTask) return;
 
         try {
-            // Fetch templates first
-            const templates = await auditManagementService.getTemplates();
-            let selectedTemplateId = '';
-
-            if (templates.length > 0) {
-                // For now, we'll use the Statutory Audit Master Template if found, otherwise the first one
-                const statutoryTemplate = templates.find(t => t.name.includes('Statutory Audit'));
-                selectedTemplateId = statutoryTemplate ? statutoryTemplate.id : templates[0].id;
-
-                if (!window.confirm(`Found template: "${templates.find(t => t.id === selectedTemplateId)?.name}". Would you like to apply it to this new audit?`)) {
-                    selectedTemplateId = ''; // User declined, create blank
-                }
-            }
-
+            setLoading(true);
             const newAudit = await auditManagementService.createAuditPlan({
-                client_id: task.client_id,
-                lead_staff_id: task.staff_id,
-                title: `Audit: ${task.title}`,
+                client_id: selectedTask.client_id,
+                lead_staff_id: selectedTask.staff_id,
+                title: `Audit: ${selectedTask.title}`,
                 status: 'active',
                 start_date: new Date().toISOString().split('T')[0]
             });
 
-            await useTasksStore.getState().updateTask(task.id, { audit_id: newAudit.id });
+            await useTasksStore.getState().updateTask(selectedTask.id, { audit_id: newAudit.id });
 
             // If a template was selected, apply its items
-            if (selectedTemplateId) {
-                await auditManagementService.createAuditFromTemplate(selectedTemplateId, newAudit.id);
+            if (templateId) {
+                await auditManagementService.createAuditFromTemplate(templateId, newAudit.id);
             }
 
             navigate(`/dashboard/audits/${newAudit.id}`);
         } catch (error) {
             console.error('Failed to initialize audit', error);
             alert('Error creating audit workspace');
+        } finally {
+            setLoading(false);
+            setShowTemplateModal(false);
+            setSelectedTask(null);
         }
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
+            {/* Template Selection Modal */}
+            {showTemplateModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-gray-100">
+                            <h3 className="text-xl font-bold text-gray-900">Select Audit Template</h3>
+                            <p className="text-sm text-gray-500 mt-1">Choose a template to structure your new audit workspace.</p>
+                        </div>
+
+                        <div className="p-6 max-h-[60vh] overflow-y-auto space-y-3">
+                            {loading ? (
+                                <div className="flex flex-col items-center justify-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                                    <p className="text-gray-500 font-medium">Creating Audit Workspace...</p>
+                                    <p className="text-xs text-gray-400 mt-1">This may take a few moments for large templates.</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={() => handleConfirmInitialize(null)}
+                                        className="w-full text-left p-4 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                                    >
+                                        <div className="font-bold text-gray-700 group-hover:text-blue-700">Continue without Template</div>
+                                        <div className="text-xs text-gray-500 mt-1">Start with an empty workspace</div>
+                                    </button>
+
+                                    {templates.map(t => (
+                                        <button
+                                            key={t.id}
+                                            onClick={() => handleConfirmInitialize(t.id)}
+                                            className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all group bg-white"
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <div className="font-bold text-gray-900 group-hover:text-blue-600">{t.name}</div>
+                                                    <div className="text-xs text-gray-500 mt-1 line-clamp-2">{t.description || 'No description'}</div>
+                                                </div>
+                                                {t.firm_id === null && (
+                                                    <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded">SYSTEM</span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </>
+                            )}
+                        </div>
+
+                        <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                            <button
+                                onClick={() => setShowTemplateModal(false)}
+                                className="px-4 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Audit Management</h1>
@@ -119,8 +182,8 @@ const AuditDashboard: React.FC = () => {
                     onClick={() => canCreate ? navigate('/dashboard/tasks') : null}
                     disabled={!canCreate}
                     className={`flex items-center px-4 py-2 rounded-lg transition-all text-sm font-bold shadow-md ${canCreate
-                            ? 'bg-blue-600 text-white hover:bg-blue-700'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         }`}
                 >
                     {canCreate ? <Plus className="h-4 w-4 mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
@@ -241,7 +304,7 @@ const AuditDashboard: React.FC = () => {
                                                 <p className="text-xs text-gray-500 mb-4">{task.client?.name}</p>
                                             </div>
                                             <button
-                                                onClick={() => handleInitialize(task)}
+                                                onClick={() => initiateInitialize(task)}
                                                 className="w-full flex items-center justify-center px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-all text-xs font-bold"
                                             >
                                                 Initialize Worksheet
