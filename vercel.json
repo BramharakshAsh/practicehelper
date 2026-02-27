@@ -3,6 +3,14 @@
         {
             "path": "/api/cron/daily-digest",
             "schedule": "30 13 * * *"
+        },
+        {
+            "path": "/api/cron/morning-sweep",
+            "schedule": "0 1 * * *"
+        },
+        {
+            "path": "/api/cron/evening-reminder",
+            "schedule": "30 12 * * *"
         }
     ]
 }

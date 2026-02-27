@@ -81,6 +81,7 @@ const CalendarPage: React.FC = () => {
                 meetings={meetings}
                 currentRole={(['staff', 'paid_staff', 'articles'].includes(user?.role || '') || activeStaffId) ? 'staff' : 'partner'}
                 currentStaffId={activeStaffId}
+                selectedStaffRole={activeStaffId ? staff.find(s => s.user_id === activeStaffId)?.role : undefined}
             />
 
             {showMeetingModal && (

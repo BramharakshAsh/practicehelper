@@ -34,6 +34,8 @@ export interface User {
   phone?: string;
   is_active: boolean;
   last_login?: string;
+  unreported_days_count?: number;
+  login_blocked?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -72,6 +74,8 @@ export interface Staff {
   is_active: boolean;
   date_of_joining?: string;
   manager_id?: string;
+  unreported_days_count?: number;
+  login_blocked?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -136,6 +140,11 @@ export interface Task {
   filing_proof_url?: string;
   time_involved?: number;
   billing_status?: 'billed' | 'not_billed';
+  last_closure_at?: string;
+  is_unreported?: boolean;
+  status_updated_at?: string;
+  due_date_modifications?: number;
+  completion_percentage?: number;
   created_at: string;
   updated_at: string;
   assigned_by: string;
@@ -192,6 +201,19 @@ export interface DashboardStats {
   pending_review: number;
   completed_today: number;
   upcoming_due_dates: number;
+}
+
+export interface DailyFirmHealth {
+  id: string;
+  firm_id: string;
+  date: string;
+  total_score: number;
+  reporting_score: number;
+  deadline_score: number;
+  dependency_score: number;
+  stability_score: number;
+  biggest_impact_factor?: string;
+  created_at: string;
 }
 
 export interface Meeting {

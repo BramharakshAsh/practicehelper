@@ -62,7 +62,7 @@ export const PricingSection: React.FC = () => {
                         <div className="absolute top-0 right-0 bg-brand-primary text-white text-xs font-bold px-3 py-1 rounded-bl-lg">RECOMMENDED</div>
                         <h3 className="text-2xl font-bold text-gray-900 mb-2">Growth Tier</h3>
                         <div className="flex items-baseline mb-6">
-                            <span className="text-4xl font-extrabold text-gray-900">₹999</span>
+                            <span className="text-4xl font-extrabold text-gray-900">₹499</span>
                             <span className="text-gray-500 ml-2">/month</span>
                         </div>
                         <p className="text-gray-600 mb-8">For growing firms that need more power and fewer limits.</p>

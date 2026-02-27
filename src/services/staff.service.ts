@@ -63,7 +63,7 @@ class StaffService {
 
     // 1. Create Auth User
     devLog('[StaffService] Creating Auth User...');
-    const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL');
+    let supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL');
     const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
     if (!supabaseUrl || !supabaseKey) {

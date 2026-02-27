@@ -66,11 +66,11 @@ class TasksService {
 
     const typedData = (data as unknown as DBTaskResponse[]) || [];
 
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const filteredData = typedData.filter(task => {
       if (task.status === 'filed_completed') {
-        // Only show completed tasks if they were updated in the last 12 hours
-        return task.updated_at >= twelveHoursAgo;
+        // Only show completed tasks if they were updated in the last 24 hours
+        return task.updated_at >= twentyFourHoursAgo;
       }
       return true;
     });
@@ -95,16 +95,74 @@ class TasksService {
 
     const typedData = (data as unknown as DBTaskResponse[]) || [];
 
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const filteredData = typedData.filter(task => {
       if (task.status === 'filed_completed') {
-        // Only show completed tasks if they were updated in the last 12 hours
-        return task.updated_at >= twelveHoursAgo;
+        // Only show completed tasks if they were updated in the last 24 hours
+        return task.updated_at >= twentyFourHoursAgo;
       }
       return true;
     });
 
     return filteredData.map(mapDBTask);
+  }
+
+  async getArchivedTasks(): Promise<Task[]> {
+    const user = useAuthStore.getState().user;
+    const firmId = user?.firm_id;
+    if (!firmId) return [];
+
+    let query = supabase
+      .from('tasks')
+      .select(`
+        *,
+        client:clients(*),
+        staff:users!tasks_staff_id_fkey(id, full_name, role, email),
+        creator:users!tasks_assigned_by_fkey(id, full_name, role, email),
+        compliance_type:compliance_types(*)
+      `)
+      .eq('firm_id', firmId)
+      .eq('status', 'filed_completed');
+
+    if (user.role === 'manager') {
+      const { data: staffIds } = await supabase.from('staff').select('user_id').eq('manager_id', user.id);
+      const { data: clientIds } = await supabase.from('clients').select('id').eq('manager_id', user.id);
+
+      const sIds = (staffIds || []).map(s => s.user_id);
+      const cIds = (clientIds || []).map(c => c.id);
+      sIds.push(user.id);
+
+      query = query.or(`staff_id.in.(${sIds.join(',')}),client_id.in.(${cIds.join(',')})`);
+    } else if (user.role !== 'partner') {
+      query = query.eq('staff_id', user.id);
+    }
+
+    const { data, error } = await (query as any).order('updated_at', { ascending: false });
+
+    if (error) throw error;
+
+    const typedData = (data as unknown as DBTaskResponse[]) || [];
+    return typedData.map(mapDBTask);
+  }
+
+  async getArchivedTasksByStaff(staffId: string): Promise<Task[]> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select(`
+        *,
+        client:clients(*),
+        staff:users!tasks_staff_id_fkey(id, full_name, role, email),
+        creator:users!tasks_assigned_by_fkey(id, full_name, role, email),
+        compliance_type:compliance_types(*)
+      `)
+      .eq('staff_id', staffId)
+      .eq('status', 'filed_completed')
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+
+    const typedData = (data as unknown as DBTaskResponse[]) || [];
+    return typedData.map(mapDBTask);
   }
 
   async getTask(id: string): Promise<Task | null> {

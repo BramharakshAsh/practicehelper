@@ -35,6 +35,24 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
     const { startTimer, activeTimer } = useTimeEntriesStore();
     const [showUploadModal, setShowUploadModal] = React.useState(false);
     const [taskDocuments, setTaskDocuments] = React.useState<Document[]>([]);
+    const [localCompletion, setLocalCompletion] = React.useState(task.completion_percentage || 0);
+
+    // Initial sync from props
+    React.useEffect(() => {
+        setLocalCompletion(task.completion_percentage || 0);
+    }, [task.completion_percentage]);
+
+    // Handle debounced update for the slider
+    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseInt(e.target.value);
+        setLocalCompletion(val);
+    };
+
+    const handleSliderChangeCommitted = () => {
+        if (localCompletion !== task.completion_percentage) {
+            onUpdateTask?.(task.id, { completion_percentage: localCompletion });
+        }
+    };
 
     React.useEffect(() => {
         fetchDocuments({ taskId: task.id });
@@ -215,6 +233,33 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, onSt
                                         >
                                             {activeTimer.activeTaskId === task.id ? <Clock className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                                         </button>
+                                    </div>
+
+                                    {/* Completion Percentage Slider */}
+                                    <div className="mt-4 bg-white p-3 rounded-lg border border-gray-100">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="block text-xs font-bold text-gray-700">
+                                                Completion Progress
+                                            </label>
+                                            <span className="text-sm font-bold text-blue-600">{localCompletion}%</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            step="5"
+                                            value={localCompletion}
+                                            onChange={handleSliderChange}
+                                            onMouseUp={handleSliderChangeCommitted}
+                                            onTouchEnd={handleSliderChangeCommitted}
+                                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                            disabled={!canUpdateStatus}
+                                        />
+                                        <div className="flex justify-between text-[10px] text-gray-400 mt-1 font-medium">
+                                            <span>0%</span>
+                                            <span>50%</span>
+                                            <span>100%</span>
+                                        </div>
                                     </div>
                                 </div>
 

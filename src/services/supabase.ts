@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import { isDev, getEnvVar } from '../utils/env';
+import { getEnvVar } from '../utils/env';
 import { devLog, devWarn, devError } from './logger';
 import { logActivity } from './freeze-detector';
 
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL');
+let supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL');
 const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
 if (!supabaseUrl || !supabaseKey) {

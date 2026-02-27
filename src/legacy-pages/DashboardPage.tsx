@@ -9,7 +9,8 @@ import StatutoryHeatmap from '../components/Dashboard/StatutoryHeatmap';
 import UrgentTasksTable from '../components/Dashboard/UrgentTasksTable';
 import ClientDependencyWidget from '../components/Dashboard/ClientDependencyWidget';
 import StaffLoadSnapshot from '../components/Dashboard/StaffLoadSnapshot';
-import QuickActions from '../components/Dashboard/QuickActions';
+import FirmHealthMeter from '../components/Dashboard/FirmHealthMeter';
+import StaffMorningFeed from '../components/Dashboard/StaffMorningFeed';
 import ClientModal from '../components/Clients/ClientModal';
 import StaffModal from '../components/Staff/StaffModal';
 import TaskModal from '../components/Tasks/TaskModal';
@@ -17,11 +18,9 @@ import AutoTaskModal from '../components/Tasks/AutoTaskModal';
 import { Task, Client, Staff } from '../types';
 
 import { useAuthStore } from '../store/auth.store';
-import { useNavigate } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
     const { user } = useAuthStore();
-    const navigate = useNavigate();
     const { tasks, createTask } = useTasks();
     const { clients, createClient } = useClients();
     const { staff, createStaff } = useStaff();
@@ -105,8 +104,15 @@ const DashboardPage: React.FC = () => {
                 </div>
             )}
 
+            {/* Morning Control Feeds */}
+            {user?.role !== 'partner' && (
+                <div className="mb-6">
+                    <StaffMorningFeed tasks={dashboardTasks} />
+                </div>
+            )}
+
             {/* Section A: Critical Alert Strip - Sticky */}
-            <div className="-mx-3 sm:-mx-4 lg:-mx-5 -mt-5 mb-4 sticky top-0 z-30 pt-4">
+            <div className="-mx-3 sm:-mx-4 lg:-mx-5 -mt-2 mb-4 sticky top-0 z-30 pt-2">
                 <CriticalAlertBanner tasks={dashboardTasks} complianceTypes={complianceTypes} />
             </div>
 
@@ -137,15 +143,10 @@ const DashboardPage: React.FC = () => {
 
                 {/* Side Column (1/3 width) */}
                 <div className="space-y-5">
-                    {/* Section G: Quick Actions */}
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-1">
-                        <QuickActions
-                            onAddTask={() => setShowTaskModal(true)}
-                            onAddClient={() => setShowClientModal(true)}
-                            onAddStaff={['partner', 'manager'].includes(user?.role || '') ? () => setShowStaffModal(true) : undefined}
-                            onImportData={() => navigate('/dashboard/import')}
-                        />
-                    </div>
+                    {/* Section G: Health Meters */}
+                    {user?.role === 'partner' && (
+                        <FirmHealthMeter tasks={dashboardTasks} />
+                    )}
 
                     {/* Section F: Staff Load Snapshot - Only for Partners/Managers */}
                     {['partner', 'manager'].includes(user?.role || '') && (
