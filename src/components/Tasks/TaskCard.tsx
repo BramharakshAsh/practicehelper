@@ -10,12 +10,13 @@ interface TaskCardProps {
   task: Task;
   onUpdate: (taskId: string, updates: Partial<Task>) => void;
   onDelete: (taskId: string) => void;
+  onDuplicate?: (task: Task) => void;
   isSelected?: boolean;
   onToggleSelect?: (taskId: string) => void;
   currentRole: UserRole;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelected, onToggleSelect, currentRole }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, onDuplicate, isSelected, onToggleSelect, currentRole }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showRemarks, setShowRemarks] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -93,7 +94,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
   return (
     <div
       onDoubleClick={() => setShowDetails(true)}
-      className={`bg-white rounded-lg border transition-all ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 shadow-md' : 'border-gray-200 hover:shadow-md'
+      className={`bg-white rounded-lg border transition-all ${task.is_unreported ? 'border-red-500 ring-2 ring-red-500 shadow-md shadow-red-100' : isSelected ? 'border-blue-500 ring-1 ring-blue-500 shadow-md' : 'border-gray-200 hover:shadow-md'
         } p-4 cursor-pointer`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start space-x-3 flex-1">
@@ -110,6 +111,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
             <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
               {task.priority} priority
             </span>
+            {task.is_unreported && (
+              <span className="ml-2 inline-block px-2 py-1 rounded-full text-xs font-bold bg-red-600 text-white shadow-sm border border-red-700 animate-pulse">
+                Unreported
+              </span>
+            )}
           </div>
         </div>
 
@@ -146,6 +152,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete, isSelecte
                 >
                   Add/Edit Remarks
                 </button>
+                {onDuplicate && (
+                  <button
+                    onClick={() => {
+                      onDuplicate(task);
+                      setShowMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center"
+                  >
+                    <MoreVertical className="h-4 w-4 mr-2" /> {/* Reusing an icon, let's use Plus later if imported properly */}
+                    Duplicate Task
+                  </button>
+                )}
                 {canDelete && (
                   <button
                     onClick={() => {

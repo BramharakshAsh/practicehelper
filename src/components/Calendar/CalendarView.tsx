@@ -8,16 +8,21 @@ interface CalendarViewProps {
   meetings?: Meeting[];
   currentRole: 'partner' | 'staff';
   currentStaffId?: string;
+  selectedStaffRole?: string;
 }
 
-const CalendarView: React.FC<CalendarViewProps> = ({ tasks, meetings = [], currentRole, currentStaffId }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ tasks, meetings = [], currentRole, currentStaffId, selectedStaffRole }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
 
   // Filter tasks based on role
   let filteredTasks = tasks;
   if (currentRole === 'staff' && currentStaffId) {
-    filteredTasks = tasks.filter((task: Task) => task.staff_id === currentStaffId);
+    if (selectedStaffRole === 'partner' || selectedStaffRole === 'manager') {
+      filteredTasks = tasks.filter((task: Task) => task.staff_id === currentStaffId || task.assigned_by === currentStaffId);
+    } else {
+      filteredTasks = tasks.filter((task: Task) => task.staff_id === currentStaffId);
+    }
   }
 
   const formatDate = (date: Date) => {

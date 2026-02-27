@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from 'react';
-import { CheckCircle, RotateCcw, Calendar, User, Building, Clock, Receipt, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { CheckCircle, RotateCcw, Calendar, User, Building, Clock, Receipt, Search, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { useTasks } from '../hooks/useTasks';
 // import { useClients } from '../hooks/useClients';
 import { useStaff } from '../hooks/useStaff';
 import { Task } from '../types';
 
 const CompletedTasksPage: React.FC = () => {
-    const { tasks, updateTask } = useTasks();
+    const { archivedTasks, fetchArchivedUserTasks, isArchivedLoading, updateTask } = useTasks();
     // const { clients } = useClients(); // clients no longer needed for completed tasks lookup
     const { staff } = useStaff();
 
@@ -17,9 +17,12 @@ const CompletedTasksPage: React.FC = () => {
     // Local state for optimistic edits
     const [editingHours, setEditingHours] = useState<Record<string, string>>({});
 
-    // Filter only completed tasks
-    const completedTasks = tasks
-        .filter(t => t.status === 'filed_completed')
+    useEffect(() => {
+        fetchArchivedUserTasks();
+    }, [fetchArchivedUserTasks]);
+
+    // Filter only completed tasks - they are already filtered by the service, but we search and sort here
+    const completedTasks = archivedTasks
         .filter(t => {
             if (!searchTerm) return true;
             const term = searchTerm.toLowerCase();
@@ -162,7 +165,12 @@ const CompletedTasksPage: React.FC = () => {
                 />
             </div>
 
-            {completedTasks.length === 0 ? (
+            {isArchivedLoading ? (
+                <div className="flex flex-col items-center justify-center p-12 bg-white rounded-lg border border-gray-200">
+                    <Loader2 className="h-8 w-8 text-blue-600 animate-spin mb-4" />
+                    <p className="text-gray-500 font-medium">Loading completed tasks...</p>
+                </div>
+            ) : completedTasks.length === 0 ? (
                 <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
                     <CheckCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Completed Tasks</h3>

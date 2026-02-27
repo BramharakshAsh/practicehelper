@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Filter, Search, AlertTriangle } from 'lucide-react';
+import { Plus, Filter, Search, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
 import { Task, Staff, Client, ComplianceType, UserRole } from '../../types';
 import TaskCard from './TaskCard';
 import TaskModal from './TaskModal';
@@ -40,6 +40,11 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [showModal, setShowModal] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  const [duplicateTaskData, setDuplicateTaskData] = useState<Task | null>(null);
+
+  type SortField = 'client' | 'staff' | 'priority' | 'due_date' | null;
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Sync state with search params if they change (e.g., when navigating from dashboard)
   useEffect(() => {
@@ -144,6 +149,47 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
     return acc;
   }, {} as Record<string, Task[]>);
 
+  // Sorting Logic for List View
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else {
+        setSortField(null);
+        setSortDirection('asc');
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortedTasks = () => {
+    if (!sortField) return filteredTasks;
+
+    return [...filteredTasks].sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'client':
+          comparison = (a.client?.name || '').localeCompare(b.client?.name || '');
+          break;
+        case 'staff':
+          comparison = (a.staff?.name || '').localeCompare(b.staff?.name || '');
+          break;
+        case 'priority':
+          const priorityWeight = { high: 3, medium: 2, low: 1 };
+          comparison = (priorityWeight[a.priority as keyof typeof priorityWeight] || 0) - (priorityWeight[b.priority as keyof typeof priorityWeight] || 0);
+          break;
+        case 'due_date':
+          comparison = new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+          break;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  const sortedTasksList = getSortedTasks();
+
   const toggleTaskSelection = (taskId: string) => {
     setSelectedTaskIds(prev =>
       prev.includes(taskId)
@@ -160,6 +206,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
     }
   };
 
+  const handleDuplicateTask = (task: Task) => {
+    setDuplicateTaskData(task);
+    setShowModal(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -193,7 +243,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
           </div>
           {['partner', 'manager', 'staff', 'paid_staff', 'articles'].includes(currentRole) && (
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setDuplicateTaskData(null);
+                setShowModal(true);
+              }}
               className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex-1 sm:flex-none text-sm"
             >
               <Plus className="h-4 w-4" />
@@ -384,6 +437,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                       task={task}
                       onUpdate={onTaskUpdate}
                       onDelete={onTaskDelete}
+                      onDuplicate={handleDuplicateTask}
                       currentRole={currentRole}
                       isSelected={selectedTaskIds.includes(task.id)}
                       onToggleSelect={toggleTaskSelection}
@@ -414,69 +468,159 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                         className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Task
+                    </th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 group"
+                      onClick={() => handleSort('client')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Client</span>
+                        {sortField === 'client' && (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-600" /> : <ArrowDown className="h-3 w-3 text-blue-600" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 group"
+                      onClick={() => handleSort('staff')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Staff</span>
+                        {sortField === 'staff' && (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-600" /> : <ArrowDown className="h-3 w-3 text-blue-600" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 group"
+                      onClick={() => handleSort('priority')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Priority</span>
+                        {sortField === 'priority' && (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-600" /> : <ArrowDown className="h-3 w-3 text-blue-600" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 group"
+                      onClick={() => handleSort('due_date')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Due Date</span>
+                        {sortField === 'due_date' && (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3 w-3 text-blue-600" /> : <ArrowDown className="h-3 w-3 text-blue-600" />
+                        )}
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {taskStatuses.map(status => (
-                    <React.Fragment key={status.value}>
-                      {groupedTasks[status.value]?.length > 0 && (
-                        <tr className="bg-gray-50">
-                          <td colSpan={6} className="px-6 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                            {status.label} ({status.count})
-                          </td>
-                        </tr>
-                      )}
-                      {groupedTasks[status.value]?.map(task => (
-                        <tr key={task.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={selectedTaskIds.includes(task.id)}
-                              onChange={() => toggleTaskSelection(task.id)}
-                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                            />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{task.title}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600 truncate max-w-[150px]">{task.client?.name}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600">{task.staff?.name}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${task.status === 'filed_completed' ? 'bg-green-100 text-green-800 border border-green-200' :
-                              task.status === 'ready_for_review' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                                task.status === 'awaiting_client_data' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
-                                  'bg-gray-100 text-gray-800 border border-gray-200'
-                              }`}>
-                              {status.label}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-800 border border-red-200' :
-                              task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-                                'bg-blue-100 text-blue-800 border border-blue-200'
-                              }`}>
-                              {task.priority}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`text-sm ${new Date(task.due_date) < new Date() && task.status !== 'filed_completed' ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
-                              {new Date(task.due_date).toLocaleDateString()}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  ))}
+                  {sortField ? (
+                    sortedTasksList.map(task => (
+                      <tr key={task.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedTaskIds.includes(task.id)}
+                            onChange={() => toggleTaskSelection(task.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{task.title}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-600 truncate max-w-[150px]">{task.client?.name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">{task.staff?.name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${task.status === 'filed_completed' ? 'bg-green-100 text-green-800 border border-green-200' :
+                            task.status === 'ready_for_review' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                              task.status === 'awaiting_client_data' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                                'bg-gray-100 text-gray-800 border border-gray-200'
+                            }`}>
+                            {taskStatuses.find(s => s.value === task.status)?.label || task.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-800 border border-red-200' :
+                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                              'bg-blue-100 text-blue-800 border border-blue-200'
+                            }`}>
+                            {task.priority}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className={`text-sm ${new Date(task.due_date) < new Date() && task.status !== 'filed_completed' ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
+                            {new Date(task.due_date).toLocaleDateString()}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    taskStatuses.map(status => (
+                      <React.Fragment key={status.value}>
+                        {groupedTasks[status.value]?.length > 0 && (
+                          <tr className="bg-gray-50">
+                            <td colSpan={6} className="px-6 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                              {status.label} ({status.count})
+                            </td>
+                          </tr>
+                        )}
+                        {groupedTasks[status.value]?.map(task => (
+                          <tr key={task.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <input
+                                type="checkbox"
+                                checked={selectedTaskIds.includes(task.id)}
+                                onChange={() => toggleTaskSelection(task.id)}
+                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                              />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">{task.title}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600 truncate max-w-[150px]">{task.client?.name}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">{task.staff?.name}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${task.status === 'filed_completed' ? 'bg-green-100 text-green-800 border border-green-200' :
+                                task.status === 'ready_for_review' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                                  task.status === 'awaiting_client_data' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                                    'bg-gray-100 text-gray-800 border border-gray-200'
+                                }`}>
+                                {status.label}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-800 border border-red-200' :
+                                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                                  'bg-blue-100 text-blue-800 border border-blue-200'
+                                }`}>
+                                {task.priority}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`text-sm ${new Date(task.due_date) < new Date() && task.status !== 'filed_completed' ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
+                                {new Date(task.due_date).toLocaleDateString()}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -499,6 +643,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
                           task={task}
                           onUpdate={onTaskUpdate}
                           onDelete={onTaskDelete}
+                          onDuplicate={handleDuplicateTask}
                           currentRole={currentRole}
                           isSelected={selectedTaskIds.includes(task.id)}
                           onToggleSelect={toggleTaskSelection}
@@ -542,7 +687,11 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
             staff={staff}
             clients={clients}
             complianceTypes={complianceTypes}
-            onClose={() => setShowModal(false)}
+            initialData={duplicateTaskData || undefined}
+            onClose={() => {
+              setShowModal(false);
+              setDuplicateTaskData(null);
+            }}
             onSubmit={onTaskCreate}
           />
         )

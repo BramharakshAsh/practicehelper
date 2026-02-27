@@ -9,6 +9,8 @@ import { RotateCcw as Undo } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { SubscriptionService } from '../../services/subscription.service';
 import { formatDate } from '../../utils/date.utils';
+import { calculateLiveHealthScore } from '../../utils/healthScore';
+import { Activity } from 'lucide-react';
 
 interface StaffListProps {
   staff: Staff[];
@@ -205,7 +207,22 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
                 </div>
               </div>
 
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-3">
+                {(() => {
+                  const staffTasks = tasks.filter(t => t.staff_id === member.user_id && t.status !== 'filed_completed');
+                  const health = calculateLiveHealthScore(staffTasks);
+                  const score = Math.round(health.total_score);
+                  let bgClass = 'bg-green-50 text-green-700 border-green-200';
+                  if (score < 65) bgClass = 'bg-red-50 text-red-700 border-red-200';
+                  else if (score < 85) bgClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+
+                  return (
+                    <div title="Staff Health Score" className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold ${bgClass}`}>
+                      <Activity className="w-3.5 h-3.5" />
+                      {score}
+                    </div>
+                  );
+                })()}
                 <button
                   onClick={() => openModal('view', member)}
                   className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-blue-600"

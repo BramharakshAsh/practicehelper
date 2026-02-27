@@ -6,12 +6,13 @@ import { Task } from '../types';
 export const useTasks = () => {
   const {
     tasks,
+    archivedTasks,
     isLoading,
+    isArchivedLoading,
     hasFetched,
     error,
-    fetchTasks,
     fetchUserTasks,
-    fetchTasksByStaff,
+    fetchArchivedUserTasks,
     createTask,
     updateTask,
     deleteTask,
@@ -40,8 +41,11 @@ export const useTasks = () => {
 
   return {
     tasks,
+    archivedTasks,
     isLoading,
+    isArchivedLoading,
     error,
+    fetchArchivedUserTasks,
     createTask: handleCreateTask,
     updateTask: handleUpdateTask,
     deleteTask: handleDeleteTask,

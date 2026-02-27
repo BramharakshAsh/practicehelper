@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
+import { useTasksStore } from '../store/tasks.store';
 import {
     LayoutDashboard, Users, UserSquare2, CheckSquare,
     Calendar, LogOut, Upload, Zap,
@@ -14,16 +15,20 @@ import { useWalkthrough } from '../components/Walkthrough/WalkthroughProvider';
 import NotificationBell from '../components/Layout/NotificationBell';
 import TimerWidget from '../components/TimeTracking/TimerWidget';
 import { LocalStorageService } from '../services/local-storage.service';
+import { DailyClosureModal } from '../components/Tasks/DailyClosureModal';
 
 const DashboardLayout: React.FC = () => {
     const { user, logout } = useAuthStore();
     const { restartWalkthrough } = useWalkthrough();
+    const { isManualClosureOpen, setManualClosureOpen } = useTasksStore();
     const navigate = useNavigate();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(() => {
         return LocalStorageService.getItem('sidebar-collapsed', false);
     });
+    const [showClosureModal, setShowClosureModal] = useState(false);
+    const [hasCompletedClosure, setHasCompletedClosure] = useState(false);
 
     const handleLogout = async () => {
         await logout();
@@ -33,6 +38,31 @@ const DashboardLayout: React.FC = () => {
     React.useEffect(() => {
         LocalStorageService.setItem('sidebar-collapsed', isSidebarCollapsed);
     }, [isSidebarCollapsed]);
+
+    React.useEffect(() => {
+        if (hasCompletedClosure || !user) return;
+
+        // Optionally, skip for partners if they don't have tasks assigned
+        // if (user.role === 'partner') return;
+
+        const checkTime = () => {
+            const now = new Date();
+            const hours = now.getHours();
+
+            // Between 18:00 (6 PM) and 06:00 (6 AM) next morning
+            if (hours >= 18 || hours < 6) {
+                setShowClosureModal(true);
+            } else {
+                setShowClosureModal(false);
+            }
+        };
+
+        checkTime();
+
+        // Check every minute just in case they leave tab open
+        const interval = setInterval(checkTime, 60000);
+        return () => clearInterval(interval);
+    }, [hasCompletedClosure, user]);
 
     const navItems = React.useMemo(() => [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -209,6 +239,20 @@ const DashboardLayout: React.FC = () => {
             <div className="z-[100]">
                 <TimerWidget />
             </div>
+
+            {/* Daily Closure Overlay */}
+            <DailyClosureModal
+                isOpen={showClosureModal || isManualClosureOpen}
+                onlyUnreported={isManualClosureOpen}
+                onComplete={() => {
+                    if (isManualClosureOpen) {
+                        setManualClosureOpen(false);
+                    } else {
+                        setShowClosureModal(false);
+                        setHasCompletedClosure(true);
+                    }
+                }}
+            />
         </div>
     );
 };

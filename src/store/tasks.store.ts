@@ -7,14 +7,23 @@ import { devLog } from '../services/logger';
 
 interface TasksState {
   tasks: Task[];
+  archivedTasks: Task[];
   isLoading: boolean;
+  isArchivedLoading: boolean;
   hasFetched: boolean;
   error: string | null;
+  isManualClosureOpen: boolean;
 
   // Actions
+  setManualClosureOpen: (isOpen: boolean) => void;
   fetchTasks: () => Promise<void>;
   fetchUserTasks: () => Promise<void>; // Smart fetch based on role
   fetchTasksByStaff: (staffId: string) => Promise<void>;
+
+  fetchArchivedTasks: () => Promise<void>;
+  fetchArchivedUserTasks: () => Promise<void>;
+  fetchArchivedTasksByStaff: (staffId: string) => Promise<void>;
+
   createTask: (task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
@@ -32,9 +41,14 @@ interface TasksState {
 
 export const useTasksStore = create<TasksState>((set) => ({
   tasks: [],
+  archivedTasks: [],
   isLoading: false,
+  isArchivedLoading: false,
   hasFetched: false,
   error: null,
+  isManualClosureOpen: false,
+
+  setManualClosureOpen: (isOpen) => set({ isManualClosureOpen: isOpen }),
 
   fetchTasks: async () => {
     devLog('[TasksStore] fetchTasks called');
@@ -93,6 +107,53 @@ export const useTasksStore = create<TasksState>((set) => ({
     });
   },
 
+  fetchArchivedTasks: async () => {
+    devLog('[TasksStore] fetchArchivedTasks called');
+    set({ isArchivedLoading: true, error: null });
+
+    await handleAsyncError(async () => {
+      const archivedTasks = await tasksService.getArchivedTasks();
+      devLog('[TasksStore] fetchArchivedTasks success, count:', archivedTasks.length);
+      set({ archivedTasks, isArchivedLoading: false });
+    }, 'Fetch archived tasks').catch((error) => {
+      set({
+        error: ErrorService.getErrorMessage(error),
+        isArchivedLoading: false
+      });
+    });
+  },
+
+  fetchArchivedUserTasks: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) {
+      devLog('[TasksStore] fetchArchivedUserTasks skipped: no user');
+      return;
+    }
+
+    const role = user.role?.toLowerCase().trim();
+    if (['staff', 'paid_staff', 'articles'].includes(role || '')) {
+      await useTasksStore.getState().fetchArchivedTasksByStaff(user.id);
+    } else {
+      await useTasksStore.getState().fetchArchivedTasks();
+    }
+  },
+
+  fetchArchivedTasksByStaff: async (staffId: string) => {
+    devLog('[TasksStore] fetchArchivedTasksByStaff called, staffId:', staffId);
+    set({ isArchivedLoading: true, error: null });
+
+    await handleAsyncError(async () => {
+      const archivedTasks = await tasksService.getArchivedTasksByStaff(staffId);
+      devLog('[TasksStore] fetchArchivedTasksByStaff success, count:', archivedTasks.length);
+      set({ archivedTasks, isArchivedLoading: false });
+    }, 'Fetch archived tasks by staff').catch((error) => {
+      set({
+        error: ErrorService.getErrorMessage(error),
+        isArchivedLoading: false
+      });
+    });
+  },
+
   createTask: async (taskData) => {
     devLog('[TasksStore] createTask called');
     set({ isLoading: true, error: null });
@@ -121,6 +182,9 @@ export const useTasksStore = create<TasksState>((set) => ({
       const updatedTask = await tasksService.updateTask(id, updates);
       set(state => ({
         tasks: state.tasks.map(task =>
+          task.id === id ? updatedTask : task
+        ),
+        archivedTasks: state.archivedTasks.map(task =>
           task.id === id ? updatedTask : task
         ),
         isLoading: false
@@ -152,6 +216,7 @@ export const useTasksStore = create<TasksState>((set) => ({
       await tasksService.deleteTask(id);
       set(state => ({
         tasks: state.tasks.filter(task => task.id !== id),
+        archivedTasks: state.archivedTasks.filter(task => task.id !== id),
         isLoading: false
       }));
     }, 'Delete task').catch((error) => {
@@ -173,6 +238,7 @@ export const useTasksStore = create<TasksState>((set) => ({
       await tasksService.bulkDeleteTasks(ids);
       set(state => ({
         tasks: state.tasks.filter(task => !ids.includes(task.id)),
+        archivedTasks: state.archivedTasks.filter(task => !ids.includes(task.id)),
         isLoading: false
       }));
     }, 'Bulk delete tasks').catch((error) => {
@@ -241,14 +307,16 @@ export const useTasksStore = create<TasksState>((set) => ({
   applyRealtimeUpdate: (task: Task) => {
     devLog('[TasksStore] applyRealtimeUpdate:', task.id);
     set(state => ({
-      tasks: state.tasks.map(t => t.id === task.id ? task : t)
+      tasks: state.tasks.map(t => t.id === task.id ? task : t),
+      archivedTasks: state.archivedTasks.map(t => t.id === task.id ? task : t)
     }));
   },
 
   applyRealtimeDelete: (taskId: string) => {
     devLog('[TasksStore] applyRealtimeDelete:', taskId);
     set(state => ({
-      tasks: state.tasks.filter(t => t.id !== taskId)
+      tasks: state.tasks.filter(t => t.id !== taskId),
+      archivedTasks: state.archivedTasks.filter(t => t.id !== taskId)
     }));
   },
 }));

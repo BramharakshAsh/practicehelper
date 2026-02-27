@@ -7,6 +7,7 @@ interface TaskModalProps {
   staff: Staff[];
   clients: Client[];
   complianceTypes: ComplianceType[];
+  initialData?: Partial<Task>;
   onClose: () => void;
   onSubmit: (task: Omit<Task, 'id' | 'firm_id' | 'created_at' | 'updated_at'>) => void | Promise<void>;
 }
@@ -15,18 +16,19 @@ const TaskModal: React.FC<TaskModalProps> = ({
   staff,
   clients,
   complianceTypes,
+  initialData,
   onClose,
   onSubmit,
 }) => {
   const [formData, setFormData] = useState({
-    client_id: '',
-    staff_id: '',
-    compliance_type_id: '',
-    title: '',
-    description: '',
-    due_date: '',
-    priority: 'medium' as Task['priority'],
-    period: '',
+    client_id: initialData?.client_id || '',
+    staff_id: initialData?.staff_id || '',
+    compliance_type_id: initialData?.compliance_type_id || '',
+    title: initialData?.title || '',
+    description: initialData?.description || '',
+    due_date: initialData?.due_date ? initialData.due_date.split('T')[0] : '',
+    priority: initialData?.priority || 'medium',
+    period: initialData?.period || '',
   });
 
   const { user } = useAuthStore();
@@ -40,12 +42,54 @@ const TaskModal: React.FC<TaskModalProps> = ({
     }
   }, [user, staff]);
 
-  const [selectedPeriod, setSelectedPeriod] = useState({
-    type: '', // 'month', 'quarter', 'year'
-    month: new Date().getMonth() + 1,
-    quarter: Math.floor(new Date().getMonth() / 3) + 1,
-    year: new Date().getFullYear(),
-  });
+  // Helper to parse the initial period string to get month, quarter, and year
+  const getInitialPeriodState = () => {
+    const defaultState = {
+      type: '',
+      month: new Date().getMonth() + 1,
+      quarter: Math.floor(new Date().getMonth() / 3) + 1,
+      year: new Date().getFullYear(),
+    };
+
+    if (!initialData?.compliance_type_id) return defaultState;
+
+    const comp = complianceTypes.find(c => c.id === initialData.compliance_type_id);
+    if (!comp) return defaultState;
+
+    let type = '';
+    if (comp.frequency === 'monthly') type = 'month';
+    else if (comp.frequency === 'quarterly') type = 'quarter';
+    else if (comp.frequency === 'yearly') type = 'year';
+
+    defaultState.type = type;
+
+    if (!initialData?.period) return defaultState;
+
+    const periodStr = initialData.period;
+
+    // Parse year from patterns like "FY 2024-25" or "FY2024"
+    const yearMatch = periodStr.match(/FY\s*(\d{4})/i) || periodStr.match(/(\d{4})/);
+    if (yearMatch) {
+      defaultState.year = parseInt(yearMatch[1], 10);
+    }
+
+    if (type === 'month') {
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const foundMonth = months.findIndex(m => periodStr.includes(m));
+      if (foundMonth !== -1) {
+        defaultState.month = foundMonth + 1;
+      }
+    } else if (type === 'quarter') {
+      const qMatch = periodStr.match(/Q([1-4])/i);
+      if (qMatch) {
+        defaultState.quarter = parseInt(qMatch[1], 10);
+      }
+    }
+
+    return defaultState;
+  };
+
+  const [selectedPeriod, setSelectedPeriod] = useState(getInitialPeriodState());
 
   const selectedCompliance = complianceTypes.find(ct => ct.id === formData.compliance_type_id);
 
@@ -61,24 +105,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
   useEffect(() => {
     if (!selectedCompliance || !selectedPeriod.type) return;
 
-    // For "Others" category, don't auto-calculate - let user enter manually
-    if (selectedCompliance.category === 'Others') {
-      // Only set period text, not due date
-      let periodText = '';
-      if (selectedCompliance.frequency === 'monthly' && selectedPeriod.type === 'month') {
-        const month = selectedPeriod.month - 1;
-        const year = selectedPeriod.year;
-        periodText = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      } else if (selectedCompliance.frequency === 'yearly' && selectedPeriod.type === 'year') {
-        const { year } = selectedPeriod;
-        periodText = `FY ${year}-${(year + 1).toString().slice(2)}`;
-      }
+    const isManual = selectedCompliance.category === 'Others' || selectedCompliance.category === 'Other' || selectedCompliance.frequency === 'as_needed';
 
+    // For manual mode, don't auto-calculate - let user enter manually
+    if (isManual) {
       setFormData(prev => ({
         ...prev,
-        period: periodText,
-        title: `${selectedCompliance.name} - ${periodText}`,
-        due_date: '', // Clear due date for manual entry
+        title: prev.title || selectedCompliance.name, // Only overwrite title if empty
+        due_date: prev.due_date || '', // Preserve user entered due date
       }));
       return;
     }
@@ -182,9 +216,16 @@ const TaskModal: React.FC<TaskModalProps> = ({
     const complianceId = e.target.value;
     const compliance = complianceTypes.find(ct => ct.id === complianceId);
 
-    setFormData(prev => ({ ...prev, compliance_type_id: complianceId }));
+    setFormData(prev => {
+      const isSwitchingToOthers = compliance?.category === 'Others' || compliance?.category === 'Other' || compliance?.frequency === 'as_needed';
+      return {
+        ...prev,
+        compliance_type_id: complianceId,
+        ...(isSwitchingToOthers ? { period: '', due_date: '', title: compliance.name } : {})
+      };
+    });
 
-    // Reset  period type based on compliance frequency
+    // Reset period type based on compliance frequency
     if (compliance) {
       if (compliance.frequency === 'monthly') {
         setSelectedPeriod(prev => ({ ...prev, type: 'month' }));
@@ -425,36 +466,46 @@ const TaskModal: React.FC<TaskModalProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
-                <Calendar className="h-4 w-4 inline mr-2" />
-                Due Date * {selectedCompliance?.category !== 'Others' && '(Auto-calculated)'}
-              </label>
-              <input
-                type="date"
-                name="due_date"
-                value={formData.due_date}
-                onChange={handleChange}
-                className={`w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${selectedCompliance?.category === 'Others' ? 'bg-white' : 'bg-gray-50'
-                  }`}
-                required
-                readOnly={selectedCompliance?.category !== 'Others' && !!selectedCompliance && !!selectedPeriod.type}
-              />
-            </div>
+            {(() => {
+              const isManual = selectedCompliance?.category === 'Others' || selectedCompliance?.category === 'Other' || selectedCompliance?.frequency === 'as_needed';
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
-                Period (Auto-filled)
-              </label>
-              <input
-                type="text"
-                name="period"
-                value={formData.period}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm sm:text-base"
-                placeholder="e.g., March 2024, Q4 FY24"
-                readOnly
-              />
-            </div>
+              return (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
+                      <Calendar className="h-4 w-4 inline mr-2" />
+                      Due Date * {!isManual && '(Auto-calculated)'}
+                    </label>
+                    <input
+                      type="date"
+                      name="due_date"
+                      value={formData.due_date}
+                      onChange={handleChange}
+                      className={`w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${isManual ? 'bg-white' : 'bg-gray-50'
+                        }`}
+                      required
+                      readOnly={!isManual && !!selectedCompliance && !!selectedPeriod.type}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 text-xs sm:text-sm">
+                      Period {!isManual && '(Auto-filled)'}
+                    </label>
+                    <input
+                      type="text"
+                      name="period"
+                      value={formData.period}
+                      onChange={handleChange}
+                      className={`w-full border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${isManual ? 'bg-white' : 'bg-gray-50'
+                        }`}
+                      placeholder={isManual ? 'Enter period manually (e.g., March 2024)' : 'e.g., March 2024, Q4 FY24'}
+                      readOnly={!isManual}
+                    />
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           <div>
