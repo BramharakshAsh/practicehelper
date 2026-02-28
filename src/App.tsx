@@ -9,8 +9,6 @@ import { devLog, devWarn, devError } from './services/logger';
 import { startFreezeDetector, logActivity } from './services/freeze-detector';
 import { authService } from './services/auth.service';
 import { useRealtimeSubscription } from './hooks/useRealtimeSubscription';
-import { Analytics } from "@vercel/analytics/react"
-
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
 
@@ -23,7 +21,8 @@ const CalendarPage = lazy(() => import('./legacy-pages/CalendarPage'));
 const ImportPage = lazy(() => import('./legacy-pages/ImportPage'));
 const AutoTasksPage = lazy(() => import('./legacy-pages/AutoTasksPage'));
 const CommunicationsPage = lazy(() => import('./legacy-pages/CommunicationsPage'));
-const ReportsPage = lazy(() => import('./legacy-pages/ReportsPage'));
+const DailyUpdatesPage = lazy(() => import('./legacy-pages/ReportsPage'));
+const AnalyticsReportsPage = lazy(() => import('./pages/AnalyticsReportsPage'));
 const LoginPage = lazy(() => import('./components/Auth/LoginPage'));
 const ForgotPasswordPage = lazy(() => import('./legacy-pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./legacy-pages/ResetPasswordPage'));
@@ -291,8 +290,6 @@ function App() {
 
   // Prefetch data when authenticated - Improved safety
   useEffect(() => {
-    let cancelled = false;
-
     const prefetch = async () => {
       if (!isAuthenticated) return;
 
@@ -312,7 +309,7 @@ function App() {
       prefetch();
     }
 
-    return () => { cancelled = true; };
+    return () => { };
   }, [isAuthenticated, hasFetchedClients, hasFetchedStaff, hasFetchedTasks]);
 
   // Wait for auth initialization to complete
@@ -364,9 +361,14 @@ function App() {
                   <BillingPage />
                 </ProtectedRoute>
               } />
+              <Route path="daily-updates" element={
+                <ProtectedRoute roles={['partner', 'manager']}>
+                  <DailyUpdatesPage />
+                </ProtectedRoute>
+              } />
               <Route path="reports" element={
                 <ProtectedRoute roles={['partner', 'manager']}>
-                  <ReportsPage />
+                  <AnalyticsReportsPage />
                 </ProtectedRoute>
               } />
               <Route path="settings" element={

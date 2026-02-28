@@ -41,7 +41,7 @@ export class ClosureService {
     }
 
     async submitClosure(
-        taskId: string,
+        task: Task,
         action: 'no_change' | 'blocked' | 'waiting_client' | 'progress',
         remarks: string = '',
         completion_percentage?: number
@@ -49,7 +49,7 @@ export class ClosureService {
         const user = useAuthStore.getState().user;
         if (!user) throw new Error('Not authenticated');
 
-        let newStatus = undefined;
+        let newStatus = task.status;
         if (action === 'waiting_client') newStatus = 'awaiting_client_data';
 
         const updateData: any = {
@@ -61,7 +61,7 @@ export class ClosureService {
             updateData.completion_percentage = completion_percentage;
         }
 
-        if (newStatus) {
+        if (newStatus !== task.status) {
             updateData.status = newStatus;
             updateData.status_updated_at = new Date().toISOString();
         }
@@ -70,11 +70,24 @@ export class ClosureService {
         const { error } = await supabase
             .from('tasks')
             .update(updateData)
-            .eq('id', taskId);
+            .eq('id', task.id);
 
         if (error) throw error;
 
-        // Insert task comment
+        // Insert into task_closures table for reporting
+        await supabase.from('task_closures').insert({
+            task_id: task.id,
+            staff_id: user.id,
+            firm_id: user.firm_id,
+            action_type: action,
+            remarks: remarks || null,
+            old_status: task.status,
+            new_status: newStatus,
+            old_completion_percentage: task.completion_percentage || 0,
+            new_completion_percentage: completion_percentage !== undefined ? completion_percentage : (task.completion_percentage || 0)
+        });
+
+        // Insert task comment (for individual task timeline)
         let commentContent = '';
         switch (action) {
             case 'no_change': commentContent = 'Daily Closure: No significant change today.'; break;
@@ -85,7 +98,7 @@ export class ClosureService {
 
         // Don't throw if comment fails, closure is more important
         await supabase.from('task_comments').insert({
-            task_id: taskId,
+            task_id: task.id,
             user_id: user.id,
             content: commentContent
         });

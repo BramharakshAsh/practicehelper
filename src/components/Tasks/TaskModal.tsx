@@ -131,20 +131,39 @@ const TaskModal: React.FC<TaskModalProps> = ({
       periodText = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     } else if (frequency === 'quarterly' && selectedPeriod.type === 'quarter') {
       const { quarter, year } = selectedPeriod;
-      // TDS quarters: Q1(Apr-Jun), Q2(Jul-Sep), Q3(Oct-Dec), Q4(Jan-Mar)
-      // Due dates: Q1 due July 31, Q2 due Oct 31, Q3 due Jan 31, Q4 due May 31
-      const dueMonths = [6, 9, 0, 4]; // July, October, January, May (0-indexed)
-      const dueMonth = dueMonths[quarter - 1];
 
-      // Calculate due year - Q3 and Q4 roll into next year
+      let dueMonth: number;
       let dueYear = year;
-      if (quarter === 3) {
-        dueYear = year + 1; // Q3 (Oct-Dec) due Jan next year
-      } else if (quarter === 4) {
-        dueYear = year + 1; // Q4 (Jan-Mar) due May next year
+      let dueDayToUse = due_day;
+
+      const isAdvanceTax = selectedCompliance.name.toLowerCase().includes('advance tax') || selectedCompliance.code === 'ADV_TAX' || selectedCompliance.code === 'ADVANCE_TAX';
+
+      if (isAdvanceTax) {
+        // Advance Tax quarters:
+        // Q1 (Apr-Jun) -> 15th Jun
+        // Q2 (Jul-Sep) -> 15th Sept
+        // Q3 (Oct-Dec) -> 15th Dec
+        // Q4 (Jan-Mar) -> 15th Mar (next year)
+        const advTaxMonths = [5, 8, 11, 2]; // June, Sept, Dec, March (0-indexed)
+        dueMonth = advTaxMonths[quarter - 1];
+        dueDayToUse = 15;
+
+        if (quarter === 4) {
+          dueYear = year + 1;
+        }
+      } else {
+        // TDS quarters: Q1(Apr-Jun), Q2(Jul-Sep), Q3(Oct-Dec), Q4(Jan-Mar)
+        // Due dates: Q1 due July 31, Q2 due Oct 31, Q3 due Jan 31, Q4 due May 31
+        const dueMonths = [6, 9, 0, 4]; // July, October, January, May (0-indexed)
+        dueMonth = dueMonths[quarter - 1];
+
+        // Calculate due year - Q3 and Q4 roll into next year
+        if (quarter === 3 || quarter === 4) {
+          dueYear = year + 1;
+        }
       }
 
-      dueDateStr = formatDateForInput(dueYear, dueMonth, due_day);
+      dueDateStr = formatDateForInput(dueYear, dueMonth, dueDayToUse);
       periodText = `Q${quarter} FY${year}`;
     } else if (frequency === 'yearly' && selectedPeriod.type === 'year') {
       const { year } = selectedPeriod;

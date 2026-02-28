@@ -8,7 +8,7 @@ import {
     Calendar, LogOut, Upload, Zap,
     Menu, X, HelpCircle,
     UserCircle, FileCheck,
-    ChevronLeft, ChevronRight, CheckCircle, BarChart2
+    ChevronLeft, ChevronRight, CheckCircle
 } from 'lucide-react';
 import { CAControlLogo } from '../components/Common/CAControlLogo';
 import { useWalkthrough } from '../components/Walkthrough/WalkthroughProvider';
@@ -68,7 +68,8 @@ const DashboardLayout: React.FC = () => {
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/dashboard/tasks', label: 'Tasks', icon: CheckSquare },
         { to: '/dashboard/completed-tasks', label: 'Completed Tasks', icon: CheckCircle },
-        { to: '/dashboard/reports', label: 'Reports', icon: BarChart2, roles: ['partner', 'manager'] },
+        // [HIDDEN TEMPORARILY] { to: '/dashboard/daily-updates', label: 'Daily Updates', icon: CheckSquare, roles: ['partner', 'manager'] },
+        // [HIDDEN TEMPORARILY] { to: '/dashboard/reports', label: 'Reports', icon: BarChart2, roles: ['partner', 'manager'] },
         { to: '/dashboard/clients', label: 'Clients', icon: Users },
         { to: '/dashboard/staff', label: 'Staff', icon: UserCircle, roles: ['partner', 'manager'] },
         { to: '/dashboard/calendar', label: 'Calendar', icon: Calendar },
