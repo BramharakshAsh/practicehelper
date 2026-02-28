@@ -12,6 +12,7 @@ export const useStaff = () => {
     createStaff,
     updateStaff,
     deleteStaff,
+    unlockStaff,
     importStaff,
     clearError,
   } = useStaffStore();
@@ -25,6 +26,7 @@ export const useStaff = () => {
   const handleCreateStaff = (staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'> & { password?: string }) => createStaff(staffData);
   const handleUpdateStaff = (id: string, updates: Partial<Staff>) => updateStaff(id, updates);
   const handleDeleteStaff = (id: string) => deleteStaff(id);
+  const handleUnlockStaff = (staffId: string, userId: string) => unlockStaff(staffId, userId);
   const handleImportStaff = (staffData: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => importStaff(staffData);
 
   return {
@@ -34,6 +36,7 @@ export const useStaff = () => {
     createStaff: handleCreateStaff,
     updateStaff: handleUpdateStaff,
     deleteStaff: handleDeleteStaff,
+    unlockStaff: handleUnlockStaff,
     importStaff: handleImportStaff,
     refetch: fetchStaff,
     clearError,

@@ -16,6 +16,7 @@ interface StaffState {
   createStaff: (staff: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'> & { password?: string }) => Promise<void>;
   updateStaff: (id: string, updates: Partial<Staff>) => Promise<void>;
   deleteStaff: (id: string) => Promise<void>;
+  unlockStaff: (staffId: string, userId: string) => Promise<void>;
   undoStaffDeletion: (id: string) => void;
   importStaff: (staff: Omit<Staff, 'id' | 'user_id' | 'firm_id' | 'created_at' | 'updated_at'>[]) => Promise<{ success: number; failures: number; errors: string[] }>;
   clearError: () => void;
@@ -121,6 +122,28 @@ export const useStaffStore = create<StaffState>((set, get) => ({
         [id]: { timer: timeoutId, staff: staffMember }
       }
     }));
+  },
+
+  unlockStaff: async (staffId, userId) => {
+    set({ isLoading: true, error: null });
+
+    await handleAsyncError(async () => {
+      await staffService.unlockStaff(staffId, userId);
+      set(state => ({
+        staff: state.staff.map(member =>
+          member.id === staffId
+            ? { ...member, login_blocked: false, unreported_days_count: 0 }
+            : member
+        ),
+        isLoading: false
+      }));
+    }, 'Unlock staff').catch((error) => {
+      set({
+        error: ErrorService.getErrorMessage(error),
+        isLoading: false
+      });
+      throw error;
+    });
   },
 
   undoStaffDeletion: (id) => {

@@ -254,6 +254,32 @@ class StaffService {
     }
   }
 
+  async unlockStaff(staffId: string, userId: string): Promise<void> {
+    devLog('[StaffService] Unlocking staff:', staffId, userId);
+
+    // Update users table
+    const { error: userError } = await supabase
+      .from('users')
+      .update({ login_blocked: false, unreported_days_count: 0 })
+      .eq('id', userId);
+
+    if (userError) {
+      devError('[StaffService] Error unlocking user profile:', userError);
+      throw userError;
+    }
+
+    // Update staff table
+    const { error: staffError } = await supabase
+      .from('staff')
+      .update({ login_blocked: false, unreported_days_count: 0 })
+      .eq('id', staffId);
+
+    if (staffError) {
+      devError('[StaffService] Error unlocking staff profile:', staffError);
+      throw staffError;
+    }
+  }
+
   async importStaff(staffList: any[]): Promise<{ success: number; failures: number; errors: string[] }> {
     devLog(`[StaffService] Starting import of ${staffList.length} staff members`);
     const firmId = useAuthStore.getState().user?.firm_id;
