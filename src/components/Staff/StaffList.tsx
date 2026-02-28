@@ -10,7 +10,7 @@ import { useAuthStore } from '../../store/auth.store';
 import { SubscriptionService } from '../../services/subscription.service';
 import { formatDate } from '../../utils/date.utils';
 import { calculateLiveHealthScore } from '../../utils/healthScore';
-import { Activity } from 'lucide-react';
+import { Activity, Unlock } from 'lucide-react';
 
 interface StaffListProps {
   staff: Staff[];
@@ -273,6 +273,20 @@ const StaffList: React.FC<StaffListProps> = ({ staff, tasks, onStaffUpdate, onSt
                 <Trash2 className="h-4 w-4" />
                 <span className="sm:hidden ml-2">Delete</span>
               </button>
+              {member.login_blocked && (
+                <button
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to unlock ${member.name}'s account? This will reset their reporting penalty.`)) {
+                      useStaffStore.getState().unlockStaff(member.id, member.user_id!);
+                    }
+                  }}
+                  className="px-3 py-2 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors text-amber-600 border border-amber-200 flex items-center justify-center"
+                  title="Unlock Account"
+                >
+                  <Unlock className="h-4 w-4" />
+                  <span className="sm:hidden ml-2">Unlock</span>
+                </button>
+              )}
             </div>
             <div className="pt-4 mt-auto border-t border-gray-100">
               <div className="flex items-center justify-between">
