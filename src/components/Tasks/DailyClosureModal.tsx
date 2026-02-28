@@ -67,7 +67,7 @@ export const DailyClosureModal: React.FC<ClosureModalProps> = ({ isOpen, onCompl
         setSubmittingId(currentTask.id);
 
         try {
-            await closureService.submitClosure(currentTask.id, action, remarks, completionPercentage);
+            await closureService.submitClosure(currentTask, action, remarks, completionPercentage);
 
             const newTasks = [...tasks];
             newTasks.splice(0, 1); // remove the completed task

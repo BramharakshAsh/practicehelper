@@ -139,18 +139,34 @@ const AutoTaskModal: React.FC<AutoTaskModalProps> = ({
           return formatDateForInput(nextYear, nextMonth, day);
         } else if (frequency === 'quarterly' && selectedPeriod.type === 'quarter') {
           const { quarter, year } = selectedPeriod;
-          // TDS quarters: Q1(Apr-Jun), Q2(Jul-Sep), Q3(Oct-Dec), Q4(Jan-Mar)
-          // Due dates: Q1 due July 31, Q2 due Oct 31, Q3 due Jan 31, Q4 due May 31
-          const dueMonths = [6, 9, 0, 4]; // July, October, January, May (0-indexed)
-          const dueMonth = dueMonths[quarter - 1];
 
-          // Calculate due year - Q3 and Q4 roll into next year
+          let dueMonth: number;
           let dueYear = year;
-          if (quarter === 3 || quarter === 4) {
-            dueYear = year + 1;
+          let dueDayToUse = day;
+
+          const isAdvanceTax = compliance.name.toLowerCase().includes('advance tax') || compliance.code === 'ADV_TAX' || compliance.code === 'ADVANCE_TAX';
+
+          if (isAdvanceTax) {
+            const advTaxMonths = [5, 8, 11, 2]; // June, Sept, Dec, March (0-indexed)
+            dueMonth = advTaxMonths[quarter - 1];
+            dueDayToUse = 15;
+
+            if (quarter === 4) {
+              dueYear = year + 1;
+            }
+          } else {
+            // TDS quarters: Q1(Apr-Jun), Q2(Jul-Sep), Q3(Oct-Dec), Q4(Jan-Mar)
+            // Due dates: Q1 due July 31, Q2 due Oct 31, Q3 due Jan 31, Q4 due May 31
+            const dueMonths = [6, 9, 0, 4]; // July, October, January, May (0-indexed)
+            dueMonth = dueMonths[quarter - 1];
+
+            // Calculate due year - Q3 and Q4 roll into next year
+            if (quarter === 3 || quarter === 4) {
+              dueYear = year + 1;
+            }
           }
 
-          return formatDateForInput(dueYear, dueMonth, day);
+          return formatDateForInput(dueYear, dueMonth, dueDayToUse);
         } else if (frequency === 'yearly' && selectedPeriod.type === 'year') {
           const { year } = selectedPeriod;
           // For yearly returns, due date is typically in the following assessment year
