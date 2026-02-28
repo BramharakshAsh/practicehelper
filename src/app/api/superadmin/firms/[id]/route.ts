@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/cron-supabase';
+import { supabaseAdmin } from '../../../../../lib/cron-supabase';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
     try {
         // 1. Authenticate Request
         const authHeader = request.headers.get('authorization');
@@ -18,7 +18,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
             return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
         }
 
-        const firmId = params.id;
+        const { id } = await context.params;
+        const firmId = id;
+
         if (!firmId) {
             return NextResponse.json({ error: 'Firm ID is required.' }, { status: 400 });
         }
