@@ -391,7 +391,7 @@ const LandingPage: React.FC = () => {
                             </div>
                             <div className="text-left">
                                 <p className="text-sm text-gray-500 font-medium">Email Support</p>
-                                <a href="mailto:learnwithfun116@gmail.com" className="text-lg font-bold text-gray-900 hover:text-brand-primary">learnwithfun116@gmail.com</a>
+                                <a href="mailto:Piush@cacontrol.online" className="text-lg font-bold text-gray-900 hover:text-brand-primary">Piush@cacontrol.online</a>
                             </div>
                         </div>
                         <div className="h-px w-full md:h-12 md:w-px bg-gray-200"></div>
@@ -467,7 +467,7 @@ const LandingPage: React.FC = () => {
                             <ul className="space-y-4 text-sm text-gray-600">
                                 <li><Link to="/privacy" className="hover:text-brand-primary transition-colors">Privacy Policy</Link></li>
                                 <li><Link to="/terms" className="hover:text-brand-primary transition-colors">Terms of Service</Link></li>
-                                <li><a href="mailto:learnwithfun116@gmail.com" className="hover:text-brand-primary transition-colors">Contact Support</a></li>
+                                <li><a href="mailto:Piush@cacontrol.online" className="hover:text-brand-primary transition-colors">Contact Support</a></li>
                                 <li><Link to="/app/login" className="hover:text-brand-primary transition-colors font-semibold text-brand-primary">User Login</Link></li>
                             </ul>
                         </div>
