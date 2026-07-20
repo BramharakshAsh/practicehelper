@@ -294,7 +294,7 @@ const SettingsPage: React.FC = () => {
                                     className="px-6 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center"
                                 >
                                     <Zap className="h-4 w-4 mr-2" />
-                                    Upgrade to Growth (₹999/mo)
+                                    Upgrade to Growth (₹199/mo)
                                 </button>
                             ) : (
                                 <div className="text-right flex flex-col items-end gap-2">
