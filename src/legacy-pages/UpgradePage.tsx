@@ -60,7 +60,7 @@ const UpgradePage: React.FC = () => {
                                     <div>
                                         <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Email Us</p>
                                         <a href="mailto:learnwithfun116@gmail.com" className="text-lg font-semibold text-gray-900 hover:text-brand-primary">
-                                            learnwithfun116@gmail.com
+                                            Piush@cacontrol.online
                                         </a>
                                     </div>
                                 </div>
